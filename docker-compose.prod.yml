@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: hill-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-example}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-hill_ts}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - hill-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB Express (Optional - for database management)
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: hill-mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME:-root}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-example}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USERNAME:-root}:${MONGO_ROOT_PASSWORD:-example}@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-admin}
+    ports:
+      - "${MONGO_EXPRESS_PORT:-8081}:8081"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - hill-network
+    profiles:
+      - tools
+
+  # Backend API
+  backend:
+    image: ${DOCKER_USERNAME:-your-username}/hill-sequence-backend:${VERSION:-latest}
+    container_name: hill-backend
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://${MONGO_ROOT_USERNAME:-root}:${MONGO_ROOT_PASSWORD:-example}@mongodb:27017/
+      - DATA_FOLDER_PATH=/app/data_folder
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - app_data:/app/data_folder
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - hill-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Worker Service
+  worker:
+    image: ${DOCKER_USERNAME:-your-username}/hill-sequence-worker:${VERSION:-latest}
+    container_name: hill-worker
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://${MONGO_ROOT_USERNAME:-root}:${MONGO_ROOT_PASSWORD:-example}@mongodb:27017/
+      - DATA_FOLDER_PATH=/app/data_folder
+    volumes:
+      - app_data:/app/data_folder
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - hill-network
+    deploy:
+      replicas: ${WORKER_REPLICAS:-1}
+
+  # Frontend Application
+  frontend:
+    image: ${DOCKER_USERNAME:-your-username}/hill-sequence-frontend:${VERSION:-latest}
+    container_name: hill-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-4200}:4200"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - hill-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Named volumes for persistent data
+volumes:
+  mongodb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MONGODB_DATA_PATH:-./mongodb_data}
+  app_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APP_DATA_PATH:-./app_data}
+
+# Custom network for service communication
+networks:
+  hill-network:
+    driver: bridge

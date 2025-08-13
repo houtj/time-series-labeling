@@ -13,13 +13,33 @@ The application consists of four main components:
 
 ## Quick Start with Docker
 
-### Prerequisites
+### Option 1: Using Published Images (Recommended)
+
+For the fastest setup using our published Docker images:
+
+```bash
+# Create directory and download files
+mkdir hill-sequence && cd hill-sequence && \
+curl -O https://raw.githubusercontent.com/your-username/hill-sequence/main/docker-compose.prod.yml && \
+curl -O https://raw.githubusercontent.com/your-username/hill-sequence/main/env.example && \
+curl -O https://raw.githubusercontent.com/your-username/hill-sequence/main/init-mongo.js && \
+cp env.example .env && \
+echo "DOCKER_USERNAME=your-dockerhub-username" >> .env && \
+echo "VERSION=latest" >> .env && \
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+See [QUICK_START.md](QUICK_START.md) for detailed instructions.
+
+### Option 2: Build from Source
+
+#### Prerequisites
 
 - Docker and Docker Compose installed
 - At least 4GB of available RAM
 - 10GB of available disk space
 
-### 1. Clone the Repository
+#### 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
