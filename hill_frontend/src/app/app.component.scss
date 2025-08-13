@@ -1,0 +1,18 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+.toolbar-area{
+    // height: 48.587px;
+    margin: 1rem;
+}
+
+.router-area{
+    flex-grow: 1;
+}
+:host ::ng-deep {
+    &.toolbar-component {
+        padding: 7px 7px 7px 7px
+    }
+}

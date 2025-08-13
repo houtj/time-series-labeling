@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "ai-lab-labeling"
+  },
+  "targets": {
+    "ai-lab-labeling": {
+      "hosting": {
+        "hill-sequence": [
+          "hill-sequence"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

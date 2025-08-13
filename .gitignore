@@ -1,0 +1,16 @@
+data_folder/*
+**/__pycache__/*
+**/.hill_backend
+**/.hill_workers
+hill_workers/test.py
+hill_backend/test/*
+hill_backend/mongodb_data/*
+hill_backend/data_folder/*
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.cert
+app_data/*
+mongodb_data/*

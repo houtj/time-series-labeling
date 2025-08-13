@@ -1,0 +1,241 @@
+<div class="labeling-page card">
+    <div class="buttons-area">
+        <div class="toggle-buttons">
+            <p-toggleButton [(ngModel)]="labelToggleButton" onIcon="pi pi-plus-circle" offIcon="pi pi-plus-circle" (onChange)="onChangeLabelToggle($event)"></p-toggleButton>
+            <p-toggleButton [(ngModel)]="guidelineToggleButton" onIcon="pi pi-minus" offIcon="pi pi-minus" (onChange)="onChangeGuidelineToggle($event)"></p-toggleButton>
+        </div>
+        <div class="file-buttons">
+            <!-- <p-button icon="pi pi-directions-alt" (onClick)="onClickParent($event)" [rounded]="true" [text]="true"></p-button> -->
+            <p-button icon="pi pi-save" (onClick)="onClickSaveLabel($event)" [rounded]="true" [text]="true"></p-button>
+            <p-button icon="pi pi-share-alt" (onClick)="onClickShare($event)" [rounded]="true" [text]="true"></p-button>
+            <p-button icon="pi pi-file-import" (onClick)="onClickImportLabelButton($event)" [rounded]="true" [text]="true"></p-button>
+            <input id="fileImportInput" type="file" class="file-input" (change)="onChangeImportInput($event)" #fileUpload style="display: none;" accept=".json" [multiple]="false">
+            <p-button icon="pi pi-file-export" (onClick)="onClickExportLabel($event)" [rounded]="true" [text]="true"></p-button>
+            <p-button icon="pi pi-download" (onClick)="onClickDownload($event)" [rounded]="true" [text]="true"></p-button>
+        </div>
+        <!-- <div class="navigation-buttons">
+            <p-button icon="pi pi-arrow-left" (onClick)="onClickPreviousFile($event)" [rounded]="true" [text]="true"></p-button>
+            <p-button icon="pi pi-arrow-right" (onClick)="onClickNextFile($event)" [rounded]="true" [text]="true"></p-button>
+        </div> -->
+    </div>
+    <p-splitter [style]="{ height: '100%', width:'100%'}" layout="vertical" class="splitter-area" (onResizeEnd)="onResizePlot($event)">
+        <ng-template pTemplate>
+            <div class="data-area">
+                <div #chart id="myChartDiv" style="height: 100%;"></div>
+            </div>
+        </ng-template>
+        <ng-template pTemplate>
+            <div class="tables-area-placeholder">
+                <div *ngIf="labelInfo!==undefined" class="tables-area">
+                    <div class="guidelines-area">
+                        <div class="vertical-caption-area">
+                            <span style="writing-mode: vertical-lr;height: 65px;">Guidelines</span>
+                            <div class="table-buttons-area">
+                                <p-button icon="pi pi-refresh" (onClick)="onClickRefresh($event)" [rounded]="true" [text]="true"></p-button>
+                                <p-button icon="pi pi-eye" (onClick)="onClickUnhideGuidelines($event)" [rounded]="true" [text]="true"></p-button>
+                                <p-button icon="pi pi-eye-slash" (onClick)="onClickHideGuidelines($event)" [rounded]="true" [text]="true"></p-button>
+                                <p-button icon="pi pi-trash" (onClick)="onClickRemoveGuidelines($event)" [rounded]="true" [text]="true"></p-button>
+                            </div>
+                        </div>
+                        <div class="table-area">
+                            <p-table [value]="labelInfo!.guidelines" sortMode="multiple" [scrollable]="true" scrollHeight="flex">
+                                <ng-template pTemplate="header">
+                                    <tr>
+                                        <th pSortableColumn="channelName" style="width: 40%;">Channel Name <p-sortIcon field="channelName"></p-sortIcon></th>
+                                        <th pSortableColumn="y" style="width: 30%;"> Value <p-sortIcon field="y"></p-sortIcon></th>
+                                        <th pSortableColumn="hide" style="width: 30%;"> Hide <p-sortIcon field="hide"></p-sortIcon></th>
+                                    </tr>
+                                </ng-template>
+                                <ng-template pTemplate="body" let-guideline>
+                                    <tr>
+                                        <td><span>{{guideline.channelName}}</span></td>
+                                        <td>{{guideline.y}}</td>
+                                        <td>
+                                            <p-button [icon]="guideline.hide?'pi pi-eye-slash':'pi pi-eye'" (onClick)="onClickHideGuideline($event, guideline)" [rounded]="true" [text]="true"></p-button>
+                                            <p-button icon="pi pi-trash" (onClick)="onClickRemoveGuideline($event, guideline)" [rounded]="true" [text]="true"></p-button>
+                                        </td>
+                                    </tr>
+                                </ng-template>
+                            </p-table>
+                        </div>
+                    </div>
+                    <div class="events-area">
+                        <div class="vertical-caption-area">
+                            <span style="writing-mode: vertical-lr; height: 65px;">Events</span>
+                            <div class="table-buttons-area">
+                                <p-button icon="pi pi-refresh" (onClick)="onClickRefresh($event)" [rounded]="true" [text]="true"></p-button>
+                                <p-button icon="pi pi-eye" (onClick)="onClickUnhideEvents($event)" [rounded]="true" [text]="true"></p-button>
+                                <p-button icon="pi pi-eye-slash" (onClick)="onClickHideEvents($event)" [rounded]="true" [text]="true"></p-button>
+                                <p-button icon="pi pi-trash" (onClick)="onClickRemoveEvents($event)" [rounded]="true" [text]="true"></p-button>
+                            </div>
+                        </div>
+                        <div class="table-area">
+                            <p-table [value]="labelInfo!.events" sortMode="multiple" [scrollable]="true" scrollHeight="flex">
+                                <ng-template pTemplate="header">
+                                    <tr>
+                                        <th pSortableColumn="className" style="width: 20%;">Event name <p-sortIcon field="className"></p-sortIcon></th>
+                                        <th pSortableColumn="start" style="width: 17%;"> Start <p-sortIcon field="start"></p-sortIcon></th>
+                                        <th pSortableColumn="end" style="width: 17%;"> End <p-sortIcon field="end"></p-sortIcon></th>
+                                        <th pSortableColumn="labeler" style="width: 17%;"> Labeler <p-sortIcon field="labeler"></p-sortIcon></th>
+                                        <th pSortableColumn="description" style="width: 18%;"> Description <p-sortIcon field="description"></p-sortIcon></th>
+                                        <th pSortableColumn="hide" style="width: 11%;"> Hide <p-sortIcon field="hide"></p-sortIcon></th>
+                                    </tr>
+                                </ng-template>
+                                <ng-template pTemplate="body" let-event let-index="rowIndex">
+                                    <tr>
+                                        <td><span (click)="onClickSelectEvent($event, event)" style="cursor: pointer;">{{event.className}}</span></td>
+                                        <td>{{event.start}}</td>
+                                        <td>{{event.end}}</td>
+                                        <td>{{event.labeler}}</td>
+                                        <td>
+                                            <div class="description-area">
+                                                <span>{{event.description}}</span>
+                                                <p-button icon="pi pi-pencil" (onClick)="onClickEditDescription($event, index, event)" [rounded]="true" [text]="true"></p-button>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <p-button [icon]="event.hide?'pi pi-eye-slash':'pi pi-eye'" (onClick)="onClickHideEvent($event, event)" [rounded]="true" [text]="true"></p-button>
+                                            <p-button icon="pi pi-trash" (onClick)="onClickRemoveEvent($event, event)" [rounded]="true" [text]="true"></p-button>
+                                        </td>
+                                    </tr>
+                                </ng-template>
+                            </p-table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </ng-template>
+    </p-splitter>
+    <!-- <div class="right-side-area">
+        
+        
+    </div> -->
+</div>
+
+<p-dialog
+    [closable]="false"
+    [modal]="true"
+    [visible]="guidelineSelectionDialogVisible"
+    [style]="{width: '50vw'}"
+    header="Guideline Definition">
+        <div class="dialog-body">
+            <div class="dialog-content">
+                <span> Select a Channel</span>
+                <p-dropdown
+                    [options]="labelingDatabaseService.channelList"
+                    [(ngModel)] ="selectedYAxis"
+                    optionLabel="channelName"
+                    appendTo="body"
+                ></p-dropdown>
+            </div>
+            
+        </div>
+        <div class="dialog-buttons-area">
+            <div class="placeholder"></div>
+            <div class="buttons-right">
+                <p-button icon="pi pi-check" (onClick)="onClickSelectChannel($event)" [rounded]="true" [text]="true"></p-button>
+                <p-button icon="pi pi-times" (onClick)="onClickDialogCancel($event, 'guidelineSelectionDialog')" [rounded]="true" [text]="true"></p-button>
+            </div>
+        </div>
+
+        
+</p-dialog>
+<p-dialog
+    [closable]="false"
+    [modal]="true"
+    [visible]="labelSelectionDialogVisible"
+    [style]="{width: '50vw'}"
+    header="Event">
+        <div class="dialog-body">
+            <div class="dialog-content">
+                <span> Select a Class</span>
+                <p-dropdown
+                    [options]="classList"
+                    [(ngModel)] ="selectedClass"
+                    optionLabel="name"
+                    appendTo="body"
+                ></p-dropdown>
+                <label for="description">Description</label>
+                <input id="description" type="text" pInputText [(ngModel)]="selectedEventDescription">
+            </div>
+            <div class="dialog-buttons-area">
+                <div class="placeholder"></div>
+                <div class="buttons-right">
+                    <p-button icon="pi pi-check" (onClick)="onClickSelectClass($event)" [rounded]="true" [text]="true"></p-button>
+                    <p-button icon="pi pi-times" (onClick)="onClickDialogCancel($event, 'labelSelectionDialog')" [rounded]="true" [text]="true"></p-button>
+                </div>
+            </div>
+        </div>
+</p-dialog>
+
+<p-dialog
+    header="Share file"
+    [closable]="false"
+    [modal]="true"
+    [visible]="shareDialogVisible"
+    [style]="{width: '50vw'}">
+        <div class="dialog-body">
+            <div class="dialog-content">
+                <p>Choose a user</p>
+                <p-dropdown
+                    [options]="usersList"
+                    [(ngModel)]="selectedUser"
+                    optionLabel="mail"
+                    appendTo="body"
+                ></p-dropdown>
+            </div>
+            <div class="dialog-content">
+                <label for="sharingMessage">Sharing message</label>
+                <input id="sharingMessage" type="text" pInputText [(ngModel)]="messageShared">
+            </div>
+            <div class="dialog-buttons-area">
+                <div class="placeholder"></div>
+                <div class="buttons-right">
+                    <p-button icon="pi pi-check" (onClick)="onClickShareOk($event)" [rounded]="true" [text]="true"></p-button>
+                    <p-button icon="pi pi-times" (onClick)="onClickDialogCancel($event, 'shareFolder')" [rounded]="true" [text]="true"></p-button>
+                </div>
+            </div>
+        </div>
+</p-dialog>
+<p-dialog
+    header="Download"
+    [closable]="false"
+    [modal]="true"
+    [visible]="downloadDialogVisible"
+    [style]="{width: '50vw'}">
+        <div class="dialog-body">
+            <div class="dialog-content">
+                <a title="Download JSON" [href]="downloadUri" download="download.json" (click)="onClickDialogCancel($event, 'download')">Download</a>
+            </div>
+            <div class="dialog-buttons-area">
+                <div class="placeholder"></div>
+                <div class="buttons-right">
+                    <p-button icon="pi pi-times" (onClick)="onClickDialogCancel($event, 'download')" [rounded]="true" [text]="true"></p-button>
+                </div>
+            </div>
+        </div>
+</p-dialog>
+
+<p-dialog
+    header="Edit description"
+    [closable]="false"
+    [modal]="true"
+    [visible]="descriptionDialogVisible">
+        <div class="dialog-body">
+            <div class="user-selection-area">
+                <label for="description">Description</label>
+                <input id="description" type="text" pInputText [(ngModel)]="selectedEventDescription">
+            </div>
+            <div class="dialog-buttons-area">
+                <div class="placeholder"></div>
+                <div class="buttons-right">
+                    <p-button icon="pi pi-check" (onClick)="onClickEditDescriptionOK($event)" [rounded]="true" [text]="true"></p-button>
+                    <p-button icon="pi pi-times" (onClick)="onClickDialogCancel($event, 'description')" [rounded]="true" [text]="true"></p-button>
+                </div>
+            </div>
+        </div>
+</p-dialog>
+
+
+<p-toast></p-toast>
+<p-confirmPopup></p-confirmPopup>

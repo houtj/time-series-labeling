@@ -1,0 +1,31 @@
+<div class="container">
+  <div class="toolbar-area">
+    <p-toolbar styleClass="toolbar-component">
+        <div class="p-toolbar-group-start">
+            <p-button icon="pi pi-directions-alt" (onClick)="onClickParent($event)" [rounded]="true" [text]="true"></p-button>
+            <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
+            <p-button icon="pi pi-bars" [rounded]="true" [text]="true" (click)="menu.toggle($event)"></p-button>
+
+        </div>
+        <div class="p-toolbar-group-center">
+          <!-- <span>{{pageLabel}}</span> -->
+            <span style="font-weight: bold;">{{pageTitle}}</span>
+        </div>
+        <div class="p-toolbar-group-end">
+            <!-- <p-button icon="pi pi-user" styleClass="mr-2" [rounded]="true" [text]="true" (onClick)="login($event)"></p-button> -->
+            <p-button icon="pi pi-user" styleClass="mr-2" [rounded]="true" [text]="true"></p-button>
+            <span class="font-bold text-bluegray-50">{{(databaseService.userInfo$|async)?.name}}</span>
+            <span style="margin-left: 10px;">{{version}}</span>
+        </div>
+    </p-toolbar>
+  </div>
+  <div class="router-area" *ngIf="databaseService.userInfo!==undefined">
+    <router-outlet></router-outlet>
+  </div>
+  <div *ngIf="databaseService.userInfo===undefined">
+    <app-manual-page></app-manual-page>
+  </div>
+  
+</div>
+<p-toast></p-toast>
+<p-confirmPopup></p-confirmPopup>

@@ -1,0 +1,124 @@
+<div class="folders-page card">
+    
+    <div class="folders-area" *ngIf="userInfo!==undefined">
+        <p-table #dt1 
+            [value]="folderList!" 
+            sortMode="multiple" 
+            [scrollable]="true" 
+            [globalFilterFields]="['name', 'project', 'template', 'nbLabeled', 'nbTotal']" 
+            scrollHeight="flex"
+        >
+            <ng-template pTemplate="caption">
+                <div class="caption-area">
+                    <div class="caption-text-area">
+                        <span>Folders</span>
+                        <span class="p-input-icon-left ml-auto">
+                            <i class="pi pi-search"></i>
+                            <input pInputText type="text" [(ngModel)]="filterText" (input)="onInputFilter($event)" placeholder="Search keyword" />
+                        </span>
+                        <button pButton label="Clear" class="p-button-outlined" icon="pi pi-filter-slash" (click)="clear(dt1)"></button>
+                    </div>
+                    <div class="table-buttons-area">
+                        <p-button icon="pi pi-refresh" [rounded]="true" [text]="true" (onClick)="onClickRefresh($event)"></p-button>
+                    </div>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="header">
+                <tr>
+                    <th pSortableColumn="name" style="width: 25%;">Name <p-sortIcon field="name"></p-sortIcon></th>
+                    <th pSortableColumn="project.name" style="width: 20%;">Project <p-sortIcon field="project.name"></p-sortIcon></th>
+                    <th pSortableColumn="template.name" style="width: 15%;">Template<p-sortIcon field="template.name"></p-sortIcon></th>
+                    <th pSortableColumn="nbLabeledFiles" style="width: 15%;">Nb Labeled<p-sortIcon field="nbLabeledFiles"></p-sortIcon></th>
+                    <th pSortableColumn="nbTotalFiles" style="width: 15%;">Nb Total<p-sortIcon field="nbTotalFiles"></p-sortIcon></th>
+                    <th style="width: 10%;"></th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-folder>
+                <tr>
+                    <td><span (click)="onClickFolder($event, folder)" style="cursor: pointer;">{{folder.name}}</span></td>
+                    <td>{{folder.project.name}}</td>
+                    <td>{{folder.template.name}}</td>
+                    <td>{{folder.nbLabeledFiles}}</td>
+                    <td>{{folder.nbTotalFiles}}</td>
+                    <td>
+                        <p-button icon="pi pi-share-alt" (onClick)="onClickShare($event, folder)" [rounded]="true" [text]="true"></p-button>
+                        <p-button icon="pi pi-times" (onClick)="onClickRemove($event, folder)" [rounded]="true" [text]="true"></p-button>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+        
+    </div>
+</div>
+<p-speedDial direction="down-right" type="quarter-circle" (onClick)="onClickNewFolder($event, false)" [rotateAnimation]="false"></p-speedDial>
+<p-confirmPopup></p-confirmPopup>
+<p-toast></p-toast>
+<p-dialog
+    header="Add new folder"
+    [visible]="newFolderDialogVisible"
+    [style]="{width: '50vw'}"
+    [modal]="true"
+    [closable]="false">
+        <div class="dialog-body">
+            <div class="folder-name-area">
+                <label for="newFolderName">New Folder Name</label>
+                <input id="newFolderName" type="text" pInputText [(ngModel)]="newFolderName">
+            </div>
+            <div class="project-selection-area">
+                <span> Project </span>
+                <p-dropdown
+                    [options]="projectList"
+                    [(ngModel)]="newFolderProject"
+                    (onChange)="onChangeSelectedProject($event)"
+                    optionLabel="projectName"
+                    appendTo="body"
+                ></p-dropdown>
+            </div>
+            <div class="template-selection-area">
+                <span> Template </span>
+                <p-dropdown
+                    [options]="templateList"
+                    [(ngModel)]="newFolderTemplate"
+                    optionLabel="name"
+                    appendTo="body"
+                ></p-dropdown>
+                <p-button icon="pi pi-cog" [rounded]="true" [text]="true" (onClick)="onClickManagement($event)"></p-button>
+            </div>
+            <div class="dialog-buttons-area">
+                <div class="placeholder"></div>
+                <div class="buttons-right">
+                    <p-button icon="pi pi-check" [rounded]="true" [text]="true" (onClick)="onClickNewFolder($event, true)"></p-button>
+                    <p-button icon="pi pi-times" [rounded]="true" [text]="true" (onClick)="onClickDialogCancel($event, 'newFolder')"></p-button>
+                </div>
+            </div>
+            
+        </div>
+</p-dialog>
+<p-dialog
+    [header]="selectedFolder?.name"
+    [visible]="shareDialogVisible"
+    [style]="{width: '50vw'}"
+    [modal]="true"
+    [closable]="false">
+    <div class="dialog-body">
+        <div class="user-selection-area">
+            <p>Choose a user</p>
+            <p-dropdown
+                [options]="usersList"
+                [(ngModel)]="selectedUser"
+                optionLabel="mail"
+                appendTo="body"
+            ></p-dropdown>
+        </div>
+        <div class="dialog-buttons-area">
+            <div class="placeholder"></div>
+            <div class="buttons-right">
+                <p-button icon="pi pi-check" [rounded]="true" [text]="true" (onClick)="onClickShareOK($event)"></p-button>
+                <p-button icon="pi pi-times" [rounded]="true" [text]="true" (onClick)="onClickDialogCancel($event, 'shareFolder')"></p-button>
+            </div>
+        </div>
+        
+
+    </div>
+        
+</p-dialog>

@@ -1,0 +1,65 @@
+:host ::ng-deep {
+    &.dropdown-component {
+        width: 20rem
+    }
+
+    &.p-datatable-header{
+        border: none;
+        background: var(--surface-ground);
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    &.p-speeddial-direction-down-right {
+        right: 2rem;
+        bottom: 2rem;
+    }
+}
+
+.project-page{
+    
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap:1rem;
+    
+    // padding: 0rem 1rem 1rem 1rem;
+}
+.header {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 1rem;
+}
+.bottom-area{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.classes-area{
+    flex-grow: 1;
+    height: 100%;
+}
+
+.template-area{
+    flex-grow: 1;
+}
+
+.row-flex {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+.column-flex {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 1rem;
+}
