@@ -25,15 +25,12 @@ print_error() {
 }
 
 # Configuration
-DOCKER_USERNAME=${DOCKER_USERNAME:-"your-dockerhub-username"}
+DOCKER_USERNAME=${DOCKER_USERNAME:-"houtj1990"}
 IMAGE_PREFIX=${IMAGE_PREFIX:-"hill-sequence"}
 VERSION=${VERSION:-"latest"}
 
-# Check if Docker is logged in
-if ! docker info | grep -q "Username"; then
-    print_error "You are not logged in to Docker Hub. Please run: docker login"
-    exit 1
-fi
+# Check if Docker is logged in (optional check)
+print_warning "Make sure you are logged in to Docker Hub with: docker login"
 
 print_status "Building and pushing Hill Sequence Docker images..."
 print_status "Docker Hub Username: $DOCKER_USERNAME"

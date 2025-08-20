@@ -10,8 +10,6 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-root}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-example}
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-hill_ts}
-    ports:
-      - "${MONGO_PORT:-27017}:27017"
     volumes:
       - mongodb_data:/data/db
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
@@ -53,8 +51,6 @@ services:
     environment:
       - MONGODB_URL=mongodb://${MONGO_ROOT_USERNAME:-root}:${MONGO_ROOT_PASSWORD:-example}@mongodb:27017/
       - DATA_FOLDER_PATH=/app/data_folder
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - app_data:/app/data_folder
     depends_on:

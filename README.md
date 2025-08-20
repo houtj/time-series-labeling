@@ -75,31 +75,32 @@ docker-compose --profile tools up -d
 
 ### 4. Access the Application
 
-- **Frontend**: http://localhost:4200
-- **Backend API**: http://localhost:8000
-- **MongoDB Express**: http://localhost:8081 (if enabled)
+- **Frontend**: http://localhost:4200 (includes API proxy to backend)
+- **MongoDB Express**: http://localhost:8081 (if enabled, for database administration)
 
 ## Docker Services
 
 ### Frontend (Port 4200)
 - Angular application served with nginx
 - Handles user interface and API communication
+- **Includes nginx proxy** for API requests to backend
 - Configured for production deployment
 
-### Backend (Port 8000)
+### Backend (Internal)
 - FastAPI application with CORS enabled
 - Handles file uploads, database operations, and API requests
 - Uses uv for dependency management
+- **Not externally exposed** - accessible via nginx proxy at `/api`
 
 ### Worker
 - Background service for file parsing
 - Processes Excel, CSV, and other time-series files
 - Automatically scales based on workload
 
-### MongoDB (Port 27017)
+### MongoDB (Internal)
 - Persistent database storage
 - Initialized with required collections and indexes
-- Configurable credentials and port
+- **Not externally exposed** - only accessible via internal Docker network
 
 ### MongoDB Express (Port 8081, Optional)
 - Web-based MongoDB administration interface
@@ -114,8 +115,6 @@ docker-compose --profile tools up -d
 | `MONGO_ROOT_USERNAME` | root | MongoDB root username |
 | `MONGO_ROOT_PASSWORD` | example | MongoDB root password |
 | `MONGO_DATABASE` | hill_ts | Database name |
-| `MONGO_PORT` | 27017 | MongoDB port |
-| `BACKEND_PORT` | 8000 | Backend API port |
 | `FRONTEND_PORT` | 4200 | Frontend port |
 | `WORKER_REPLICAS` | 1 | Number of worker instances |
 

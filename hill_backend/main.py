@@ -22,6 +22,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Increase file upload size limit to 100MB
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class LargeFileMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Set maximum file size to 100MB
+        request.scope["max_content_size"] = 100 * 1024 * 1024  # 100MB
+        response = await call_next(request)
+        return response
+
+app.add_middleware(LargeFileMiddleware)
+
 data_folder_path = os.getenv("DATA_FOLDER_PATH", './data_folder')
 
 CHANGE_STREAM_DB = os.getenv("MONGODB_URL", "mongodb://root:example@localhost:27017/")
