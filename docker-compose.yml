@@ -112,16 +112,8 @@ services:
 volumes:
   mongodb_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${MONGODB_DATA_PATH:-./mongodb_data}
   app_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${APP_DATA_PATH:-./app_data}
 
 # Custom network for service communication
 networks:
