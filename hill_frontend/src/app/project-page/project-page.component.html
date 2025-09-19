@@ -54,7 +54,7 @@
                         <td (click)="onClickUpdateTemplate($event, template)" style="cursor: pointer;;">{{template.name}}</td>
                         <td>{{template.fileType}}</td>
                         <td>
-                            <p-button icon="pi pi-clone" (onClick)="onClickClone($event, template)" [rounded]="true" [text]="true" styleClass="button-inline"></p-button>
+                            <p-button icon="pi pi-clone" (onClick)="onClickClone($event, template)" [rounded]="true" [text]="true" pTooltip="Clone Template" styleClass="button-inline"></p-button>
                         </td>
                     </tr>
                 </ng-template>
@@ -160,7 +160,7 @@
                 </p-button>
                 <p-button
                     icon="pi pi-upload"
-                    (onClick)="onClickUploadTestFile($event)" pTooltip="Upload Test File" [rounded]="true" [text]="true" [disabled]="true">
+                    (onClick)="onClickFromFile($event)" pTooltip="Upload Test File" [rounded]="true" [text]="true">
                 </p-button>
             </div>
             <div class="meta-list row-flex" *ngIf="template!==undefined">

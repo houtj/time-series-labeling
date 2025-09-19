@@ -233,8 +233,84 @@ export class ProjectPageComponent implements OnInit, OnDestroy {
     this.template!.channels.splice(index, 1)
   }
 
-  onClickUploadTestFile($event: MouseEvent) {
-    throw new Error('Method not implemented.');
+  onClickFromFile($event: MouseEvent) {
+    // Create file input element programmatically
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    
+    // Set accepted file types based on template file type
+    if (this.template?.fileType) {
+      const fileType = this.template.fileType.startsWith('.') ? this.template.fileType : '.' + this.template.fileType;
+      fileInput.accept = fileType;
+    }
+    
+    fileInput.onchange = (event: any) => {
+      const file = event.target.files[0];
+      if (file) {
+        this.uploadFileAndExtractColumns(file);
+      }
+    };
+    
+    fileInput.click();
+  }
+
+  uploadFileAndExtractColumns(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('templateId', this.template!._id!.$oid);
+
+    this.http.post<any>(`${environment.databaseUrl}/extract-columns`, formData).subscribe(
+      response => {
+        this.autoMapColumnsToTemplate(response.columns);
+        this.messageService.add({
+          severity: 'success', 
+          summary: 'Columns Mapped', 
+          detail: `Automatically mapped ${response.columns.length} columns to template channels.`
+        });
+      },
+      error => {
+        this.messageService.add({
+          severity: 'error', 
+          summary: 'File Processing Failed', 
+          detail: 'Could not extract columns from the file. Please check the file format.'
+        });
+      }
+    );
+  }
+
+  autoMapColumnsToTemplate(columns: any[]) {
+    // Clear existing channels before auto-mapping
+    this.template!.channels = [];
+    
+    // Auto-map the first column to X-axis if no X-axis is configured
+    const hasXAxisMapping = this.template!.x.regex && this.template!.x.regex.trim() !== '';
+    if (columns.length > 0 && !hasXAxisMapping) {
+      this.template!.x.regex = columns[0].name;
+      if (!this.template!.x.name || this.template!.x.name.trim() === '') {
+        this.template!.x.name = columns[0].name;
+      }
+    }
+    
+    // Auto-map all columns as channels (skip first if it was used for X-axis)
+    const startIndex = hasXAxisMapping ? 0 : 1;
+    
+    for (let i = startIndex; i < columns.length && this.template!.channels.length < 8; i++) {
+      const column = columns[i];
+      const newChannel: TemplateModel['channels'][0] = {
+        mandatory: true,
+        channelName: column.name,
+        regex: column.name,
+        unit: '',
+        color: this.getRandomColor(),
+      };
+      
+      this.template!.channels.push(newChannel);
+    }
+  }
+
+  getRandomColor(): string {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
+    return colors[Math.floor(Math.random() * colors.length)];
   }
 
   onClickClone($event: MouseEvent, template: ProjectModel['templates'][0]) {

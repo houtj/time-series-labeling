@@ -7,11 +7,15 @@ import time
 import re
 from bson.json_util import dumps, loads
 from bson.objectid import ObjectId
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 CHANGE_STREAM_DB = os.getenv("MONGODB_URL", "mongodb://root:example@localhost:27017/")
 client = pymongo.MongoClient(CHANGE_STREAM_DB)
 db = client['hill_ts']
-data_folder_path = os.getenv("DATA_FOLDER_PATH", '/app/data_folder')
+data_folder_path = os.getenv("DATA_FOLDER_PATH", './data_folder')
 
 def parse_file(db, f):
     json_dict = []
@@ -141,7 +145,7 @@ while True:
             db['files'].update_one({'_id': f['_id']}, {'$set': {'parsing': 'parsed', 'jsonPath': f'{project_id}/{file_id}/{json_name}'}})
             print('done')
         except Exception as err:
-            # raise
+            raise
             db['files'].update_one({'_id': f['_id']}, {'$set': {'parsing': f'error {str(err)}'}})
             print('failed')
     time.sleep(30)

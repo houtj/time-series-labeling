@@ -12,6 +12,12 @@ import simplejson as json
 from typing import Annotated
 from pathlib import Path
 import shutil
+import pandas as pd
+import tempfile
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI()
 app.add_middleware(
@@ -146,6 +152,70 @@ async def add_template(request: NewTemplateModel):
 async def get_templates(template_id):
     templateInfo = db['templates'].find_one({'_id': ObjectId(template_id)})
     return dumps(templateInfo)
+
+@app.post('/extract-columns')
+async def extract_columns(file: UploadFile, templateId: Annotated[str, Form()]):
+    try:
+        # Get template information
+        template = db['templates'].find_one({'_id': ObjectId(templateId)})
+        if not template:
+            return {'error': 'Template not found'}
+        
+        # Create temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file.filename) as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_file_path = tmp_file.name
+        
+        try:
+            # Read file based on file type
+            file_type = template.get('fileType', '.xlsx')
+            
+            if file_type == '.xlsx':
+                sheet_name = template.get('sheetName', 0)
+                try:
+                    sheet_name = int(sheet_name)
+                except:
+                    pass
+                df = pd.read_excel(tmp_file_path, sheet_name=sheet_name, engine='openpyxl', 
+                                 header=template.get('headRow', 0))
+            elif file_type == '.xls':
+                sheet_name = template.get('sheetName', 0)
+                try:
+                    sheet_name = int(sheet_name)
+                except:
+                    pass
+                df = pd.read_excel(tmp_file_path, sheet_name=sheet_name, engine='xlrd', 
+                                 header=template.get('headRow', 0))
+            elif file_type == '.csv':
+                df = pd.read_csv(tmp_file_path, header=template.get('headRow', 0))
+            else:
+                return {'error': 'Unsupported file type'}
+            
+            # Extract column information
+            columns = []
+            for i, column_name in enumerate(df.columns):
+                # Get first non-null value as sample data
+                sample_data = ""
+                for value in df[column_name].dropna():
+                    if pd.notna(value):
+                        sample_data = str(value)
+                        break
+                
+                columns.append({
+                    'name': str(column_name),
+                    'index': i,
+                    'sampleData': sample_data
+                })
+            
+            return {'columns': columns}
+            
+        finally:
+            # Clean up temporary file
+            os.unlink(tmp_file_path)
+            
+    except Exception as e:
+        return {'error': f'Failed to process file: {str(e)}'}
 
 @app.put('/templates_clone')
 async def clone_template(request: CloneTemplateModel):
