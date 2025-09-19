@@ -41,6 +41,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SplitterModule } from 'primeng/splitter';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { SidebarModule } from 'primeng/sidebar';
 
 @NgModule({
   declarations: [
@@ -80,6 +81,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
     FileUploadModule,
     InputTextareaModule,
     ProgressSpinnerModule,
+    SidebarModule,
     ToolbarModule,
     AvatarModule,
     AvatarGroupModule,

@@ -68,6 +68,7 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   public selectedEventDescription?: string;
   public selectedEvent?: LabelModel['events'][0]
   public selectedEventIndex?: number;
+  public sidePanelVisible: boolean = false;
   
 
   ngOnInit(): void {
@@ -431,6 +432,10 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   onClickEditDescriptionOK($event: MouseEvent) {
     this.descriptionDialogVisible = false
     this.selectedEvent!.description = this.selectedEventDescription!
+  }
+
+  onClickTogglePanel($event: MouseEvent) {
+    this.sidePanelVisible = !this.sidePanelVisible;
   }
 
   ngOnDestroy(): void {
