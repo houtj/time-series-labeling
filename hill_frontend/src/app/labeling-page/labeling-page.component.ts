@@ -6,6 +6,8 @@ import { DatabaseService } from '../database/database.service';
 import { Subscription, filter, first, switchMap, tap } from 'rxjs';
 import { transition } from '@angular/animations';
 import { LabelingDatabaseService } from './labeling-database.service';
+import { ChartService } from './chart.service';
+import { DialogService } from './dialog.service';
 import { ToggleButtonChangeEvent } from 'primeng/togglebutton';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { HttpClient } from '@angular/common/http';
@@ -26,6 +28,8 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   private route = inject(ActivatedRoute)
   private databaseService = inject(DatabaseService)
   public labelingDatabaseService = inject(LabelingDatabaseService)
+  private chartService = inject(ChartService)
+  private dialogService = inject(DialogService)
   private confirmationService = inject(ConfirmationService)
   private messageService = inject(MessageService)
   private http = inject(HttpClient)
@@ -35,52 +39,6 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   private data?: DataModel[]
   private startX?: string|number
   private endX?: string|number
-  private layout: Partial<Plotly.Layout> = {
-    showlegend: true,
-    legend: {
-      x: 1,
-      y: 1, 
-      xanchor: 'right',
-      bgcolor: '#c7ced9',
-      font: {
-        family: '-apple-system, BlinkMacSystemFont, "Segoe UI",bRoboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
-      }
-    },
-    hovermode: 'x',
-    dragmode: 'pan',
-    paper_bgcolor: '#c7ced9',
-    plot_bgcolor: '#e0e4ea',
-    // autosize: true,
-    // height: 400,
-    margin: {
-      t:20,
-      r: 5,
-      b: 20,
-      l: 40
-    },
-    shapes: [],
-    annotations: [],
-    xaxis: {
-      showgrid: true,
-      color: '#222',
-      tickfont:{
-        family: '-apple-system, BlinkMacSystemFont, "Segoe UI",bRoboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-        size: 16,
-        color:'#444e5c'
-      },
-    },
-    hoverlabel:{
-      font:{
-        family: '-apple-system, BlinkMacSystemFont, "Segoe UI",bRoboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
-      }
-    },
-    
-  }
-  private config: Partial<Plotly.Config> = {
-    responsive: true,
-    scrollZoom: true,
-    displaylogo: false,
-  }
   public fileId?: string|null;
   public folderId?: string|null;
   public labelToggleButton: boolean=false;
@@ -174,51 +132,7 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
         filter(data=>data!==undefined),
         tap(data=>{
           this.data = data
-          const x_trace = data!.find(c=>c.x===true)!
-          const channels = data!.filter(c=>c.x===false)
-          const traces: Plotly.Data[] = channels.map((c, index)=>{
-            let k
-            if (index===0){
-              k = ''
-            } else {
-              k = index+1
-            }
-            // this.initLayout()
-            //@ts-expect-error
-            this.layout[`yaxis${k}`] = {
-              title: {
-                font: {
-                  color: c.color,
-                  family: '-apple-system, BlinkMacSystemFont, "Segoe UI",bRoboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
-                },
-                standoff: 0,
-                text: `${c.name} - ${c.unit}`
-              },
-              tickfont: {
-                color: c.color,
-                family: '-apple-system, BlinkMacSystemFont, "Segoe UI",bRoboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
-              },
-              overlaying: index===0? 'free': 'y',
-              side: 'left',
-              position: 0.04*index,
-              showgrid: false,
-              zeroline: false,
-            }
-            //@ts-expect-error
-            this.labelingDatabaseService.channelList?.push({channelName: c.name, yaxis: `y${k}`, color: c.color})
-            return {
-            x: x_trace.data,
-            y: c.data,
-            yaxis: `y${k}`,
-            name: c.name,
-            type: 'scatter',
-            mode: 'lines',
-            line: {color: c.color},
-            }
-          })
-          this.layout.xaxis!.domain = [channels.length*0.04-0.035, 0.94]
-          this.layout.xaxis!.range = [x_trace.data[0], x_trace.data[x_trace.data.length-1]]
-          Plotly.newPlot(this.plotlyChart.nativeElement, traces, this.layout, this.config)
+          this.chartService.initializeChart(this.plotlyChart, data!, this.labelingDatabaseService.channelList!)
           this.plotlyChart.nativeElement.on('plotly_click', (data: Plotly.PlotMouseEvent)=>{
             this.plotlyClick(data)
           })
@@ -235,14 +149,12 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
         switchMap(label=>this.labelingDatabaseService.plotlyShapes$),
         filter(shapes=> shapes!==undefined),
         tap(shapes=>{
-          this.layout.shapes = shapes!
-          Plotly.relayout('myChartDiv', {shapes: this.layout.shapes})
+          this.chartService.updateShapes(shapes!)
         }),
         switchMap(shape=> this.labelingDatabaseService.plotlyAnnotations$),
         filter(annotations=>annotations!==undefined),
         tap(annotations=>{
-          this.layout.annotations = annotations
-          Plotly.relayout('myChartDiv', {annotations: this.layout.annotations})
+          this.chartService.updateAnnotations(annotations!)
         })
       ).subscribe()
     )
@@ -282,7 +194,7 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
         this.startX = undefined
         this.endX = undefined
         this.selectedButton = button
-        this.removeTempShapes()
+        this.chartService.removeTempShapes()
         this.nbClick = 0
         switch (button){
           case 'none':
@@ -303,22 +215,11 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
     
 
   }
-  private removeTempShapes() {
-    //@ts-expect-error
-    this.layout.shapes = this.layout.shapes!.filter(s=>s.temp!==true)
-    Plotly.relayout('myChartDiv', {shapes: this.layout.shapes})
-  }
   private plotlyClick(data: Plotly.PlotMouseEvent){
     if (this.selectedButton === 'guideline') {
       switch (this.nbClick){
         case 0:
-          const newGuideline: LabelModel['guidelines'][0]={
-            channelName: this.selectedYAxis!.channelName,
-            color: this.selectedYAxis!.color,
-            hide: false,
-            y: this.layout.shapes![this.layout.shapes!.length-1].y0!,
-            yaxis: this.layout.shapes![this.layout.shapes!.length-1].yref!
-          }
+          const newGuideline = this.chartService.createGuideline(this.selectedYAxis!)
           this.labelInfo!.guidelines.push(newGuideline)
           this.labelingDatabaseService.updateLabels(this.labelInfo!)
           this.labelingDatabaseService.updateSelectedButton('none')
@@ -342,79 +243,12 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   }
   private plotlyHover(data:Plotly.PlotMouseEvent){
     if (this.selectedButton === 'label') {
-      switch (this.nbClick) {
-        case 0:
-          //@ts-expect-error
-          if (this.layout.shapes!.length!==0 && this.layout.shapes![this.layout.shapes!.length-1].temp!==undefined){
-            const lastShape = this.layout.shapes![this.layout.shapes!.length-1]
-            lastShape.x0 = data.points[0].x
-            lastShape.x1 = data.points[0].x
-            Plotly.relayout('myChartDiv', {shapes: this.layout.shapes})
-          } else {
-            const lastShape: Plotly.Shape = {
-              type: 'line',
-              xref: 'x',
-              yref: 'paper',
-              y0: 0,
-              y1: 1,
-              x0: data.points[0].x,
-              x1: data.points[0].x,
-              opacity: 0.5,
-              line: {
-                color: '#808080',
-                width: 2,
-                dash: 'dash'
-              },
-              //@ts-expect-error
-              temp: true
-            }
-            this.layout.shapes?.push(lastShape)
-            Plotly.relayout('myChartDiv', {shapes: this.layout.shapes})
-          }
-          break
-        case 1:
-          const lastShape = this.layout.shapes![this.layout.shapes!.length-1]
-          lastShape.type ='rect'
-          lastShape.x0 = this.startX!
-          lastShape.x1 = data.points[0].x
-          lastShape.fillcolor = '#808080'
-          lastShape.line!.width = 4
-          lastShape.line!.dash = 'dot'
-          lastShape.opacity = 0.5
-          Plotly.relayout('myChartDiv', {shapes: this.layout.shapes})
-          break
-      }
+      this.chartService.handleLabelHover(data, this.nbClick, this.startX)
     }
     if (this.selectedButton === 'guideline'){
       switch (this.nbClick) {
         case 0:
-          //@ts-expect-error
-          if (this.layout.shapes!.length!==0 && this.layout.shapes![this.layout.shapes!.length-1].temp!==undefined){
-            const lastShape = this.layout.shapes![this.layout.shapes!.length-1]
-            lastShape.y0 = data.points.find(c=> c.data.yaxis===this.selectedYAxis!.yaxis)!.y
-            lastShape.y1 = data.points.find(c=> c.data.yaxis===this.selectedYAxis!.yaxis)!.y
-            Plotly.relayout('myChartDiv', {shapes: this.layout.shapes})
-          } else {
-            const lastShape: Plotly.Shape = {
-              type: 'line',
-              yref: this.selectedYAxis!.yaxis,
-              xref: 'paper',
-              x0: 0,
-              x1: 1,
-              y0: data.points.find(c=> c.data.yaxis===this.selectedYAxis!.yaxis)!.y,
-              y1: data.points.find(c=> c.data.yaxis===this.selectedYAxis!.yaxis)!.y,
-              opacity: 0.5,
-              line: {
-                color: this.selectedYAxis?.color,
-                width: 2,
-                dash: 'dash'
-              },
-              //@ts-expect-error
-              temp: true
-            }
-            this.layout.shapes?.push(lastShape)
-            Plotly.relayout('myChartDiv', {shapes: this.layout.shapes})
-          }
+          this.chartService.handleGuidelineHover(data, this.selectedYAxis!)
           break
       }
     }
@@ -444,15 +278,13 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   }
 
   onClickSelectClass($event: MouseEvent) {
-    const newEvent: LabelModel['events'][0] = {
-      className: this.selectedClass!.name,
-      color: this.selectedClass!.color,
-      description: this.selectedEventDescription!,
-      start: this.startX!,
-      end: this.endX!,
-      hide: false,
-      labeler: this.userInfo!.name,
-    }
+    const newEvent = this.dialogService.createEvent(
+      this.selectedClass!,
+      this.selectedEventDescription!,
+      this.startX!,
+      this.endX!,
+      this.userInfo!
+    )
     this.labelInfo!.events.push(newEvent)
     this.labelingDatabaseService.updateLabels(this.labelInfo!)
     this.labelSelectionDialogVisible = false
@@ -532,83 +364,39 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   }
   onClickRemoveEvents($event: MouseEvent) {
     this.labelingDatabaseService.updateSelectedButton('none')
-    this.confirmationService.confirm({
-      target: $event.target as EventTarget,
-      message: 'Are you sure you want to remove all the events?',
-      icon: 'pi pi-info-circle',
-      accept: ()=>{
-        this.labelInfo!.events = []
-        this.labelingDatabaseService.updateLabels(this.labelInfo!)
-      }
+    this.dialogService.showRemoveEventsConfirmation($event, () => {
+      this.labelInfo!.events = []
+      this.labelingDatabaseService.updateLabels(this.labelInfo!)
     })
   }
   onClickRemoveGuidelines($event: MouseEvent) {
     this.labelingDatabaseService.updateSelectedButton('none')
-    this.confirmationService.confirm({
-      target: $event.target as EventTarget,
-      message: 'Are you sure you want to remove all the guidelines?',
-      icon: 'pi pi-info-circle',
-      accept: ()=>{
-        this.labelInfo!.guidelines = []
-        this.labelingDatabaseService.updateLabels(this.labelInfo!)
-      }
+    this.dialogService.showRemoveGuidelinesConfirmation($event, () => {
+      this.labelInfo!.guidelines = []
+      this.labelingDatabaseService.updateLabels(this.labelInfo!)
     })
   }
 
   onClickSelectEvent($event: MouseEvent, event: LabelModel['events'][0]) {
     this.labelingDatabaseService.updateSelectedButton('none')
-    this.layout.xaxis!.range![0]= event.start, 
-    this.layout.xaxis!.range![1] = event.end
-    Plotly.relayout('myChartDiv', {xaxis: this.layout.xaxis})
+    this.chartService.zoomToEvent(event)
   }
 
   onClickNextFile($event: MouseEvent) {
     this.labelingDatabaseService.updateSelectedButton('none')
     const fileList = this.folderInfo!.fileList
     const index = this.folderInfo!.fileList.findIndex(fileId=> fileId===this.fileInfo!._id!.$oid)
-    if (index!==fileList.length-1){
-      this.confirmationService.confirm({
-        target: $event.target as EventTarget,
-        message: 'Are you sure you want to proceed? All the unsaved changes are disgarded!',
-        icon: 'pi pi-exclamation-triangle',
-        accept: ()=>{
-          this.router.navigate(['/labeling', {folderId: this.folderInfo!._id!.$oid, fileId: fileList[index+1]}])
-        }
-      })
-    } else {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'The end',
-        detail: 'No next file'
-      })
-    }
+    this.dialogService.showNextFileConfirmation($event, this.folderInfo!, fileList, index)
   }
   onClickPreviousFile($event: MouseEvent) {
     this.labelingDatabaseService.updateSelectedButton('none')
     const fileList = this.folderInfo!.fileList
     const index = this.folderInfo!.fileList.findIndex(fileId=> fileId===this.fileInfo!._id!.$oid)
-    if (index!==0){
-      this.confirmationService.confirm({
-        target: $event.target as EventTarget,
-        message: 'Are you sure you want to proceed? All the unsaved changes are disgarded!',
-        icon: 'pi pi-exclamation-triangle',
-        accept: ()=>{
-          this.router.navigate(['/labeling', {folderId: this.folderInfo!._id!.$oid, fileId: fileList[index-1]}])
-        }
-      })
-    } else {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'The end',
-        detail: 'No previous file'
-      })
-    }
+    this.dialogService.showPreviousFileConfirmation($event, this.folderInfo!, fileList, index)
   }
   onClickDownload($event: MouseEvent) {
     this.labelingDatabaseService.updateSelectedButton('none')
-    const json = JSON.stringify(this.data)
-    const uri = this.sanitizer.bypassSecurityTrustUrl("data:text/json;charset=UTF-8,"+encodeURIComponent(json))
-    this.downloadUri = uri
+    this.downloadUri = this.dialogService.createDownloadUri(this.data)
     this.downloadDialogVisible = true
   }
 
@@ -616,46 +404,21 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   onClickExportLabel($event: MouseEvent) {
     this.labelingDatabaseService.updateSelectedButton('none')
     this.databaseService.updateSelectedFile(this.fileInfo?._id?.$oid!)
-    const json = JSON.stringify(this.labelInfo!.events)
-    const uri = this.sanitizer.bypassSecurityTrustUrl("data:text/json;charset=UTF-8,"+encodeURIComponent(json))
-    this.downloadUri = uri
+    this.downloadUri = this.dialogService.createDownloadUri(this.labelInfo!.events)
     this.downloadDialogVisible = true
   }
 
 
   onChangeImportInput($event: Event) {
-    const target = $event.target as HTMLInputElement
-    const file:File = (target!.files as FileList)[0]
-    if (file){
-      const formData: FormData = new FormData()
-      formData.append('data', this.labelInfo?._id?.$oid!)
-      formData.append('user', this.userInfo!.name)
-      formData.append('file', file, file.name)
-      this.http.post(`${environment.databaseUrl}/event`, formData).subscribe(res=>{
-        this.databaseService.updateSelectedFile(this.fileInfo?._id?.$oid!)
-      })
-    }  
+    this.dialogService.handleFileImport($event, this.labelInfo!, this.userInfo!, this.fileInfo!)
   }
   onClickImportLabelButton($event: MouseEvent) {
-    this.confirmationService.confirm({
-      target: $event.target!,
-      message: 'All the current events will be replaced by the uploaded events',
-      icon: 'pi pi-info-circle',
-      accept: ()=>{
-        document.getElementById('fileImportInput')?.click() 
-      }
-    })
+    this.dialogService.showImportLabelConfirmation($event)
   }
 
   onClickSaveLabel($event: MouseEvent) {
     this.labelingDatabaseService.updateSelectedButton('none')
-    this.http.put(`${environment.databaseUrl}/labels`, {label: this.labelInfo!, user: this.userInfo!.name}).subscribe(response=>{
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Saved',
-        detail: 'Your label has been saved'
-      })
-    })
+    this.dialogService.saveLabel(this.labelInfo!, this.userInfo!)
   }
   onClickRefresh($event: MouseEvent) {
     this.labelingDatabaseService.updateSelectedButton('none')
@@ -663,26 +426,27 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   }
 
   onClickParent($event: MouseEvent) {
-    this.router.navigate(['/files', {folderId: this.folderId}])
+    this.dialogService.navigateToParent(this.folderId!)
   }
   
   onClickShare($event: MouseEvent) {
     this.messageShared = `Please check this file: ${this.fileInfo?.name}`
-    this.http.get<string>(`${environment.databaseUrl}/users`).subscribe(users=>{
+    this.dialogService.loadUsers((users) => {
       this.shareDialogVisible = true
-      this.usersList = JSON.parse(users)
+      this.usersList = users
       this.selectedUser = this.usersList![0]
     })
   }
 
   onClickShareOk($event: Event){
-    this.http.put<string>(`${environment.databaseUrl}/usersSharedFiles`, {folder: this.folderInfo, user: this.selectedUser, userName: this.userInfo!.name, message: this.messageShared}).subscribe(response=>{
-      this.shareDialogVisible = false
-      this.messageService.add({severity: 'success', summary: 'Folder Shared', detail: 'Folder Shared successfully'})
-    }, error=>{
-      this.shareDialogVisible = false
-      this.messageService.add({severity:'error', summary:'Folder sharing failed.', detail:'Folder sharing failed.'})
-    })
+    this.dialogService.shareFolder(
+      this.folderInfo!,
+      this.selectedUser!,
+      this.userInfo!,
+      this.messageShared!,
+      () => { this.shareDialogVisible = false },
+      () => { this.shareDialogVisible = false }
+    )
   }
 
   onClickEditDescription($event: MouseEvent, index: number, event: LabelModel['events'][0]) {
@@ -711,6 +475,6 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   }
 
   onResizePlot($event: SplitterResizeEndEvent) {
-    window.dispatchEvent(new Event('resize'))
+    this.chartService.resizeChart()
   }
 }
