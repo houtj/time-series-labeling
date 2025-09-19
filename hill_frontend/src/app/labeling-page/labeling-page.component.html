@@ -12,7 +12,7 @@
             <input id="fileImportInput" type="file" class="file-input" (change)="onChangeImportInput($event)" #fileUpload style="display: none;" accept=".json" [multiple]="false">
             <p-button icon="pi pi-file-export" (onClick)="onClickExportLabel($event)" [rounded]="true" [text]="true"></p-button>
             <p-button icon="pi pi-download" (onClick)="onClickDownload($event)" [rounded]="true" [text]="true"></p-button>
-            <p-button icon="pi pi-window-minimize" (onClick)="onClickTogglePanel($event)" [rounded]="true" [text]="true" pTooltip="Toggle Bottom Panel"></p-button>
+            <p-button icon="pi pi-comments" (onClick)="onClickToggleChatbot($event)" [rounded]="true" [text]="true" pTooltip="AI Assistant"></p-button>
         </div>
         <!-- <div class="navigation-buttons">
             <p-button icon="pi pi-arrow-left" (onClick)="onClickPreviousFile($event)" [rounded]="true" [text]="true"></p-button>
@@ -112,6 +112,77 @@
         
     </div> -->
 </div>
+
+<p-sidebar 
+    [(visible)]="chatbotDrawerVisible" 
+    position="bottom" 
+    [style]="{ height: '40vh' }"
+    [modal]="false"
+    [dismissible]="true"
+    [closeOnEscape]="true"
+    [blockScroll]="false">
+    
+    <ng-template pTemplate="header">
+        <div class="chatbot-header">
+            <i class="pi pi-comments" style="margin-right: 0.5rem;"></i>
+            <span>AI Assistant</span>
+            <div class="chatbot-header-actions">
+                <p-button 
+                    icon="pi pi-trash" 
+                    (onClick)="onClickClearChat($event)" 
+                    [rounded]="true" 
+                    [text]="true" 
+                    size="small"
+                    pTooltip="Clear conversation">
+                </p-button>
+            </div>
+        </div>
+    </ng-template>
+    
+    <div class="chatbot-container">
+        <div class="chat-messages" #chatMessages>
+            <div 
+                *ngFor="let message of chatHistory" 
+                class="message"
+                [ngClass]="{'user-message': message.role === 'user', 'assistant-message': message.role === 'assistant'}">
+                <div class="message-content">
+                    <div class="message-text">{{ message.content }}</div>
+                    <div class="message-timestamp">{{ message.timestamp | date:'short' }}</div>
+                </div>
+            </div>
+            <div *ngIf="isWaitingForResponse" class="message assistant-message">
+                <div class="message-content">
+                    <div class="message-text">
+                        <i class="pi pi-spin pi-spinner"></i> Thinking...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <textarea 
+                    #chatInput
+                    pInputTextarea 
+                    [(ngModel)]="currentMessage" 
+                    placeholder="Ask me anything about this data..."
+                    [autoResize]="true"
+                    rows="1"
+                    (keydown)="onChatInputKeydown($event)"
+                    [disabled]="isWaitingForResponse"
+                    class="chat-input">
+                </textarea>
+                <p-button 
+                    icon="pi pi-send" 
+                    (onClick)="onClickSendMessage($event)"
+                    [rounded]="true"
+                    [disabled]="!currentMessage.trim() || isWaitingForResponse"
+                    class="send-button">
+                </p-button>
+            </div>
+        </div>
+    </div>
+</p-sidebar>
 
 <p-dialog
     [closable]="false"

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import pymongo
 from bson.json_util import dumps, loads
 from bson.objectid import ObjectId
-from model import CloneTemplateModel, DownloadJsonFiles, NewClassModel, NewFolderModel, NewProjectModel, NewTemplateModel, ReparsingFiles, UpdateClassRequest, UpdateDescriptionModel, UpdateLabelModel, UpdateProjectDescriptionsModel, UpdateTemplateModel, UpdateUserRecentFilesModel, UpdateUserShareProjectModel, UpdateUserSharedFolderModel
+from model import CloneTemplateModel, DownloadJsonFiles, NewClassModel, NewFolderModel, NewProjectModel, NewTemplateModel, ReparsingFiles, UpdateClassRequest, UpdateDescriptionModel, UpdateLabelModel, UpdateProjectDescriptionsModel, UpdateTemplateModel, UpdateUserRecentFilesModel, UpdateUserShareProjectModel, UpdateUserSharedFolderModel, ChatMessage, ConversationModel
 from datetime import datetime, timezone
 import simplejson as json
 from typing import Annotated
@@ -15,6 +15,9 @@ import shutil
 import pandas as pd
 import tempfile
 from dotenv import load_dotenv
+import asyncio
+from langchain_openai import AzureChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 # Load environment variables from .env file
 load_dotenv()
@@ -46,6 +49,18 @@ data_folder_path = os.getenv("DATA_FOLDER_PATH", './data_folder')
 CHANGE_STREAM_DB = os.getenv("MONGODB_URL", "mongodb://root:example@localhost:27017/")
 client = pymongo.MongoClient(CHANGE_STREAM_DB)
 db = client['hill_ts']
+
+# Azure OpenAI configuration
+azure_chat_model = AzureChatOpenAI(
+    azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4.1"),
+    api_version=os.getenv("API_VERSION", "2024-02-01"),
+    api_key=os.getenv("API_KEY"),
+    azure_endpoint=os.getenv("API_ENDPOINT"),
+    temperature=0.7,
+)
+
+# Store active WebSocket connections
+active_connections: dict[str, WebSocket] = {}
 
 
 @app.post("/jsonfiles")
@@ -631,6 +646,128 @@ async def update_project_descriptions(request: UpdateProjectDescriptionsModel):
         )
     
     return 'done'
+
+# Conversation endpoints
+@app.get('/conversations/{file_id}')
+async def get_conversation(file_id: str):
+    """Get conversation history for a file"""
+    conversation = db['conversations'].find_one({'fileId': file_id})
+    if conversation:
+        return dumps(conversation)
+    else:
+        # Create new conversation if none exists
+        new_conversation = {
+            'fileId': file_id,
+            'history': []
+        }
+        result = db['conversations'].insert_one(new_conversation)
+        new_conversation['_id'] = result.inserted_id
+        return dumps(new_conversation)
+
+@app.delete('/conversations/{file_id}')
+async def clear_conversation(file_id: str):
+    """Clear conversation history for a file"""
+    result = db['conversations'].update_one(
+        {'fileId': file_id}, 
+        {'$set': {'history': []}}
+    )
+    return 'done'
+
+async def generate_ai_response(messages: list[dict]) -> str:
+    """Generate AI response using Azure OpenAI via LangChain"""
+    try:
+        # Format messages for LangChain
+        langchain_messages = [
+            SystemMessage(content="You are a helpful AI assistant that helps users analyze time series data and labeling tasks. Be concise and helpful.")
+        ]
+        
+        for msg in messages:
+            if msg["role"] == "user":
+                langchain_messages.append(HumanMessage(content=msg["content"]))
+            elif msg["role"] == "assistant":
+                langchain_messages.append(AIMessage(content=msg["content"]))
+        
+        # Generate response using LangChain
+        response = await azure_chat_model.ainvoke(langchain_messages)
+        
+        return response.content
+    except Exception as e:
+        return f"I apologize, but I encountered an error: {str(e)}"
+
+@app.websocket("/ws/chat/{file_id}")
+async def websocket_chat_endpoint(websocket: WebSocket, file_id: str):
+    await websocket.accept()
+    active_connections[file_id] = websocket
+    
+    try:
+        while True:
+            # Receive message from frontend
+            data = await websocket.receive_json()
+            user_message = data.get('message', '')
+            
+            if not user_message.strip():
+                continue
+            
+            # Get existing conversation
+            conversation = db['conversations'].find_one({'fileId': file_id})
+            if not conversation:
+                conversation = {'fileId': file_id, 'history': []}
+                result = db['conversations'].insert_one(conversation)
+                conversation['_id'] = result.inserted_id
+            
+            # Add user message to history
+            user_msg = {
+                'role': 'user',
+                'content': user_message,
+                'timestamp': datetime.now(tz=timezone.utc).isoformat()
+            }
+            
+            conversation['history'].append(user_msg)
+            
+            # Update database
+            db['conversations'].update_one(
+                {'fileId': file_id},
+                {'$set': {'history': conversation['history']}}
+            )
+            
+            # Send acknowledgment
+            await websocket.send_json({
+                'type': 'user_message_received',
+                'message': user_msg
+            })
+            
+            # Generate AI response
+            ai_response = await generate_ai_response(conversation['history'])
+            
+            # Add AI response to history
+            ai_msg = {
+                'role': 'assistant',
+                'content': ai_response,
+                'timestamp': datetime.now(tz=timezone.utc).isoformat()
+            }
+            
+            conversation['history'].append(ai_msg)
+            
+            # Update database
+            db['conversations'].update_one(
+                {'fileId': file_id},
+                {'$set': {'history': conversation['history']}}
+            )
+            
+            # Send AI response
+            await websocket.send_json({
+                'type': 'ai_response',
+                'message': ai_msg
+            })
+            
+    except WebSocketDisconnect:
+        if file_id in active_connections:
+            del active_connections[file_id]
+    except Exception as e:
+        await websocket.send_json({
+            'type': 'error',
+            'message': f'An error occurred: {str(e)}'
+        })
 
 if __name__=='__main__':
     import uvicorn

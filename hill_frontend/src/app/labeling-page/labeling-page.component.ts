@@ -24,6 +24,8 @@ import { SplitterResizeEndEvent } from 'primeng/splitter';
 export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
 
   @ViewChild('chart') plotlyChart!: ElementRef
+  @ViewChild('chatMessages') chatMessagesElement!: ElementRef
+  @ViewChild('chatInput') chatInputElement!: ElementRef
   private router = inject(Router)
   private route = inject(ActivatedRoute)
   private databaseService = inject(DatabaseService)
@@ -69,6 +71,13 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   public selectedEvent?: LabelModel['events'][0]
   public selectedEventIndex?: number;
   public sidePanelVisible: boolean = false;
+  
+  // Chatbot properties
+  public chatbotDrawerVisible: boolean = false;
+  public chatHistory: any[] = [];
+  public currentMessage: string = '';
+  public isWaitingForResponse: boolean = false;
+  private websocket?: WebSocket;
   
 
   ngOnInit(): void {
@@ -434,12 +443,174 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
     this.selectedEvent!.description = this.selectedEventDescription!
   }
 
-  onClickTogglePanel($event: MouseEvent) {
-    this.sidePanelVisible = !this.sidePanelVisible;
+  onClickToggleChatbot($event: MouseEvent) {
+    this.chatbotDrawerVisible = !this.chatbotDrawerVisible;
+    if (this.chatbotDrawerVisible) {
+      this.initializeChatbot();
+    } else {
+      this.disconnectWebSocket();
+    }
+  }
+
+  private initializeChatbot() {
+    if (this.fileId) {
+      // Load conversation history
+      this.loadConversationHistory();
+      // Connect to WebSocket
+      this.connectWebSocket();
+    }
+  }
+
+  private loadConversationHistory() {
+    this.http.get<string>(`${environment.databaseUrl}/conversations/${this.fileId}`).subscribe({
+      next: (response) => {
+        const conversation = JSON.parse(response);
+        this.chatHistory = conversation.history || [];
+        this.scrollToBottom();
+      },
+      error: (error) => {
+        console.error('Error loading conversation history:', error);
+        this.chatHistory = [];
+      }
+    });
+  }
+
+  private connectWebSocket() {
+    if (this.websocket) {
+      this.websocket.close();
+    }
+
+    const wsUrl = `ws://localhost:8000/ws/chat/${this.fileId}`;
+    this.websocket = new WebSocket(wsUrl);
+
+    this.websocket.onopen = () => {
+      console.log('WebSocket connected');
+    };
+
+    this.websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      this.handleWebSocketMessage(data);
+    };
+
+    this.websocket.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+
+    this.websocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Connection Error',
+        detail: 'Failed to connect to AI assistant'
+      });
+    };
+  }
+
+  private disconnectWebSocket() {
+    if (this.websocket) {
+      this.websocket.close();
+      this.websocket = undefined;
+    }
+  }
+
+  private handleWebSocketMessage(data: any) {
+    switch (data.type) {
+      case 'user_message_received':
+        // Message was received and processed
+        break;
+      case 'ai_response':
+        this.chatHistory.push(data.message);
+        this.isWaitingForResponse = false;
+        this.scrollToBottom();
+        break;
+      case 'error':
+        this.messageService.add({
+          severity: 'error',
+          summary: 'AI Error',
+          detail: data.message
+        });
+        this.isWaitingForResponse = false;
+        break;
+    }
+  }
+
+  onClickSendMessage($event: MouseEvent) {
+    this.sendMessage();
+  }
+
+  onChatInputKeydown($event: KeyboardEvent) {
+    if ($event.key === 'Enter' && !$event.shiftKey) {
+      $event.preventDefault();
+      this.sendMessage();
+    }
+  }
+
+  private sendMessage() {
+    if (!this.currentMessage.trim() || this.isWaitingForResponse || !this.websocket) {
+      return;
+    }
+
+    const message = {
+      role: 'user',
+      content: this.currentMessage,
+      timestamp: new Date().toISOString()
+    };
+
+    // Add user message to chat history
+    this.chatHistory.push(message);
+    this.isWaitingForResponse = true;
+    
+    // Send message through WebSocket
+    this.websocket.send(JSON.stringify({ message: this.currentMessage }));
+    
+    // Clear input
+    this.currentMessage = '';
+    this.scrollToBottom();
+  }
+
+  onClickClearChat($event: MouseEvent) {
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to clear the conversation history?',
+      header: 'Clear Chat',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.clearConversationHistory();
+      }
+    });
+  }
+
+  private clearConversationHistory() {
+    this.http.delete(`${environment.databaseUrl}/conversations/${this.fileId}`).subscribe({
+      next: () => {
+        this.chatHistory = [];
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Chat Cleared',
+          detail: 'Conversation history has been cleared'
+        });
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Clear Failed',
+          detail: 'Failed to clear conversation history'
+        });
+      }
+    });
+  }
+
+  private scrollToBottom() {
+    setTimeout(() => {
+      if (this.chatMessagesElement) {
+        const element = this.chatMessagesElement.nativeElement;
+        element.scrollTop = element.scrollHeight;
+      }
+    }, 100);
   }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe()
+    this.disconnectWebSocket()
     this.initPage()
   }
 

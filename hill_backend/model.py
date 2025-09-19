@@ -75,3 +75,12 @@ class UpdateProjectDescriptionsModel(BaseModel):
     projectId: str
     generalDescription: str
     classDescriptions: list[dict]
+
+class ChatMessage(BaseModel):
+    role: str  # 'user' or 'assistant'
+    content: str
+    timestamp: str
+
+class ConversationModel(BaseModel):
+    fileId: str
+    history: list[dict]
