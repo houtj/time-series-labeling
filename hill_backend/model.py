@@ -22,6 +22,7 @@ class NewClassModel(BaseModel):
     newClassName: str
     projectId: str
     newClassColor: str
+    description: str
 
 class NewFolderModel(BaseModel):
     newFolderName: str
@@ -60,6 +61,7 @@ class UpdateClassRequest(BaseModel):
     updatingClassName: str
     newClassName: str
     newClassColor: str
+    description: str
     projectId: str
 
 class DownloadJsonFiles(BaseModel):
@@ -68,3 +70,8 @@ class DownloadJsonFiles(BaseModel):
 
 class ReparsingFiles(BaseModel):
     folderId: str
+
+class UpdateProjectDescriptionsModel(BaseModel):
+    projectId: str
+    generalDescription: str
+    classDescriptions: list[dict]

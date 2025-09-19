@@ -104,7 +104,9 @@ export interface ProjectModel {
     classes: {
         name: string,
         color: string,
+        description: string,
     }[]
+    general_pattern_description: string,
 }
 
 export interface LabelModel {

@@ -30,6 +30,8 @@ export class ProjectPageComponent implements OnInit, OnDestroy {
   public addNewClassDialogVisible: boolean = false;
   public newClassName: string = '';
   public newClassColor: string = '#000000';
+  public newClassDescription: string = '';
+  public classDescriptionPlaceholder: string = 'Please describe the visual pattern of this event class. Include details about:\n• How measurements change at the start and end of the event\n• How measurements change during the event\n• Typical duration range of the event\n• Expected noise characteristics in the measurements\n• Sequential dependencies with other event classes';
   public addNewTemplateDialogVisible: boolean = false;
   public newTemplateName?: string;
   public addNewProjectDialogVisible: boolean = false;
@@ -47,6 +49,7 @@ export class ProjectPageComponent implements OnInit, OnDestroy {
   public usersList?: UserModel[]
   public selectedUser?: UserModel
   public userInfo?: UserModel
+  public descriptionDialogVisible: boolean = false;
 
 
   ngOnInit(): void {
@@ -113,10 +116,12 @@ export class ProjectPageComponent implements OnInit, OnDestroy {
       this.addNewClassDialogVisible = true
       this.newClassName = ''
       this.newClassColor = '#000000'
+      this.newClassDescription = ''
     } else {
       const newClass = {
         newClassName: this.newClassName, 
         newClassColor: this.newClassColor,
+        description: this.newClassDescription,
         projectId: this.selectedProject!._id!.$oid
       }
       this.http.post<string>(`${environment.databaseUrl}/classes`, newClass).subscribe(response=>{
@@ -147,6 +152,7 @@ export class ProjectPageComponent implements OnInit, OnDestroy {
   onClickUpdateClass($event: MouseEvent, class_: ProjectModel['classes'][0]) {
     this.newClassName = class_.name
     this.newClassColor = class_.color
+    this.newClassDescription = class_.description || ''
     this.updatingClassName = class_.name
     this.updateClassDialogVisible = true
   }
@@ -156,6 +162,7 @@ export class ProjectPageComponent implements OnInit, OnDestroy {
       updatingClassName: this.updatingClassName,
       newClassName: this.newClassName,
       newClassColor: this.newClassColor,
+      description: this.newClassDescription,
       projectId: this.selectedProject!._id!.$oid
     }
     this.http.put<string>(`${environment.databaseUrl}/classes`, options).subscribe(response=>{
@@ -353,5 +360,16 @@ export class ProjectPageComponent implements OnInit, OnDestroy {
       this.shareDialogVisible = false
       this.messageService.add({severity: 'error', summary: 'Project sharing failed', detail: 'Folder sharing failed'})
     })
+  }
+
+  onClickEditDescriptions($event: MouseEvent) {
+    if (this.selectedProject) {
+      this.descriptionDialogVisible = true;
+    }
+  }
+
+  onDescriptionsSaved() {
+    // Refresh the project data to get updated descriptions
+    this.databaseService.updateSelectedUser();
   }
 }

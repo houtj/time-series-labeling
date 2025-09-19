@@ -35,9 +35,12 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 import { MenuModule } from 'primeng/menu';
 import { ContactPageComponent } from './contact-page/contact-page.component';
 import { ManualPageComponent } from './manual-page/manual-page.component';
+import { DescriptionDialogComponent } from './description-dialog/description-dialog.component';
 import { ListboxModule } from 'primeng/listbox';
 import { TooltipModule } from 'primeng/tooltip';
 import { SplitterModule } from 'primeng/splitter';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @NgModule({
   declarations: [
@@ -49,6 +52,7 @@ import { SplitterModule } from 'primeng/splitter';
     FoldersPageComponent,
     ContactPageComponent,
     ManualPageComponent,
+    DescriptionDialogComponent,
   ],
   imports: [
     BrowserModule,
@@ -74,6 +78,8 @@ import { SplitterModule } from 'primeng/splitter';
     ListboxModule,
     SplitterModule,
     FileUploadModule,
+    InputTextareaModule,
+    ProgressSpinnerModule,
     ToolbarModule,
     AvatarModule,
     AvatarGroupModule,

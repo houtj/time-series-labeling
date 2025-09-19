@@ -30,6 +30,14 @@
     flex-direction: row;
     flex-wrap: nowrap;
     gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
 }
 .bottom-area{
     display: flex;

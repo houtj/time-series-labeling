@@ -1,0 +1,68 @@
+<p-dialog
+    header="Edit Project Descriptions"
+    [(visible)]="visible"
+    [style]="{width: '70vw', height: '80vh'}"
+    [modal]="true"
+    [closable]="false"
+    [blockScroll]="true">
+    
+    <div class="description-dialog-content" *ngIf="!loading">
+        <div class="general-description-section">
+            <h3>General Project Description</h3>
+            <textarea 
+                pInputTextarea 
+                [(ngModel)]="generalDescription" 
+                [autoResize]="true"
+                [placeholder]="getGeneralDescriptionPlaceholder()"
+                rows="4"
+                style="width: 100%; resize: both; min-height: 100px; margin-bottom: 20px;">
+            </textarea>
+        </div>
+
+        <div class="class-descriptions-section" *ngIf="classDescriptions.length > 0">
+            <h3>Class Pattern Descriptions</h3>
+            <div class="class-description-item" *ngFor="let classDesc of classDescriptions; let i = index">
+                <div class="class-header">
+                    <span class="class-name" [style.color]="classDesc.color">
+                        {{ classDesc.name }}
+                    </span>
+                </div>
+                <textarea 
+                    pInputTextarea 
+                    [(ngModel)]="classDesc.description" 
+                    [autoResize]="true"
+                    [placeholder]="getClassDescriptionPlaceholder()"
+                    rows="4"
+                    style="width: 100%; resize: both; min-height: 100px; margin-bottom: 15px;">
+                </textarea>
+            </div>
+        </div>
+
+        <div class="no-classes-message" *ngIf="classDescriptions.length === 0">
+            <p class="text-muted">No classes defined for this project yet. Add classes first to edit their descriptions.</p>
+        </div>
+    </div>
+
+    <div class="loading-section" *ngIf="loading">
+        <p-progressSpinner></p-progressSpinner>
+        <p>Loading descriptions...</p>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="dialog-footer">
+            <p-button 
+                icon="pi pi-check" 
+                label="Save" 
+                (onClick)="onConfirm()" 
+                [disabled]="loading">
+            </p-button>
+            <p-button 
+                icon="pi pi-times" 
+                label="Cancel" 
+                [outlined]="true"
+                (onClick)="onCancel()" 
+                [disabled]="loading">
+            </p-button>
+        </div>
+    </ng-template>
+</p-dialog>

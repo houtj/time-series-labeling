@@ -1,7 +1,10 @@
 <div class="project-page card">
     <div class="header">
         <p-dropdown [options]="projectList" optionLabel="projectName" [(ngModel)]="selectedProject" (onChange)="onChangeSelectedProject($event)" styleClass="dropdown-component"></p-dropdown>
-        <p-button icon="pi pi-share-alt" (onClick)="onClickShare($event)" [rounded]="true" [outlined]="true"></p-button>
+        <div class="header-buttons">
+            <p-button icon="pi pi-file-edit" (onClick)="onClickEditDescriptions($event)" [rounded]="true" [outlined]="true" pTooltip="Edit Descriptions"></p-button>
+            <p-button icon="pi pi-share-alt" (onClick)="onClickShare($event)" [rounded]="true" [outlined]="true" pTooltip="Share Project"></p-button>
+        </div>
     </div>
     <div class="bottom-area">
         <div class="classes-area">
@@ -78,6 +81,18 @@
             <div class="row-flex">
                 <span> Select color </span>
                 <p-colorPicker [(ngModel)]="newClassColor" appendTo="body"></p-colorPicker>
+            </div>
+            <div class="column-flex">
+                <label for="newClassDescription">Event Pattern Description</label>
+                <textarea 
+                    id="newClassDescription" 
+                    pInputTextarea 
+                    [(ngModel)]="newClassDescription" 
+                    [autoResize]="true"
+                    [placeholder]="classDescriptionPlaceholder"
+                    rows="6"
+                    style="resize: both; min-height: 150px;">
+                </textarea>
             </div>
             <div class="bottom-buttons-area row-flex">
                 <div class="placeholder"></div>
@@ -236,6 +251,18 @@
                 <span> Choose color</span>
                 <p-colorPicker [(ngModel)]="newClassColor" appendTo="body"></p-colorPicker>
             </div>
+            <div class="column-flex">
+                <label for="updateClassDescription">Event Pattern Description</label>
+                <textarea 
+                    id="updateClassDescription" 
+                    pInputTextarea 
+                    [(ngModel)]="newClassDescription" 
+                    [autoResize]="true"
+                    [placeholder]="classDescriptionPlaceholder"
+                    rows="6"
+                    style="resize: both; min-height: 150px;">
+                </textarea>
+            </div>
             <div class="bottom-buttons-area row-flex">
                 <div class="placeholder"></div>
                 <div class="button-right row-flex">
@@ -265,5 +292,10 @@
         </div>
     </div>
 </p-dialog>
+<app-description-dialog
+    [(visible)]="descriptionDialogVisible"
+    [project]="selectedProject"
+    (onSave)="onDescriptionsSaved()">
+</app-description-dialog>
 <p-toast></p-toast>
 <p-confirmPopup></p-confirmPopup>

@@ -159,34 +159,6 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
       ).subscribe()
     )
     
-    // this.subscriptions.add(
-    //   this.databaseService.selectedLabel$.pipe(
-    //     filter(label=>label!==undefined)
-    //   ).subscribe(label=>{
-    //     this.labelInfo = label
-    //     this.labelingDatabaseService.updateLabels(this.labelInfo!)
-    //   })
-    // )
-    
-    
-    // this.subscriptions.add(
-    //   this.labelingDatabaseService.plotlyShapes$.pipe(
-    //     filter(shapes=> shapes!==undefined)
-    //   ).subscribe(shapes=>{
-    //     this.layout.shapes = shapes!
-    //     Plotly.relayout('myChartDiv', {shapes: this.layout.shapes})
-    //   })  
-    // )
-    
-    // this.subscriptions.add(
-    //   this.labelingDatabaseService.plotlyAnnotations$.pipe(
-    //     filter(annotations=>annotations!==undefined)
-    //   ).subscribe(annotations=>{
-    //     this.layout.annotations = annotations
-    //     Plotly.relayout('myChartDiv', {annotations: this.layout.annotations})
-    //   })
-    // )
-    
     this.subscriptions.add(
       this.labelingDatabaseService.selectedButton$.pipe(
         filter(b=>b!==undefined)

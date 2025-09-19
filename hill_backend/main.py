@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import pymongo
 from bson.json_util import dumps, loads
 from bson.objectid import ObjectId
-from model import CloneTemplateModel, DownloadJsonFiles, NewClassModel, NewFolderModel, NewProjectModel, NewTemplateModel, ReparsingFiles, UpdateClassRequest, UpdateDescriptionModel, UpdateLabelModel, UpdateTemplateModel, UpdateUserRecentFilesModel, UpdateUserShareProjectModel, UpdateUserSharedFolderModel
+from model import CloneTemplateModel, DownloadJsonFiles, NewClassModel, NewFolderModel, NewProjectModel, NewTemplateModel, ReparsingFiles, UpdateClassRequest, UpdateDescriptionModel, UpdateLabelModel, UpdateProjectDescriptionsModel, UpdateTemplateModel, UpdateUserRecentFilesModel, UpdateUserShareProjectModel, UpdateUserSharedFolderModel
 from datetime import datetime, timezone
 import simplejson as json
 from typing import Annotated
@@ -111,6 +111,7 @@ async def add_project(project: NewProjectModel):
         'projectName': project.projectName,
         'templates': [],
         'classes': [],
+        'general_pattern_description': '',
     }
     result = db['projects'].insert_one(new_project)
     new_project_id = result.inserted_id
@@ -251,12 +252,12 @@ async def update_template(request: UpdateTemplateModel):
 
 @app.post("/classes")
 async def add_new_class(class_: NewClassModel):
-    result = db['projects'].update_one({'_id': ObjectId(class_.projectId)}, {'$push': {'classes':{'name': class_.newClassName, 'color': class_.newClassColor}}})
+    result = db['projects'].update_one({'_id': ObjectId(class_.projectId)}, {'$push': {'classes':{'name': class_.newClassName, 'color': class_.newClassColor, 'description': class_.description}}})
     return 'done'
 
 @app.put("/classes")
 async def update_class(newClass: UpdateClassRequest):
-    result = db['projects'].update_one({'_id': ObjectId(newClass.projectId), 'classes.name': newClass.updatingClassName}, {'$set': {'classes.$':{'name':newClass.newClassName, 'color': newClass.newClassColor}}})
+    result = db['projects'].update_one({'_id': ObjectId(newClass.projectId), 'classes.name': newClass.updatingClassName}, {'$set': {'classes.$':{'name':newClass.newClassName, 'color': newClass.newClassColor, 'description': newClass.description}}})
     return 'done'
 
 @app.post("/folders")
@@ -603,6 +604,32 @@ async def reparsing_files(request:ReparsingFiles):
     result = db['folders'].find_one({'_id': ObjectId(folder_id)})
     files_id = result['fileList']
     result = db['files'].update_many({'_id': {'$in':[ObjectId(id) for id in files_id]}}, {'$set':{'parsing': 'parsing start'}})
+    return 'done'
+
+@app.put('/project-descriptions')
+async def update_project_descriptions(request: UpdateProjectDescriptionsModel):
+    project_id = ObjectId(request.projectId)
+    
+    # Update general description
+    result = db['projects'].update_one(
+        {'_id': project_id}, 
+        {'$set': {'general_pattern_description': request.generalDescription}}
+    )
+    
+    # Update class descriptions
+    for class_desc in request.classDescriptions:
+        result = db['projects'].update_one(
+            {
+                '_id': project_id,
+                'classes.name': class_desc['name']
+            }, 
+            {
+                '$set': {
+                    'classes.$.description': class_desc['description']
+                }
+            }
+        )
+    
     return 'done'
 
 if __name__=='__main__':
