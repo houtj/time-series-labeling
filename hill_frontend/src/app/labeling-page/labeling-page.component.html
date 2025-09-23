@@ -12,7 +12,10 @@
             <input id="fileImportInput" type="file" class="file-input" (change)="onChangeImportInput($event)" #fileUpload style="display: none;" accept=".json" [multiple]="false">
             <p-button icon="pi pi-file-export" (onClick)="onClickExportLabel($event)" [rounded]="true" [text]="true"></p-button>
             <p-button icon="pi pi-download" (onClick)="onClickDownload($event)" [rounded]="true" [text]="true"></p-button>
+        </div>
+        <div class="chatbot-buttons">
             <p-button icon="pi pi-comments" (onClick)="onClickToggleChatbot($event)" [rounded]="true" [text]="true" pTooltip="AI Assistant"></p-button>
+            <p-button icon="pi pi-file-edit" (onClick)="onClickEditDescriptions($event)" [rounded]="true" [text]="true" pTooltip="Edit Descriptions"></p-button>
         </div>
         <!-- <div class="navigation-buttons">
             <p-button icon="pi pi-arrow-left" (onClick)="onClickPreviousFile($event)" [rounded]="true" [text]="true"></p-button>
@@ -326,6 +329,13 @@
         <p>Panel content coming soon...</p>
     </div>
 </p-sidebar>
+
+<!-- Description Dialog -->
+<app-description-dialog 
+    [(visible)]="projectDescriptionDialogVisible" 
+    [project]="projectInfo"
+    (onSave)="onProjectDescriptionsSaved()">
+</app-description-dialog>
 
 <p-toast></p-toast>
 <p-confirmPopup></p-confirmPopup>

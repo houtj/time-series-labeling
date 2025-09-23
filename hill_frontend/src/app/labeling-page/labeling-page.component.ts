@@ -71,6 +71,7 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   public selectedEvent?: LabelModel['events'][0]
   public selectedEventIndex?: number;
   public sidePanelVisible: boolean = false;
+  public projectDescriptionDialogVisible: boolean = false;
   
   // Chatbot properties
   public chatbotDrawerVisible: boolean = false;
@@ -130,6 +131,7 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
       tap((projects: ProjectModel[])=>{
         const projectId = this.folderInfo!.project.id
         const projectInfo = projects!.find(p=>p._id?.$oid===projectId)
+        this.projectInfo = projectInfo
         this.classList = projectInfo?.classes
       })
     ).subscribe())
@@ -441,6 +443,23 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   onClickEditDescriptionOK($event: MouseEvent) {
     this.descriptionDialogVisible = false
     this.selectedEvent!.description = this.selectedEventDescription!
+  }
+
+  onClickEditDescriptions($event: MouseEvent) {
+    console.log('Opening description dialog with project:', this.projectInfo);
+    console.log('Project ID:', this.projectInfo?._id?.$oid);
+    console.log('Project classes:', this.projectInfo?.classes);
+    this.projectDescriptionDialogVisible = true;
+  }
+
+  onProjectDescriptionsSaved() {
+    // Refresh project data to get updated descriptions
+    console.log('Descriptions saved successfully');
+    // For now, just close the dialog - the data will be refreshed when reopened
+    this.projectDescriptionDialogVisible = false;
+    
+    // Optionally refresh the project list to get updated descriptions
+    this.databaseService.updateSelectedUser();
   }
 
   onClickToggleChatbot($event: MouseEvent) {

@@ -45,6 +45,14 @@
     border-radius: 5px;
 }
 
+.chatbot-buttons {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    border: 1px solid var(--primary-color);
+    border-radius: 5px;
+}
+
 .toggle-buttons {
     display: flex;
     flex-direction: column;

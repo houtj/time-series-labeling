@@ -40,8 +40,12 @@ export class DescriptionDialogComponent {
   }
 
   onConfirm() {
-    if (!this.project) return;
+    if (!this.project) {
+      console.error('No project data available for saving descriptions');
+      return;
+    }
 
+    console.log('Saving descriptions for project:', this.project._id?.$oid);
     this.loading = true;
     
     const updateData = {
@@ -49,6 +53,8 @@ export class DescriptionDialogComponent {
       generalDescription: this.generalDescription,
       classDescriptions: this.classDescriptions
     };
+
+    console.log('Update data being sent:', updateData);
 
     this.http.put<string>(`${environment.databaseUrl}/project-descriptions`, updateData).subscribe({
       next: (response) => {
@@ -61,6 +67,7 @@ export class DescriptionDialogComponent {
         this.onCancel();
       },
       error: (error) => {
+        console.error('Error saving descriptions:', error);
         this.messageService.add({
           severity: 'error', 
           summary: 'Update Failed', 
