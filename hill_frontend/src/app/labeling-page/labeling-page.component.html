@@ -120,7 +120,8 @@
     [modal]="false"
     [dismissible]="true"
     [closeOnEscape]="true"
-    [blockScroll]="false">
+    [blockScroll]="false"
+    (onHide)="onChatbotSidebarHide()">
     
     <ng-template pTemplate="header">
         <div class="chatbot-header">

@@ -448,17 +448,54 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
     if (this.chatbotDrawerVisible) {
       this.initializeChatbot();
     } else {
-      this.disconnectWebSocket();
+      this.closeChatbot();
     }
   }
 
   private initializeChatbot() {
     if (this.fileId) {
+      // Reset UI state when opening
+      this.resetChatbotState();
       // Load conversation history
       this.loadConversationHistory();
       // Connect to WebSocket
       this.connectWebSocket();
     }
+  }
+
+  private closeChatbot() {
+    // Cancel any ongoing AI requests
+    this.cancelOngoingRequest();
+    // Disconnect WebSocket
+    this.disconnectWebSocket();
+    // Reset UI state
+    this.resetChatbotState();
+  }
+
+  private resetChatbotState() {
+    // Reset waiting state and enable send button
+    this.isWaitingForResponse = false;
+    // Clear current message input
+    this.currentMessage = '';
+  }
+
+  private cancelOngoingRequest() {
+    if (this.isWaitingForResponse && this.websocket) {
+      // Send cancellation message to backend
+      try {
+        this.websocket.send(JSON.stringify({ 
+          type: 'cancel_request',
+          message: 'User closed chatbot' 
+        }));
+      } catch (error) {
+        console.warn('Could not send cancellation message:', error);
+      }
+    }
+  }
+
+  onChatbotSidebarHide() {
+    // This is called when the sidebar is closed by any means (X button, escape, etc.)
+    this.closeChatbot();
   }
 
   private loadConversationHistory() {
@@ -514,6 +551,7 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   }
 
   private handleWebSocketMessage(data: any) {
+    console.log(data.type)
     switch (data.type) {
       case 'user_message_received':
         // Message was received and processed
@@ -522,6 +560,34 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
         this.chatHistory.push(data.message);
         this.isWaitingForResponse = false;
         this.scrollToBottom();
+        break;
+      case 'event_added':
+        // New event was added by AI - update immediately
+        this.addEventToLocalData(data.data.event);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Event Added',
+          detail: data.data.message
+        });
+        break;
+      case 'guideline_added':
+        // New guideline was added by AI - update immediately
+        this.addGuidelineToLocalData(data.data.guideline);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Guideline Added',
+          detail: data.data.message
+        });
+        break;
+      case 'data_updated':
+        // AI has updated the labels/guidelines - refresh the data
+        this.refreshLabelsAndData();
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Data Updated',
+          detail: data.message
+        });
+        console.log(data.message)
         break;
       case 'error':
         this.messageService.add({
@@ -606,6 +672,61 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
         element.scrollTop = element.scrollHeight;
       }
     }, 100);
+  }
+
+  private addEventToLocalData(event: any) {
+    // Add event to local labelInfo immediately for instant UI update
+    if (this.labelInfo) {
+      if (!this.labelInfo.events) {
+        this.labelInfo.events = [];
+      }
+      this.labelInfo.events.push(event);
+      
+      // Update the database service observables
+      this.databaseService.selectedLabel$.next(this.labelInfo);
+      
+      // Trigger chart refresh by updating labels (this triggers the chart update pipeline)
+      this.labelingDatabaseService.updateLabels(this.labelInfo);
+    }
+  }
+
+  private addGuidelineToLocalData(guideline: any) {
+    // Add guideline to local labelInfo immediately for instant UI update
+    if (this.labelInfo) {
+      if (!this.labelInfo.guidelines) {
+        this.labelInfo.guidelines = [];
+      }
+      this.labelInfo.guidelines.push(guideline);
+      
+      // Update the database service observables
+      this.databaseService.selectedLabel$.next(this.labelInfo);
+      
+      // Trigger chart refresh by updating labels (this triggers the chart update pipeline)
+      this.labelingDatabaseService.updateLabels(this.labelInfo);
+    }
+  }
+
+  private refreshLabelsAndData() {
+    // Refresh the label data to show new events/guidelines added by AI
+    if (this.fileInfo?.label) {
+      this.http.get<string>(`${environment.databaseUrl}/labels/${this.fileInfo.label}`).subscribe({
+        next: (response) => {
+          const updatedLabel = JSON.parse(response);
+          this.labelInfo = updatedLabel;
+          
+          // Update the database service observables
+          this.databaseService.selectedLabel$.next(this.labelInfo);
+          
+          // Trigger chart refresh by updating labels (this triggers the chart update pipeline)
+          if (this.labelInfo) {
+            this.labelingDatabaseService.updateLabels(this.labelInfo);
+          }
+        },
+        error: (error) => {
+          console.error('Error refreshing labels:', error);
+        }
+      });
+    }
   }
 
   ngOnDestroy(): void {
