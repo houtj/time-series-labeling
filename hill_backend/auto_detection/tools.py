@@ -21,12 +21,14 @@ def get_basic_statistics(ts: pd.DataFrame):
     return stats
 
 class PlotViewer:
-    def __init__(self, ts: pd.DataFrame) -> None:
+    def __init__(self, ts: pd.DataFrame, sync_callback=None) -> None:
         """Initialize a PlotViewer instance for time series visualization.
 
         Args:
             ts (pd.DataFrame): The time series data to visualize. Must be a pandas DataFrame
                              where each column represents a different channel/variable.
+            sync_callback (callable, optional): Callback function to sync view changes with frontend.
+                                               Should accept (start_idx, end_idx) parameters.
 
         The viewer automatically calculates initial view ranges and maintains state for:
         - X-axis view range (index-based)
@@ -45,6 +47,12 @@ class PlotViewer:
         self.y_zoomed = False
         self.max_window_size = 500
         self.nb_channels = ts.shape[1]
+        self.sync_callback = sync_callback
+
+    def _sync_view_range(self, x_view_range: List[int]) -> None:
+        """Sync the current view range with the frontend if callback is available"""
+        if self.sync_callback:
+            self.sync_callback(x_view_range[0], x_view_range[1])
 
     def _plot_window(self, x_view_range: List[int], y_view_range: Dict[str, List[float]]) -> str:
         """Plots a windowed segment of the time series data and returns the plot as a base64-encoded PNG image.
@@ -110,6 +118,9 @@ class PlotViewer:
             - If self.y_zoomed is False, the initial y-axis range (self.y_init_range) is used.
             - Updates self.current_x_view_range to the provided x_view_range.
         """
+        # Update current view range and sync with frontend
+        self.current_x_view_range = x_view_range
+        self._sync_view_range(x_view_range)
 
         ts_window = self.ts.iloc[x_view_range[0]: x_view_range[1]]
         ts_window_y_range = ts_window.max(axis='index') - ts_window.min(axis='index')

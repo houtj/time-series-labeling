@@ -95,9 +95,9 @@ class AgentCoordinator:
         self.llm_validator = llm_validator.with_structured_output(ValidatorResponseFormatter, include_raw=True)
     
     def _init_tools(self):
-        self.plot_viewer_planner = tools.PlotViewer(self.df)
-        self.plot_viewer_identifier = tools.PlotViewer(self.df)
-        self.plot_viewer_validator = tools.PlotViewer(self.df)
+        self.plot_viewer_planner = tools.PlotViewer(self.df, self._create_view_sync_callback('Planner'))
+        self.plot_viewer_identifier = tools.PlotViewer(self.df, self._create_view_sync_callback('Identifier'))
+        self.plot_viewer_validator = tools.PlotViewer(self.df, self._create_view_sync_callback('Validator'))
 
     def _invoke_llm(self, messages, chain):
         try:
@@ -156,6 +156,25 @@ class AgentCoordinator:
         }
         
         self.pending_llm_notifications.append(notification_data)
+
+    def _create_view_sync_callback(self, agent_name: str):
+        """Create a callback function to sync plot view changes with frontend"""
+        def sync_callback(start_idx: int, end_idx: int):
+            if self.notification_callback:
+                # Store the notification for sending in the next async iteration
+                if not hasattr(self, 'pending_view_sync_notifications'):
+                    self.pending_view_sync_notifications = []
+                
+                self.pending_view_sync_notifications.append({
+                    'type': 'plot_view_sync',
+                    'data': {
+                        'agent': agent_name,
+                        'start_idx': start_idx,
+                        'end_idx': end_idx,
+                        'timestamp': pd.Timestamp.now().isoformat()
+                    }
+                })
+        return sync_callback
 
     # Agent node wrappers - pass coordinator to agent functions
     def planner_node(self, state: State):
@@ -231,6 +250,15 @@ class AgentCoordinator:
             
             for notification in notifications_to_send:
                 await self.send_notification(notification['type'], notification['data'])
+                
+    async def send_pending_view_sync_notifications(self):
+        """Send any pending plot view sync notifications"""
+        if hasattr(self, 'pending_view_sync_notifications') and self.pending_view_sync_notifications:
+            notifications_to_send = self.pending_view_sync_notifications.copy()
+            self.pending_view_sync_notifications.clear()
+            
+            for notification in notifications_to_send:
+                await self.send_notification(notification['type'], notification['data'])
     
     async def run(self):
         """Run the event detection workflow"""
@@ -286,9 +314,12 @@ class AgentCoordinator:
                 'message': 'Multi-agent analysis started...'
             })
             
-            for chunk in workflow.stream(state, {"recursion_limit": 5}, stream_mode='updates'):
+            for chunk in workflow.stream(state, {"recursion_limit": 10}, stream_mode='updates'):
                 # Send any pending LLM notifications
                 await self.send_pending_llm_notifications()
+                
+                # Send any pending view sync notifications
+                await self.send_pending_view_sync_notifications()
                 
                 # Send periodic updates
                 await self.send_notification('analysis_progress', {
@@ -299,6 +330,7 @@ class AgentCoordinator:
                 
             # Send any remaining pending notifications
             await self.send_pending_llm_notifications()
+            await self.send_pending_view_sync_notifications()
             
             # Check if we have final results
             if self.final_result:

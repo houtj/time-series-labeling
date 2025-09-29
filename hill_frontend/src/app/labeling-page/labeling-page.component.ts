@@ -507,17 +507,14 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   }
 
   addInferenceLog(type: string, message: string, details: any) {
-    const timestamp = new Date().toISOString();
-    console.log(`[REALTIME] ${timestamp} Adding inference log:`, type, message);
     const logEntry = {
       type: type,
       message: message,
       details: details,
-      timestamp: timestamp
+      timestamp: new Date().toISOString()
     };
     
     this.inferenceHistory.push(logEntry);
-    console.log(`[REALTIME] ${timestamp} Inference history updated, length:`, this.inferenceHistory.length);
     
     // Force immediate change detection and scroll
     this.cdr.detectChanges();
@@ -529,7 +526,6 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
 
   addLlmInteractionLog(data: any) {
     const timestamp = new Date().toISOString();
-    console.log(`[REALTIME] ${timestamp} Adding LLM interaction log:`, data.agent);
     
     // Add agent header
     const agentEntry = {
@@ -563,7 +559,6 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
     }
 
     // Force immediate change detection and updates
-    console.log(`[REALTIME] ${timestamp} Updated inference history length:`, this.inferenceHistory.length);
     this.cdr.detectChanges();
     
     // Scroll to bottom immediately and with delays
@@ -590,6 +585,64 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
     }
   }
 
+  syncPlotlyViewRange(startIdx: number, endIdx: number, agent: string) {
+    if (!this.data || this.data.length === 0) {
+      console.warn('[PLOT_SYNC] No data available for plot synchronization');
+      return;
+    }
+
+    // Find the x-axis channel (the one with x: true)
+    const xChannel = this.data.find(channel => channel.x === true);
+    if (!xChannel) {
+      console.warn('[PLOT_SYNC] No x-axis channel found in data');
+      return;
+    }
+
+    // Check if indices are within bounds of the actual time series data
+    const dataLength = xChannel.data.length;
+    if (startIdx < 0 || endIdx > dataLength || startIdx >= endIdx) {
+      console.warn(`[PLOT_SYNC] Invalid index range: [${startIdx}, ${endIdx}] for data length ${dataLength}`);
+      return;
+    }
+
+    // Get the x-axis values corresponding to the indices
+    const startX = xChannel.data[startIdx];
+    const endX = xChannel.data[endIdx - 1]; // endIdx is exclusive, so use endIdx - 1
+
+    if (startX === undefined || endX === undefined) {
+      console.warn(`[PLOT_SYNC] Could not retrieve x-values for indices [${startIdx}, ${endIdx - 1}]`);
+      return;
+    }
+
+    // Check if chart element exists
+    if (!this.plotlyChart || !this.plotlyChart.nativeElement) {
+      console.warn('[PLOT_SYNC] Plotly chart element not found or not initialized');
+      return;
+    }
+
+    // Update Plotly chart view range
+    const update = {
+      xaxis: {
+        range: [startX, endX]
+      }
+    };
+
+    // Apply the update to the chart
+    Plotly.relayout(this.plotlyChart.nativeElement, update).then(() => {
+      // Add a brief visual indication in the inference log
+      this.addInferenceLog('info', `🔍 Synchronized view to ${agent} agent's analysis window [${startX}, ${endX}]`, {
+        agent: agent,
+        start_idx: startIdx,
+        end_idx: endIdx,
+        start_x: startX,
+        end_x: endX,
+        data_length: dataLength
+      });
+    }).catch((error) => {
+      console.error('[PLOT_SYNC] Failed to sync Plotly view:', error);
+    });
+  }
+
   private initializeAutoDetectionWebSocket() {
     if (this.autoDetectionWebsocket) {
       this.autoDetectionWebsocket.close();
@@ -610,7 +663,6 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
 
     this.autoDetectionWebsocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('[REALTIME] Auto-detection WebSocket received at:', new Date().toISOString(), data.type);
       
       // Process message synchronously - no setTimeout or delays
       this.handleAutoDetectionMessage(data);
@@ -629,8 +681,6 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
         this.cdr.detectChanges();
         this.scrollToBottomImmediately();
       });
-      
-      console.log('[REALTIME] Message processed, UI should be updated');
     };
 
     this.autoDetectionWebsocket.onclose = () => {
@@ -676,8 +726,10 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
         this.refreshLabelsAndData();
         break;
       case 'llm_interaction':
-        console.log('[DEBUG] Frontend received llm_interaction:', data.data);
         this.addLlmInteractionLog(data.data);
+        break;
+      case 'plot_view_sync':
+        this.syncPlotlyViewRange(data.data.start_idx, data.data.end_idx, data.data.agent);
         break;
       case 'auto_detect_completed':
         this.addInferenceLog('success', data.data.message, data.data);
