@@ -650,6 +650,12 @@ async def websocket_chat_endpoint(websocket: WebSocket, file_id: str):
     """WebSocket endpoint for chat functionality"""
     await handle_chat_websocket(websocket, file_id)
 
+@app.websocket("/ws/auto-detection/{file_id}")
+async def websocket_auto_detection_endpoint(websocket: WebSocket, file_id: str):
+    """WebSocket endpoint for auto-detection functionality"""
+    from websocket_handlers import handle_auto_detection_websocket
+    await handle_auto_detection_websocket(websocket, file_id)
+
 if __name__=='__main__':
     import uvicorn
     uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=True)

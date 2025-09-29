@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as Plotly from 'plotly.js-dist-min'
 import { DataModel, FileModel, FolderModel, LabelModel, ProjectModel, UserModel } from '../model';
@@ -26,6 +26,7 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   @ViewChild('chart') plotlyChart!: ElementRef
   @ViewChild('chatMessages') chatMessagesElement!: ElementRef
   @ViewChild('chatInput') chatInputElement!: ElementRef
+  @ViewChild('inferenceLog') inferenceLogElement!: ElementRef
   private router = inject(Router)
   private route = inject(ActivatedRoute)
   private databaseService = inject(DatabaseService)
@@ -36,6 +37,8 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   private messageService = inject(MessageService)
   private http = inject(HttpClient)
   private sanitizer = inject(DomSanitizer)
+  private zone = inject(NgZone)
+  private cdr = inject(ChangeDetectorRef)
   private subscriptions = new Subscription()
 
   private data?: DataModel[]
@@ -79,6 +82,12 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   public currentMessage: string = '';
   public isWaitingForResponse: boolean = false;
   private websocket?: WebSocket;
+  
+  // Auto-annotation properties
+  public inferenceDrawerVisible: boolean = false;
+  public isAutoAnnotationRunning: boolean = false;
+  public inferenceHistory: any[] = [];
+  private autoDetectionWebsocket?: WebSocket;
   
 
   ngOnInit(): void {
@@ -462,6 +471,253 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
     this.databaseService.updateSelectedUser();
   }
 
+  onClickAutoAnnotate($event: MouseEvent) {
+    this.inferenceDrawerVisible = true;
+    // Initialize auto-detection WebSocket when sidebar opens
+    this.initializeAutoDetectionWebSocket();
+  }
+
+  onInferenceSidebarHide() {
+    // Close the inference sidebar and disconnect WebSocket
+    this.inferenceDrawerVisible = false;
+    this.disconnectAutoDetectionWebSocket();
+  }
+
+  startAutoAnnotation() {
+    if (this.isAutoAnnotationRunning) {
+      return;
+    }
+
+    this.isAutoAnnotationRunning = true;
+    this.addInferenceLog('info', 'Starting auto-annotation agent...', {});
+
+    // Send auto-detection request through dedicated WebSocket
+    if (this.autoDetectionWebsocket) {
+      this.autoDetectionWebsocket.send(JSON.stringify({ 
+        command: 'start_auto_detection'
+      }));
+    } else {
+      this.addInferenceLog('error', 'No connection to auto-detection service. Please try again.', {});
+      this.isAutoAnnotationRunning = false;
+    }
+  }
+
+  clearInferenceLog() {
+    this.inferenceHistory = [];
+  }
+
+  addInferenceLog(type: string, message: string, details: any) {
+    const timestamp = new Date().toISOString();
+    console.log(`[REALTIME] ${timestamp} Adding inference log:`, type, message);
+    const logEntry = {
+      type: type,
+      message: message,
+      details: details,
+      timestamp: timestamp
+    };
+    
+    this.inferenceHistory.push(logEntry);
+    console.log(`[REALTIME] ${timestamp} Inference history updated, length:`, this.inferenceHistory.length);
+    
+    // Force immediate change detection and scroll
+    this.cdr.detectChanges();
+    
+    // Scroll to bottom immediately and with a slight delay
+    this.scrollToBottomImmediately();
+    setTimeout(() => this.scrollToBottomImmediately(), 10);
+  }
+
+  addLlmInteractionLog(data: any) {
+    const timestamp = new Date().toISOString();
+    console.log(`[REALTIME] ${timestamp} Adding LLM interaction log:`, data.agent);
+    
+    // Add agent header
+    const agentEntry = {
+      type: 'agent-header',
+      message: `🤖 ${data.agent} Agent`,
+      details: { agent: data.agent, token_usage: data.token_usage },
+      timestamp: timestamp
+    };
+    this.inferenceHistory.push(agentEntry);
+
+    // Add sent message
+    if (data.sent_message && data.sent_message.trim()) {
+      const sentEntry = {
+        type: 'sent-message',
+        message: data.sent_message,
+        details: { agent: data.agent },
+        timestamp: timestamp
+      };
+      this.inferenceHistory.push(sentEntry);
+    }
+
+    // Add received message
+    if (data.received_message && data.received_message.trim()) {
+      const receivedEntry = {
+        type: 'received-message',
+        message: data.received_message,
+        details: { agent: data.agent, token_usage: data.token_usage },
+        timestamp: timestamp
+      };
+      this.inferenceHistory.push(receivedEntry);
+    }
+
+    // Force immediate change detection and updates
+    console.log(`[REALTIME] ${timestamp} Updated inference history length:`, this.inferenceHistory.length);
+    this.cdr.detectChanges();
+    
+    // Scroll to bottom immediately and with delays
+    this.scrollToBottomImmediately();
+    setTimeout(() => this.scrollToBottomImmediately(), 10);
+    setTimeout(() => this.scrollToBottomImmediately(), 50);
+  }
+
+  formatTimestamp(timestamp: string): string {
+    return new Date(timestamp).toLocaleTimeString();
+  }
+
+  formatDetails(details: any): string {
+    if (typeof details === 'object') {
+      return JSON.stringify(details, null, 2);
+    }
+    return String(details);
+  }
+
+  scrollToBottomImmediately() {
+    if (this.inferenceLogElement) {
+      const element = this.inferenceLogElement.nativeElement;
+      element.scrollTop = element.scrollHeight;
+    }
+  }
+
+  private initializeAutoDetectionWebSocket() {
+    if (this.autoDetectionWebsocket) {
+      this.autoDetectionWebsocket.close();
+    }
+
+    if (!this.fileId) {
+      this.addInferenceLog('error', 'No file ID available for auto-detection', {});
+      return;
+    }
+
+    const wsUrl = `ws://localhost:8000/ws/auto-detection/${this.fileId}`;
+    this.autoDetectionWebsocket = new WebSocket(wsUrl);
+
+    this.autoDetectionWebsocket.onopen = () => {
+      console.log('Auto-detection WebSocket connected');
+      this.addInferenceLog('info', 'Connected to auto-detection service', {});
+    };
+
+    this.autoDetectionWebsocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('[REALTIME] Auto-detection WebSocket received at:', new Date().toISOString(), data.type);
+      
+      // Process message synchronously - no setTimeout or delays
+      this.handleAutoDetectionMessage(data);
+      
+      // Force multiple change detection strategies
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
+      
+      // Trigger zone run
+      this.zone.run(() => {
+        this.cdr.detectChanges();
+      });
+      
+      // Force immediate DOM update
+      requestAnimationFrame(() => {
+        this.cdr.detectChanges();
+        this.scrollToBottomImmediately();
+      });
+      
+      console.log('[REALTIME] Message processed, UI should be updated');
+    };
+
+    this.autoDetectionWebsocket.onclose = () => {
+      console.log('Auto-detection WebSocket disconnected');
+      this.addInferenceLog('info', 'Disconnected from auto-detection service', {});
+    };
+
+    this.autoDetectionWebsocket.onerror = (error) => {
+      console.error('Auto-detection WebSocket error:', error);
+      this.addInferenceLog('error', 'Connection error with auto-detection service', {});
+    };
+  }
+
+  private disconnectAutoDetectionWebSocket() {
+    if (this.autoDetectionWebsocket) {
+      this.autoDetectionWebsocket.close();
+      this.autoDetectionWebsocket = undefined;
+    }
+  }
+
+  private handleAutoDetectionMessage(data: any) {
+    console.log('Auto-detection message received:', data.type, data);
+    
+    switch (data.type) {
+      case 'auto_detect_started':
+        this.addInferenceLog('info', data.data.message, data.data);
+        break;
+      case 'data_loaded':
+        this.addInferenceLog('success', data.data.message, data.data);
+        break;
+      case 'analysis_started':
+        this.addInferenceLog('info', data.data.message, data.data);
+        break;
+      case 'analysis_completed':
+        this.addInferenceLog('success', data.data.message, data.data);
+        break;
+      case 'validation_completed':
+        this.addInferenceLog('info', data.data.message, data.data);
+        break;
+      case 'events_saved':
+        this.addInferenceLog('success', data.data.message, data.data);
+        // Refresh the chart to show new events
+        this.refreshLabelsAndData();
+        break;
+      case 'llm_interaction':
+        console.log('[DEBUG] Frontend received llm_interaction:', data.data);
+        this.addLlmInteractionLog(data.data);
+        break;
+      case 'auto_detect_completed':
+        this.addInferenceLog('success', data.data.message, data.data);
+        this.isAutoAnnotationRunning = false;
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Auto-Detection Complete',
+          detail: data.data.message
+        });
+        // Refresh the chart to show new events
+        this.refreshLabelsAndData();
+        break;
+      case 'auto_detect_error':
+        this.addInferenceLog('error', data.data.message, data.data);
+        this.isAutoAnnotationRunning = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Auto-Detection Failed',
+          detail: data.data.message
+        });
+        break;
+      case 'auto_detect_cancelled':
+        this.addInferenceLog('info', data.data.message, data.data);
+        this.isAutoAnnotationRunning = false;
+        break;
+      case 'detection_started':
+      case 'detection_completed':
+      case 'detection_failed':
+        this.addInferenceLog(data.type.includes('failed') ? 'error' : 'info', data.data.message, data.data);
+        if (data.type === 'detection_completed' || data.type === 'detection_failed') {
+          this.isAutoAnnotationRunning = false;
+        }
+        break;
+      case 'error':
+        this.addInferenceLog('error', data.data ? data.data.message : data.message, data.data || {});
+        this.isAutoAnnotationRunning = false;
+        break;
+    }
+  }
+
   onClickToggleChatbot($event: MouseEvent) {
     this.chatbotDrawerVisible = !this.chatbotDrawerVisible;
     if (this.chatbotDrawerVisible) {
@@ -751,6 +1007,7 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe()
     this.disconnectWebSocket()
+    this.disconnectAutoDetectionWebSocket()
     this.initPage()
   }
 

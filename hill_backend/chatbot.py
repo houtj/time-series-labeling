@@ -50,6 +50,7 @@ class AddGuidelineInput(BaseModel):
     value: float = Field(description="The Y-axis value for the guideline")
     description: str = Field(default="created with chat", description="Description of the guideline")
 
+
 class AddEventTool(BaseTool):
     name: str = "add_event"
     description: str = "Add an event/label to the current file's timeline"
@@ -205,6 +206,7 @@ class AddGuidelineTool(BaseTool):
             
         except Exception as e:
             return f"Error adding guideline: {str(e)}"
+
 
 async def get_project_context(file_id: str) -> str:
     """Get project context including classes and data channels for the current file"""

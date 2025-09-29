@@ -306,3 +306,171 @@
 .chat-messages::-webkit-scrollbar-thumb:hover {
     background: var(--text-color-secondary);
 }
+
+// Auto-annotation inference sidebar styles
+.inference-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+
+  .inference-status {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+  }
+}
+
+.inference-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.inference-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--surface-ground);
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  max-height: calc(100vh - 200px);
+}
+
+.inference-entry {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 4px solid var(--primary-color);
+
+  &.inference-info {
+    background: var(--blue-50);
+    border-left-color: var(--blue-500);
+  }
+
+  &.inference-success {
+    background: var(--green-50);
+    border-left-color: var(--green-500);
+  }
+
+  &.inference-error {
+    background: var(--red-50);
+    border-left-color: var(--red-500);
+  }
+
+  &.inference-agent-header {
+    background: var(--purple-50);
+    border-left-color: var(--purple-500);
+    font-weight: bold;
+  }
+
+  &.inference-sent-message {
+    background: var(--cyan-50);
+    border-left-color: var(--cyan-500);
+    margin-left: 1rem;
+  }
+
+  &.inference-received-message {
+    background: var(--orange-50);
+    border-left-color: var(--orange-500);
+    margin-left: 1rem;
+  }
+
+  .inference-timestamp {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 0.25rem;
+  }
+
+  .inference-message {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    &.agent-message {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--purple-700);
+    }
+
+    &.sent-message {
+      font-weight: normal;
+      color: var(--cyan-700);
+    }
+
+    &.received-message {
+      font-weight: normal;
+      color: var(--orange-700);
+    }
+
+    .message-label {
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+  }
+
+  .inference-details {
+    background: var(--surface-card);
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--surface-border);
+
+    pre {
+      margin: 0;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  }
+
+  .token-usage {
+    font-size: 0.7rem;
+    color: var(--text-color-secondary);
+    margin-top: 0.25rem;
+    text-align: right;
+  }
+}
+
+.inference-empty {
+  text-align: center;
+  color: var(--text-color-secondary);
+  padding: 2rem;
+
+  i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  p {
+    margin: 0.5rem 0;
+  }
+}
+
+.inference-actions {
+  padding: 1rem;
+  border-top: 1px solid var(--surface-border);
+}
+
+// Dark theme adjustments
+:host-context(.dark) {
+  .inference-log {
+    background: var(--surface-section);
+  }
+
+  .inference-entry {
+    &.inference-info {
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    &.inference-success {
+      background: rgba(34, 197, 94, 0.1);
+    }
+
+    &.inference-error {
+      background: rgba(239, 68, 68, 0.1);
+    }
+  }
+}

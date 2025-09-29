@@ -7,6 +7,9 @@ import json
 # Store active WebSocket connections
 active_connections: dict[str, WebSocket] = {}
 
+# Store active auto-detection WebSocket connections
+auto_detection_connections: dict[str, WebSocket] = {}
+
 async def handle_chat_websocket(websocket: WebSocket, file_id: str):
     """Handle WebSocket chat endpoint"""
     await websocket.accept()
@@ -90,4 +93,93 @@ async def handle_chat_websocket(websocket: WebSocket, file_id: str):
         await websocket.send_json({
             'type': 'error',
             'message': f'An error occurred: {str(e)}'
+        })
+
+async def handle_auto_detection_websocket(websocket: WebSocket, file_id: str):
+    """Handle WebSocket auto-detection endpoint"""
+    await websocket.accept()
+    auto_detection_connections[file_id] = websocket
+    
+    try:
+        while True:
+            # Receive message from frontend
+            data = await websocket.receive_json()
+            
+            # Handle different auto-detection commands
+            command = data.get('command', '')
+            
+            if command == 'start_auto_detection':
+                await start_auto_detection_process(websocket, file_id)
+            elif command == 'cancel_auto_detection':
+                await websocket.send_json({
+                    'type': 'auto_detect_cancelled',
+                    'data': {
+                        'message': 'Auto-detection has been cancelled'
+                    }
+                })
+            else:
+                await websocket.send_json({
+                    'type': 'error',
+                    'data': {
+                        'message': f'Unknown command: {command}'
+                    }
+                })
+            
+    except WebSocketDisconnect:
+        if file_id in auto_detection_connections:
+            del auto_detection_connections[file_id]
+    except Exception as e:
+        await websocket.send_json({
+            'type': 'error',
+            'data': {
+                'message': f'An error occurred: {str(e)}'
+            }
+        })
+
+async def start_auto_detection_process(websocket: WebSocket, file_id: str):
+    """Start the auto-detection process"""
+    try:
+        # Import the auto-detection logic
+        from auto_detection import run_auto_detection
+        
+        # Define notification callback for auto-detection
+        async def auto_detection_callback(file_id: str, message: dict):
+            if file_id in auto_detection_connections:
+                await auto_detection_connections[file_id].send_json(message)
+        
+        # Send start notification
+        await websocket.send_json({
+            'type': 'auto_detect_started',
+            'data': {
+                'message': 'Starting automatic event detection...'
+            }
+        })
+        
+        # Run the detection
+        result = await run_auto_detection(file_id, "Auto-detection requested", auto_detection_callback)
+        
+        # Send final result
+        if result['success']:
+            await websocket.send_json({
+                'type': 'auto_detect_completed',
+                'data': {
+                    'message': f'Auto-detection completed! Found {result["events_detected"]} events.',
+                    'events_detected': result['events_detected'],
+                    'analysis_summary': result['analysis_summary']
+                }
+            })
+        else:
+            await websocket.send_json({
+                'type': 'auto_detect_error',
+                'data': {
+                    'message': f'Auto-detection failed: {result["error"]}'
+                }
+            })
+            
+    except Exception as e:
+        await websocket.send_json({
+            'type': 'auto_detect_error',
+            'data': {
+                'message': f'Auto-detection failed: {str(e)}'
+            }
         })

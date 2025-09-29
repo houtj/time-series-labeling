@@ -16,6 +16,7 @@
         <div class="chatbot-buttons">
             <p-button icon="pi pi-comments" (onClick)="onClickToggleChatbot($event)" [rounded]="true" [text]="true" pTooltip="AI Assistant"></p-button>
             <p-button icon="pi pi-file-edit" (onClick)="onClickEditDescriptions($event)" [rounded]="true" [text]="true" pTooltip="Edit Descriptions"></p-button>
+            <p-button icon="pi pi-cog" (onClick)="onClickAutoAnnotate($event)" [rounded]="true" [text]="true" pTooltip="Auto-Annotation Agent" [loading]="isAutoAnnotationRunning"></p-button>
         </div>
         <!-- <div class="navigation-buttons">
             <p-button icon="pi pi-arrow-left" (onClick)="onClickPreviousFile($event)" [rounded]="true" [text]="true"></p-button>
@@ -327,6 +328,76 @@
     <div class="side-panel-content">
         <!-- Panel content will be added here later -->
         <p>Panel content coming soon...</p>
+    </div>
+</p-sidebar>
+
+<!-- Auto-Annotation Inference Sidebar -->
+<p-sidebar 
+    [(visible)]="inferenceDrawerVisible" 
+    position="right" 
+    [style]="{ width: '40vw' }"
+    [modal]="false"
+    [dismissible]="true"
+    [closeOnEscape]="true"
+    [blockScroll]="false"
+    (onHide)="onInferenceSidebarHide()">
+    
+    <ng-template pTemplate="header">
+        <div class="inference-header">
+            <i class="pi pi-cog" style="margin-right: 0.5rem;"></i>
+            <span>Auto-Annotation Agent</span>
+            <div class="inference-status" *ngIf="isAutoAnnotationRunning">
+                <p-progressSpinner [style]="{ width: '20px', height: '20px' }" strokeWidth="3"></p-progressSpinner>
+                <span style="margin-left: 0.5rem;">Processing...</span>
+            </div>
+        </div>
+    </ng-template>
+    
+    <div class="inference-content">
+        <!-- Inference Log Display -->
+        <div class="inference-log" #inferenceLog>
+                    <div 
+                        *ngFor="let log of inferenceHistory" 
+                        class="inference-entry"
+                        [ngClass]="'inference-' + log.type">
+                        <div class="inference-timestamp">{{ formatTimestamp(log.timestamp) }}</div>
+                        <div class="inference-message" [ngClass]="{'agent-message': log.type === 'agent-header', 'sent-message': log.type === 'sent-message', 'received-message': log.type === 'received-message'}">
+                            <span *ngIf="log.type === 'sent-message'" class="message-label">💬 Sent:</span>
+                            <span *ngIf="log.type === 'received-message'" class="message-label">🤖 Response:</span>
+                            {{ log.message }}
+                        </div>
+                        <div class="inference-details" *ngIf="log.details && log.type !== 'sent-message' && log.type !== 'received-message' && log.type !== 'agent-header'">
+                            <pre>{{ formatDetails(log.details) }}</pre>
+                        </div>
+                        <div class="token-usage" *ngIf="log.type === 'received-message' && log.details && log.details.token_usage">
+                            <small>Tokens used: {{ log.details.token_usage }}</small>
+                        </div>
+                    </div>
+            
+            <div *ngIf="inferenceHistory.length === 0" class="inference-empty">
+                <i class="pi pi-info-circle"></i>
+                <p>No auto-annotation activity yet.</p>
+                <p>Click the Auto-Annotation button to start analyzing the data.</p>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="inference-actions">
+            <p-button 
+                label="Start Auto-Annotation" 
+                icon="pi pi-play"
+                (onClick)="startAutoAnnotation()"
+                [disabled]="isAutoAnnotationRunning"
+                [style]="{ width: '100%', 'margin-bottom': '0.5rem' }">
+            </p-button>
+            <p-button 
+                label="Clear Log" 
+                icon="pi pi-trash"
+                severity="secondary"
+                (onClick)="clearInferenceLog()"
+                [style]="{ width: '100%' }">
+            </p-button>
+        </div>
     </div>
 </p-sidebar>
 
