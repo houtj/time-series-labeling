@@ -33,6 +33,11 @@ class Settings:
     # CORS
     CORS_ORIGINS: list[str] = os.getenv("CORS_ORIGINS", "*").split(",")
     
+    # Redis (for task queue)
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", "")
+    
     # Azure OpenAI (for chatbot)
     AZURE_OPENAI_DEPLOYMENT: str = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4.1")
     AZURE_API_VERSION: str = os.getenv("API_VERSION", "2024-02-01")

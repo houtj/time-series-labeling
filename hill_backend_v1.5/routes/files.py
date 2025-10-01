@@ -7,10 +7,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 import simplejson as json
 import shutil
+import logging
 
 from database import get_db, get_data_folder_path
 from models import UpdateDescriptionRequest, ReparsingFilesRequest, DownloadJsonFilesRequest
 from config import settings
+from redis_client import get_redis_client
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -55,12 +59,25 @@ async def upload_files(data: Annotated[str, Form()], user: Annotated[str, Form()
         
         # Update file 
         fileInfo['rawPath'] = f'{folderId}/{str(newFileId)}/{file.filename}'
-        fileInfo['parsing'] = 'parsing start'
+        fileInfo['parsing'] = 'queued'  # Changed from 'parsing start'
         db['files'].update_one({'_id': newFileId}, {'$set': fileInfo})
         db['folders'].update_one(
             {'_id': ObjectId(folderId)}, 
             {'$push': {'fileList': str(newFileId)}, '$inc': {'nbTotalFiles': 1}}
         )
+        
+        # Add to Redis queue for processing
+        try:
+            redis = get_redis_client()
+            redis.add_file_to_queue(
+                file_id=str(newFileId),
+                metadata={'filename': file.filename, 'folder_id': folderId}
+            )
+            logger.info(f"File {newFileId} added to parsing queue")
+        except Exception as e:
+            logger.error(f"Failed to add file {newFileId} to Redis queue: {e}")
+            # Fall back to old method if Redis fails
+            db['files'].update_one({'_id': newFileId}, {'$set': {'parsing': 'parsing start'}})
     
     return 'done'
 
@@ -147,10 +164,30 @@ async def reparse_files(request: ReparsingFilesRequest):
     db = get_db()
     result = db['folders'].find_one({'_id': ObjectId(request.folderId)})
     files_id = result['fileList']
+    
+    # Update status to queued
     db['files'].update_many(
         {'_id': {'$in': [ObjectId(id) for id in files_id]}}, 
-        {'$set': {'parsing': 'parsing start'}}
+        {'$set': {'parsing': 'queued'}}
     )
+    
+    # Add all files to Redis queue
+    try:
+        redis = get_redis_client()
+        for file_id in files_id:
+            redis.add_file_to_queue(
+                file_id=file_id,
+                metadata={'reparse': True, 'folder_id': request.folderId}
+            )
+        logger.info(f"Added {len(files_id)} files to reparse queue")
+    except Exception as e:
+        logger.error(f"Failed to add files to Redis queue for reparsing: {e}")
+        # Fall back to old method if Redis fails
+        db['files'].update_many(
+            {'_id': {'$in': [ObjectId(id) for id in files_id]}}, 
+            {'$set': {'parsing': 'parsing start'}}
+        )
+    
     return 'done'
 
 

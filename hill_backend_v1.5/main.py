@@ -9,6 +9,7 @@ from fastapi import Request
 
 from config import settings
 from database import init_database
+from redis_client import init_redis
 
 # Import route modules
 from routes import (
@@ -60,11 +61,14 @@ app.add_middleware(LargeFileMiddleware)
 
 
 # ============================================================================
-# Database Initialization
+# Database & Redis Initialization
 # ============================================================================
 
 # Initialize database on startup
 db = init_database()
+
+# Initialize Redis on startup
+init_redis()
 
 
 # ============================================================================
