@@ -42,6 +42,7 @@ import { SplitterModule } from 'primeng/splitter';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SidebarModule } from 'primeng/sidebar';
+import { TabViewModule } from 'primeng/tabview';
 
 @NgModule({
   declarations: [
@@ -82,6 +83,7 @@ import { SidebarModule } from 'primeng/sidebar';
     InputTextareaModule,
     ProgressSpinnerModule,
     SidebarModule,
+    TabViewModule,
     ToolbarModule,
     AvatarModule,
     AvatarGroupModule,

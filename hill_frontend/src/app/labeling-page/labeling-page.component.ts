@@ -89,6 +89,12 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   public inferenceHistory: any[] = [];
   private autoDetectionWebsocket?: WebSocket;
   
+  // Auto-detection tab properties
+  public autoDetectionTabVisible: boolean = false;
+  
+  // AI assistant tab properties
+  public aiAssistantTabVisible: boolean = false;
+  
 
   ngOnInit(): void {
     this.databaseService.updatePageLabel('Labeling')
@@ -472,15 +478,31 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   }
 
   onClickAutoAnnotate($event: MouseEvent) {
-    this.inferenceDrawerVisible = true;
-    // Initialize auto-detection WebSocket when sidebar opens
-    this.initializeAutoDetectionWebSocket();
+    // Show auto-detection tab instead of sidebar
+    this.autoDetectionTabVisible = true;
+    
+    // Initialize auto-detection WebSocket if not already connected
+    if (!this.autoDetectionWebsocket) {
+      this.initializeAutoDetectionWebSocket();
+    }
   }
 
   onInferenceSidebarHide() {
     // Close the inference sidebar and disconnect WebSocket
     this.inferenceDrawerVisible = false;
     this.disconnectAutoDetectionWebSocket();
+  }
+
+  onAutoDetectionTabClose() {
+    // Close the auto-detection tab and disconnect WebSocket (same behavior as sidebar)
+    this.autoDetectionTabVisible = false;
+    this.disconnectAutoDetectionWebSocket();
+  }
+
+  onAiAssistantTabClose() {
+    // Close the AI assistant tab and disconnect WebSocket (same behavior as sidebar)
+    this.aiAssistantTabVisible = false;
+    this.closeChatbot();
   }
 
   startAutoAnnotation() {
@@ -771,11 +793,12 @@ export class LabelingPageComponent implements OnInit, AfterViewInit, OnDestroy{
   }
 
   onClickToggleChatbot($event: MouseEvent) {
-    this.chatbotDrawerVisible = !this.chatbotDrawerVisible;
-    if (this.chatbotDrawerVisible) {
+    // Show AI assistant tab instead of sidebar
+    this.aiAssistantTabVisible = true;
+    
+    // Initialize chatbot if not already connected
+    if (!this.websocket) {
       this.initializeChatbot();
-    } else {
-      this.closeChatbot();
     }
   }
 
