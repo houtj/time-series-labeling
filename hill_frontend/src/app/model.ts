@@ -136,3 +136,36 @@ export interface DataModel {
     color: string,
     data: string[]|number[]
 }
+
+export interface ChatMessage {
+    role: 'user' | 'assistant' | 'system',
+    content: string,
+    timestamp: string
+}
+
+export interface ChatConversation {
+    _id?: {$oid: string},
+    fileId: string,
+    messages: ChatMessage[],
+    createdAt?: string,
+    updatedAt?: string
+}
+
+export interface AutoDetectionMessage {
+    type: 'status' | 'progress' | 'result' | 'error',
+    status: string,  // started, planning, identifying, validating, completed, failed
+    message: string,
+    timestamp: string,
+    eventsDetected?: number,
+    summary?: string,
+    error?: string
+}
+
+export interface AutoDetectionConversation {
+    _id?: {$oid: string},
+    fileId: string,
+    messages: AutoDetectionMessage[],
+    status: 'idle' | 'started' | 'running' | 'completed' | 'failed',
+    createdAt?: string,
+    updatedAt?: string
+}

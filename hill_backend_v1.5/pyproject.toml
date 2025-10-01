@@ -1,0 +1,28 @@
+[project]
+name = "hill-backend-v1-5"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "aiofiles>=24.1.0",
+    "fastapi>=0.118.0",
+    "langchain>=0.3.27",
+    "langchain-community>=0.3.30",
+    "langchain-core>=0.3.77",
+    "langchain-openai>=0.3.34",
+    "langgraph>=0.6.8",
+    "matplotlib>=3.10.6",
+    "openai>=2.0.1",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.3",
+    "pydantic>=2.11.9",
+    "pymongo>=4.15.1",
+    "python-dotenv>=1.1.1",
+    "python-multipart>=0.0.20",
+    "scikit-learn>=1.7.2",
+    "scipy>=1.16.2",
+    "simplejson>=3.20.2",
+    "uvicorn[standard]>=0.37.0",
+    "websockets>=15.0.1",
+    "xlrd>=2.0.2",
+]
