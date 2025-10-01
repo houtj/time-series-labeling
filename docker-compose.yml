@@ -20,6 +20,24 @@ services:
       retries: 3
       start_period: 40s
 
+  # Redis for task queue
+  redis:
+    image: redis:7-alpine
+    container_name: hill-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hill-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: redis-server --appendonly yes
+
   # MongoDB Express (Optional - for database management)
   mongo-express:
     image: mongo-express:1.0.0
@@ -111,6 +129,8 @@ services:
 # Named volumes for persistent data
 volumes:
   mongodb_data:
+    driver: local
+  redis_data:
     driver: local
   app_data:
     driver: local
