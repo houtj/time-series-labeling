@@ -1,0 +1,215 @@
+<p-dialog
+  [header]="templateName"
+  [(visible)]="visible"
+  [modal]="true"
+  [style]="{ width: '85vw', height: '85vh' }"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="template-editor-dialog"
+>
+  <div class="dialog-content" *ngIf="template">
+    <!-- Top toolbar with actions -->
+    <div class="toolbar">
+      <p-select
+        [options]="fileTypesList"
+        [(ngModel)]="selectedFileType"
+        optionLabel="name"
+        [style]="{ width: '150px' }"
+        placeholder="File Type"
+      />
+      <p-button
+        icon="pi pi-plus"
+        label="Add Channel"
+        (onClick)="onClickAddChannel($event)"
+        [outlined]="true"
+        pTooltip="Add a Channel"
+      />
+      <p-button
+        icon="pi pi-upload"
+        label="Upload Test File"
+        (onClick)="onClickFromFile($event)"
+        [outlined]="true"
+        pTooltip="Upload a file to auto-map columns"
+      />
+    </div>
+
+    <!-- Meta information section -->
+    <div class="meta-section">
+      <h3>File Parsing Configuration</h3>
+      <div class="meta-grid">
+        <div class="form-field">
+          <label for="sheetName">Sheet Name (0-indexed)</label>
+          <input
+            id="sheetName"
+            type="text"
+            pInputText
+            [(ngModel)]="template.sheetName"
+            placeholder="Sheet name or index"
+            pTooltip="Supported: 0-indexed number or string"
+          />
+        </div>
+        
+        <div class="form-field">
+          <label for="headRow">Header Row Index</label>
+          <input
+            id="headRow"
+            type="number"
+            pInputText
+            [(ngModel)]="template.headRow"
+            placeholder="0"
+            pTooltip="0-indexed number. Number of header rows (only the first is used)"
+          />
+        </div>
+        
+        <div class="form-field">
+          <label for="skipRows">Skip Rows After Header</label>
+          <input
+            id="skipRows"
+            type="number"
+            pInputText
+            [(ngModel)]="template.skipRow"
+            placeholder="0"
+            pTooltip="Number of rows to skip after header row"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- X-axis configuration -->
+    <div class="x-axis-section">
+      <h3>X-Axis Configuration</h3>
+      <div class="x-axis-grid">
+        <div class="form-field">
+          <label for="xAxisName">X-Axis Name</label>
+          <input
+            id="xAxisName"
+            type="text"
+            pInputText
+            [(ngModel)]="template.x.name"
+            placeholder="e.g., Time"
+          />
+        </div>
+        
+        <div class="form-field">
+          <label for="xRegex">Matching String</label>
+          <input
+            id="xRegex"
+            type="text"
+            pInputText
+            [(ngModel)]="template.x.regex"
+            placeholder="Column name or regex"
+            pTooltip="Regular expression to match the column"
+          />
+        </div>
+        
+        <div class="form-field">
+          <label for="xUnit">Unit</label>
+          <input
+            id="xUnit"
+            type="text"
+            pInputText
+            [(ngModel)]="template.x.unit"
+            placeholder="e.g., seconds"
+          />
+        </div>
+        
+        <div class="form-field checkbox-field">
+          <p-checkbox
+            [(ngModel)]="template.x.isTime"
+            [binary]="true"
+            inputId="isTime"
+            label="Is Time Axis"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Channels list -->
+    <div class="channels-section">
+      <h3>Data Channels (Max 8)</h3>
+      
+      <div class="channels-list">
+        <div
+          *ngFor="let channel of template.channels; let index = index"
+          class="channel-row"
+        >
+          <span class="channel-number">{{ index + 1 }}</span>
+          
+          <div class="form-field">
+            <label>Variable Name</label>
+            <input
+              type="text"
+              pInputText
+              [(ngModel)]="channel.channelName"
+              placeholder="Variable name"
+            />
+          </div>
+          
+          <div class="form-field">
+            <label>Matching String</label>
+            <input
+              type="text"
+              pInputText
+              [(ngModel)]="channel.regex"
+              placeholder="Column name or regex"
+              pTooltip="Regular expression to match the column"
+            />
+          </div>
+          
+          <div class="form-field">
+            <label>Unit</label>
+            <input
+              type="text"
+              pInputText
+              [(ngModel)]="channel.unit"
+              placeholder="Unit"
+            />
+          </div>
+          
+          <div class="form-field color-field">
+            <label>Color</label>
+            <p-colorPicker
+              [(ngModel)]="channel.color"
+            />
+          </div>
+          
+          <div class="form-field checkbox-field">
+            <p-checkbox
+              [(ngModel)]="channel.mandatory"
+              [binary]="true"
+              label="Mandatory"
+            />
+          </div>
+          
+          <p-button
+            icon="pi pi-times"
+            (onClick)="onClickRemoveChannel($event, index)"
+            [rounded]="true"
+            [text]="true"
+            severity="danger"
+            pTooltip="Remove Channel"
+          />
+        </div>
+        
+        <div *ngIf="template.channels.length === 0" class="empty-channels">
+          <i class="pi pi-info-circle"></i>
+          <p>No channels configured. Click "Add Channel" to add one.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickCancel($event)"
+      styleClass="p-button-text"
+    />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      (onClick)="onClickSave($event)"
+    />
+  </ng-template>
+</p-dialog>

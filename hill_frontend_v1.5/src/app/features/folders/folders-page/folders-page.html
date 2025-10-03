@@ -1,0 +1,198 @@
+<div class="folders-page card">
+  <div class="folders-area" *ngIf="userInfo">
+    <p-table
+      #dt1
+      [value]="folders()"
+      sortMode="multiple"
+      [scrollable]="true"
+      [globalFilterFields]="['name', 'project.name', 'template.name', 'nbLabeledFiles', 'nbTotalFiles']"
+      scrollHeight="flex"
+      [loading]="loading()"
+    >
+      <ng-template pTemplate="caption">
+        <div class="caption-area">
+          <div class="caption-text-area">
+            <span class="caption-title">Folders</span>
+            <span class="p-input-icon-left ml-auto">
+              <i class="pi pi-search"></i>
+              <input
+                pInputText
+                type="text"
+                [(ngModel)]="filterText"
+                (input)="onInputFilter($event)"
+                placeholder="Search keyword"
+              />
+            </span>
+            <p-button
+              label="Clear"
+              styleClass="p-button-outlined"
+              icon="pi pi-filter-slash"
+              (onClick)="clear(dt1)"
+            />
+          </div>
+          <div class="table-buttons-area">
+            <p-button
+              icon="pi pi-refresh"
+              [rounded]="true"
+              [text]="true"
+              (onClick)="onClickRefresh($event)"
+            />
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="name" style="width: 25%">
+            Name <p-sortIcon field="name" />
+          </th>
+          <th pSortableColumn="project.name" style="width: 20%">
+            Project <p-sortIcon field="project.name" />
+          </th>
+          <th pSortableColumn="template.name" style="width: 15%">
+            Template <p-sortIcon field="template.name" />
+          </th>
+          <th pSortableColumn="nbLabeledFiles" style="width: 15%">
+            Labeled <p-sortIcon field="nbLabeledFiles" />
+          </th>
+          <th pSortableColumn="nbTotalFiles" style="width: 15%">
+            Total <p-sortIcon field="nbTotalFiles" />
+          </th>
+          <th style="width: 10%"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-folder>
+        <tr>
+          <td>
+            <span class="folder-name" (click)="onClickFolder($event, folder)">
+              {{ folder.name }}
+            </span>
+          </td>
+          <td>{{ folder.project.name }}</td>
+          <td>{{ folder.template.name }}</td>
+          <td>{{ folder.nbLabeledFiles }}</td>
+          <td>{{ folder.nbTotalFiles }}</td>
+          <td>
+            <p-button
+              icon="pi pi-share-alt"
+              (onClick)="onClickShare($event, folder)"
+              [rounded]="true"
+              [text]="true"
+            />
+            <p-button
+              icon="pi pi-times"
+              (onClick)="onClickRemove($event, folder)"
+              [rounded]="true"
+              [text]="true"
+              severity="danger"
+            />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="empty-message">
+            <div class="empty-state">
+              <i class="pi pi-folder-open"></i>
+              <p>No folders found. Click the + button to create one.</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- Speed Dial for new folder -->
+<p-speedDial
+  direction="up"
+  (onClick)="onClickNewFolder($event, false)"
+/>
+
+<!-- Confirmation Popup -->
+<p-confirmpopup />
+
+<!-- Toast Messages -->
+<p-toast />
+
+<!-- New Folder Dialog -->
+<p-dialog
+  header="Add New Folder"
+  [(visible)]="newFolderDialogVisible"
+  [modal]="true"
+  [style]="{ width: '50vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="dialog-body">
+    <div class="form-field">
+      <label for="newFolderName">Folder Name</label>
+      <input
+        id="newFolderName"
+        type="text"
+        pInputText
+        [(ngModel)]="newFolderName"
+        placeholder="Enter folder name"
+      />
+    </div>
+
+    <div class="form-field">
+      <label for="projectSelect">Project</label>
+      <p-select
+        inputId="projectSelect"
+        [options]="projectList"
+        [(ngModel)]="newFolderProject"
+        (onChange)="onChangeSelectedProject($event)"
+        optionLabel="projectName"
+        placeholder="Select a project"
+        [style]="{ width: '100%' }"
+      />
+    </div>
+
+    <div class="form-field template-field">
+      <label for="templateSelect">Template</label>
+      <div class="template-input-group">
+        <p-select
+          inputId="templateSelect"
+          [options]="templateList"
+          [(ngModel)]="newFolderTemplate"
+          optionLabel="name"
+          placeholder="Select a template"
+          [style]="{ width: '100%' }"
+        />
+        <p-button
+          icon="pi pi-cog"
+          [rounded]="true"
+          [text]="true"
+          (onClick)="onClickManagement($event)"
+          pTooltip="Manage Projects"
+        />
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickDialogCancel($event, 'newFolder')"
+      styleClass="p-button-text"
+    />
+    <p-button
+      label="Create"
+      icon="pi pi-check"
+      (onClick)="onClickNewFolder($event, true)"
+    />
+  </ng-template>
+</p-dialog>
+
+<!-- Share Folder Dialog -->
+<app-share-dialog
+  [(visible)]="shareDialogVisible"
+  [title]="'Share Folder'"
+  [resourceType]="'folder'"
+  [resourceName]="selectedFolder?.name || ''"
+  (onShare)="onShareFolder($event)"
+/>

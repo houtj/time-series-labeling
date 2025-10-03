@@ -1,0 +1,161 @@
+<div class="files-page card">
+  <div class="files-area" *ngIf="folderInfo">
+    <p-table
+      #dt1
+      [value]="files()"
+      sortMode="multiple"
+      [globalFilterFields]="['name', 'lastModifier', 'nbEvent', 'description']"
+      [scrollable]="true"
+      scrollHeight="flex"
+      [loading]="loading()"
+    >
+      <ng-template pTemplate="caption">
+        <div class="caption-area">
+          <div class="caption-text-area">
+            <span class="caption-title">{{ folderInfo.name }}</span>
+            <span class="p-input-icon-left ml-auto">
+              <i class="pi pi-search"></i>
+              <input
+                pInputText
+                type="text"
+                [(ngModel)]="filterText"
+                (input)="onInputFilter($event)"
+                placeholder="Search keyword"
+              />
+            </span>
+            <p-button
+              label="Clear"
+              styleClass="p-button-outlined"
+              icon="pi pi-filter-slash"
+              (onClick)="clear(dt1)"
+            />
+          </div>
+          <div class="table-buttons-area">
+            <p-button icon="pi pi-upload" (onClick)="onClickUploadFiles($event)" [rounded]="true" [text]="true" pTooltip="Upload Files" />
+            <p-button icon="pi pi-download" (onClick)="onClickDownload($event)" [rounded]="true" [text]="true" pTooltip="Download Data" />
+            <p-button icon="pi pi-file-import" (onClick)="onClickImportLabels($event)" [rounded]="true" [text]="true" pTooltip="Import Labels" />
+            <input id="fileImportInput" type="file" (change)="onChangeImportInput($event)" style="display: none;" accept=".json" />
+            <p-button icon="pi pi-file-export" (onClick)="onClickExportLabels($event)" [rounded]="true" [text]="true" pTooltip="Export Labels" />
+            <p-button icon="pi pi-share-alt" (onClick)="onClickShareFolder($event)" [rounded]="true" [text]="true" pTooltip="Share Folder" />
+            <p-button icon="pi pi-refresh" (onClick)="onClickRefresh($event)" [rounded]="true" [text]="true" pTooltip="Refresh" />
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="name" style="width: 30%">Name <p-sortIcon field="name" /></th>
+          <th pSortableColumn="parsing" style="width: 10%">
+            Parsing <p-sortIcon field="parsing" />
+            <p-button icon="pi pi-replay" (onClick)="onClickReparsing($event)" [rounded]="true" [text]="true" pTooltip="Reparse All" />
+          </th>
+          <th pSortableColumn="lastModifier" style="width: 10%">Last Modifier <p-sortIcon field="lastModifier" /></th>
+          <th pSortableColumn="lastUpdate" style="width: 10%">Last Update <p-sortIcon field="lastUpdate" /></th>
+          <th pSortableColumn="nbEvent" style="width: 10%">Events <p-sortIcon field="nbEvent" /></th>
+          <th pSortableColumn="description" style="width: 25%">Description <p-sortIcon field="description" /></th>
+          <th style="width: 5%"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-file>
+        <tr>
+          <td><span class="file-name" (click)="onClickFile($event, file)">{{ file.name }}</span></td>
+          <td>{{ file.parsing }}</td>
+          <td>{{ file.lastModifier || 'unknown' }}</td>
+          <td>{{ file.lastUpdate?.$date | date: 'short' }}</td>
+          <td>{{ file.nbEvent }}</td>
+          <td>
+            {{ file.description }}
+            <p-button icon="pi pi-pencil" (onClick)="onClickEditDescription($event, file)" [rounded]="true" [text]="true" pTooltip="Edit Description" />
+          </td>
+          <td>
+            <p-button icon="pi pi-times" (onClick)="onClickRemove($event, file)" [rounded]="true" [text]="true" severity="danger" pTooltip="Delete File" />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="empty-message">
+            <div class="empty-state">
+              <i class="pi pi-file"></i>
+              <p>No files in this folder. Click the upload button to add files.</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-speedDial direction="up" (onClick)="onClickUploadFiles($event)" />
+<p-toast />
+<p-confirmpopup />
+
+<!-- Upload Dialog -->
+<p-dialog
+  header="Upload Files"
+  [(visible)]="uploadFileDialogVisible"
+  [modal]="true"
+  [style]="{ width: '60vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <app-file-upload
+    [folderId]="folderInfo?._id?.$oid"
+    [userName]="userInfo?.name"
+    (uploadComplete)="onUploadComplete()"
+    (uploadError)="onUploadError($event)"
+  />
+  
+  <ng-template pTemplate="footer">
+    <p-button 
+      label="Close" 
+      icon="pi pi-times" 
+      (onClick)="onClickDialogCancel($event, 'uploadFileDialog')" 
+      styleClass="p-button-text" 
+    />
+  </ng-template>
+</p-dialog>
+
+<!-- Share Dialog -->
+<app-share-dialog
+  [(visible)]="shareDialogVisible"
+  [title]="'Share Folder'"
+  [resourceType]="'folder'"
+  [resourceName]="folderInfo?.name || ''"
+  (onShare)="onShareFolder($event)"
+/>
+
+<!-- Description Dialog -->
+<app-description-dialog
+  [(visible)]="descriptionDialogVisible"
+  [title]="'Edit File Description'"
+  [resourceName]="selectedFile?.name || ''"
+  [(description)]="selectedFileDescription"
+  [placeholder]="'Describe the file contents, purpose, or any relevant notes...'"
+  [maxLength]="500"
+  [rows]="5"
+  (onSave)="onSaveDescription($event)"
+/>
+
+<!-- Download Dialog -->
+<p-dialog
+  header="Download File"
+  [(visible)]="downloadDialogVisible"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="download-content">
+    <p>Click the link below to download:</p>
+    <a [href]="downloadUri" download="export.json" class="download-link">
+      <i class="pi pi-download"></i> Download JSON
+    </a>
+  </div>
+  
+  <ng-template pTemplate="footer">
+    <p-button label="Close" icon="pi pi-times" (onClick)="onClickDialogCancel($event, 'download')" />
+  </ng-template>
+</p-dialog>

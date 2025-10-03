@@ -1,0 +1,103 @@
+<p-card styleClass="auto-detection-card">
+  <ng-template pTemplate="header">
+    <div class="panel-header">
+      <div class="header-title">
+        <i class="pi pi-cog"></i>
+        <span>🤖 Auto-Annotation Agent</span>
+      </div>
+      <div class="header-actions">
+        @if (isRunning()) {
+          <p-button 
+            icon="pi pi-stop" 
+            label="Stop"
+            (onClick)="onClickStopAutoAnnotation()" 
+            severity="danger"
+            size="small"
+          />
+        } @else {
+          <p-button 
+            icon="pi pi-play" 
+            label="Start"
+            (onClick)="onClickStartAutoAnnotation()" 
+            severity="success"
+            size="small"
+          />
+        }
+        <p-button 
+          icon="pi pi-trash" 
+          label="Clear"
+          (onClick)="onClickClearLog()" 
+          [text]="true"
+          size="small"
+        />
+        <p-button 
+          icon="pi pi-times" 
+          (onClick)="onClickClose()" 
+          [rounded]="true" 
+          [text]="true"
+          size="small"
+        />
+      </div>
+    </div>
+  </ng-template>
+  
+  <div class="panel-content">
+    <div class="inference-log" #inferenceLog>
+      @if (inferenceHistory().length === 0) {
+        <div class="log-empty">
+          <i class="pi pi-info-circle" style="font-size: 3rem;"></i>
+          <h4>No inference data yet</h4>
+          <p>Click "Start" to begin auto-annotation. The agent will analyze your data and suggest labels.</p>
+        </div>
+      } @else {
+        @for (log of inferenceHistory(); track $index) {
+          <div class="log-entry" [ngClass]="'log-' + log.type">
+            <div class="log-header">
+              <div class="log-icon">
+                <i [class]="getLogIcon(log.type)"></i>
+              </div>
+              <div class="log-meta">
+                <span class="log-timestamp">{{ formatTimestamp(log.timestamp) }}</span>
+                <span class="log-type">{{ log.type }}</span>
+              </div>
+            </div>
+            <div class="log-message">
+              @if (log.type === 'sent-message') {
+                <span class="message-label">💬 Sent:</span>
+              }
+              @if (log.type === 'received-message') {
+                <span class="message-label">🤖 Response:</span>
+              }
+              @if (log.type === 'agent-header') {
+                <span class="agent-name">{{ log.message }}</span>
+              } @else {
+                {{ log.message }}
+              }
+            </div>
+            @if (log.details && log.type !== 'agent-header') {
+              <div class="log-details">
+                <pre>{{ formatDetails(log.details) }}</pre>
+              </div>
+            }
+          </div>
+        }
+      }
+      
+      @if (isRunning()) {
+        <div class="log-entry log-running">
+          <div class="log-header">
+            <div class="log-icon">
+              <i class="pi pi-spin pi-spinner"></i>
+            </div>
+            <div class="log-meta">
+              <span class="log-type">Running...</span>
+            </div>
+          </div>
+          <div class="log-message">
+            Agent is processing data and generating labels...
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</p-card>

@@ -1,0 +1,110 @@
+<div class="labeling-page">
+  <!-- Labeling Toolbar -->
+  <app-labeling-toolbar 
+    [fileId]="fileId"
+    [folderId]="folderId"
+    [fileInfo]="fileInfo"
+    [folderInfo]="folderInfo"
+    [labelInfo]="labelInfo"
+    [projectInfo]="projectInfo()"
+    (onSave)="onSaveLabels()"
+    (onShare)="onShareFolder()"
+    (onImport)="onImportLabels()"
+    (onExport)="onExportLabels()"
+    (onDownload)="onDownloadData()"
+    (onEditDescriptions)="onEditDescriptions()"
+    (onAutoAnnotate)="onAutoAnnotate()"
+    (onToggleAiChat)="onToggleAiChat()"
+  />
+  
+  <!-- Main Splitter: Chart + Panels -->
+  <p-splitter 
+    [style]="{ height: '100%', width:'100%'}" 
+    layout="vertical" 
+    class="splitter-area" 
+    (onResizeEnd)="onResizePlot()"
+  >
+    <!-- Chart Area -->
+    <ng-template pTemplate>
+      <div class="chart-area">
+        <app-chart 
+          [data]="data"
+          [labelInfo]="labelInfo"
+        />
+      </div>
+    </ng-template>
+    <!-- Bottom Panels Area -->
+    <ng-template pTemplate>
+      <div class="panels-area">
+        @if (labelInfo) {
+          <div class="panels-container">
+            <!-- Guidelines Panel -->
+            <div class="panel-slot">
+              <app-guidelines-panel 
+                [labelInfo]="labelInfo"
+                (onRefresh)="onRefreshPage()"
+              />
+            </div>
+
+            <!-- Events Panel -->
+            <div class="panel-slot">
+              <app-events-panel 
+                [labelInfo]="labelInfo"
+                (onRefresh)="onRefreshPage()"
+                (onEditDescription)="onEditEventDescription($event)"
+              />
+            </div>
+            
+            <!-- AI Chat Panel (when visible) -->
+            @if (aiChatVisible) {
+              <div class="panel-slot overlay-panel">
+                <app-ai-chat-tab (onClose)="onAiChatClose()" />
+              </div>
+            }
+            
+            <!-- Auto-Detection Panel (when visible) -->
+            @if (autoDetectionVisible) {
+              <div class="panel-slot overlay-panel">
+                <app-auto-detection-panel 
+                  [fileId]="fileId"
+                  [folderId]="folderId"
+                  [projectId]="projectInfo()?._id?.$oid"
+                  (onClose)="onAutoDetectionClose()"
+                />
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <i class="pi pi-info-circle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+            <p>No label data available</p>
+          </div>
+        }
+      </div>
+    </ng-template>
+  </p-splitter>
+</div>
+
+<!-- Share Dialog -->
+<app-share-dialog
+  [(visible)]="shareDialogVisible"
+  [title]="'Share Folder'"
+  [resourceType]="'folder'"
+  [resourceName]="folderInfo?.name || ''"
+  (onShare)="onShareFolderConfirm($event)"
+/>
+
+<!-- Description Dialog -->
+<app-description-dialog
+  [(visible)]="descriptionDialogVisible"
+  [title]="'Edit Event Description'"
+  [resourceName]="selectedEvent?.className || ''"
+  [description]="selectedEventDescription"
+  [placeholder]="'Add notes about this event...'"
+  [maxLength]="500"
+  [rows]="5"
+  (onSave)="onSaveEventDescription($event)"
+/>
+
+<!-- Toast for notifications -->
+<p-toast />

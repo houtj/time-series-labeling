@@ -1,0 +1,178 @@
+<div class="profile-page">
+  <div class="profile-area">
+    <!-- Top Section: Stats Cards -->
+    <div class="top-area">
+      <!-- Badge & Level Card -->
+      <p-card styleClass="stat-card level-card">
+        <ng-template pTemplate="header">
+          <div class="card-header">Level - {{ userInfo()?.badge || 'Iron' }}</div>
+        </ng-template>
+        <div class="badge-area">
+          <img 
+            [alt]="userInfo()?.badge || 'Badge'" 
+            [src]="badgeImageSrc()" 
+            class="badge-image"
+            (error)="$any($event.target).src='assets/img/Iron.png'"
+          />
+        </div>
+        <div class="card-stats">
+          <p><i class="pi pi-calendar"></i> Active since: {{ formatDate(userInfo()?.activeSince) }}</p>
+          <p pTooltip="The rank is refreshed every 24 hours." tooltipPosition="top">
+            <i class="pi pi-trophy"></i> Rank: {{ userInfo()?.rank || 'N/A' }}
+          </p>
+        </div>
+      </p-card>
+
+      <!-- Recent Files Card -->
+      <p-card styleClass="stat-card">
+        <ng-template pTemplate="header">
+          <div class="card-header">
+            <i class="pi pi-clock"></i> Recent Files
+          </div>
+        </ng-template>
+        <div class="card-content">
+          @if (userInfo()?.recent && userInfo()!.recent!.length > 0) {
+            <ul class="item-list">
+              @for (recentFile of userInfo()!.recent; track recentFile.file) {
+                <li class="list-item" (click)="onClickRecentFile($event, recentFile)">
+                  <i class="pi pi-file"></i>
+                  <span>{{ recentFile.displayText }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <div class="empty-state">
+              <i class="pi pi-inbox"></i>
+              <p>No recent files</p>
+            </div>
+          }
+        </div>
+      </p-card>
+
+      <!-- Messages Card -->
+      <p-card styleClass="stat-card">
+        <ng-template pTemplate="header">
+          <div class="card-header">
+            <i class="pi pi-envelope"></i> Messages
+          </div>
+        </ng-template>
+        <div class="card-content">
+          @if (userInfo()?.message && userInfo()!.message!.length > 0) {
+            <ul class="item-list">
+              @for (message of userInfo()!.message; track $index) {
+                <li class="list-item" (click)="onClickMessage($event, message)">
+                  <i class="pi pi-comment"></i>
+                  <span>{{ message.displayText }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <div class="empty-state">
+              <i class="pi pi-inbox"></i>
+              <p>No messages</p>
+            </div>
+          }
+        </div>
+      </p-card>
+
+      <!-- Contribution Chart Card -->
+      <p-card styleClass="stat-card chart-card">
+        <ng-template pTemplate="header">
+          <div class="card-header">
+            <i class="pi pi-chart-bar"></i> Contribution History
+          </div>
+        </ng-template>
+        <div class="chart-container">
+          <div #chart class="plotly-chart"></div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Bottom Section: Tables -->
+    <div class="bottom-area">
+      <!-- Folders Table -->
+      <p-card styleClass="table-card folders-table">
+        <p-table 
+          [value]="folderList()" 
+          sortMode="multiple"
+          [scrollable]="true"
+          scrollHeight="flex"
+          styleClass="profile-table"
+        >
+          <ng-template pTemplate="caption">
+            <div class="table-caption">
+              <i class="pi pi-folder"></i> Folders
+            </div>
+          </ng-template>
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="name">
+                Name <p-sortIcon field="name"></p-sortIcon>
+              </th>
+              <th pSortableColumn="nbLabeledFiles">
+                Labeled Files <p-sortIcon field="nbLabeledFiles"></p-sortIcon>
+              </th>
+              <th pSortableColumn="nbTotalFiles">
+                Total Files <p-sortIcon field="nbTotalFiles"></p-sortIcon>
+              </th>
+              <th pSortableColumn="project.name">
+                Project <p-sortIcon field="project.name"></p-sortIcon>
+              </th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-folder>
+            <tr>
+              <td>{{ folder.name }}</td>
+              <td>{{ folder.nbLabeledFiles }}</td>
+              <td>{{ folder.nbTotalFiles }}</td>
+              <td>{{ folder.project?.name || 'N/A' }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="4" class="empty-message">
+                <i class="pi pi-inbox"></i> No folders available
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+
+      <!-- Projects Table -->
+      <p-card styleClass="table-card projects-table">
+        <p-table 
+          [value]="projectList()" 
+          sortMode="multiple"
+          [scrollable]="true"
+          scrollHeight="flex"
+          styleClass="profile-table"
+        >
+          <ng-template pTemplate="caption">
+            <div class="table-caption">
+              <i class="pi pi-cog"></i> Projects
+            </div>
+          </ng-template>
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="projectName">
+                Name <p-sortIcon field="projectName"></p-sortIcon>
+              </th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-project>
+            <tr>
+              <td>{{ project.projectName }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td class="empty-message">
+                <i class="pi pi-inbox"></i> No projects available
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  </div>
+</div>

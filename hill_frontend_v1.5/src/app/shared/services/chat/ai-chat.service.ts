@@ -1,0 +1,164 @@
+import { Injectable, signal, inject } from '@angular/core';
+import { WebSocketBaseService } from '../../../core/services/websocket/websocket-base.service';
+import { environment } from '../../../../environments/environment';
+
+/**
+ * AI Chat Service
+ * Handles WebSocket communication for AI assistant chat
+ * Shared service used by multiple pages (labeling, etc.)
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export class AiChatService extends WebSocketBaseService {
+  // State
+  readonly chatHistory = signal<any[]>([]);
+  readonly isWaitingForResponse = signal<boolean>(false);
+  readonly currentMessage = signal<string>('');
+  
+  constructor() {
+    super();
+  }
+
+  /**
+   * Connect to AI chat WebSocket
+   */
+  connectChat(fileId: string, context?: { folderId?: string; projectId?: string }): void {
+    const wsUrl = `${environment.wsUrl}/chat/${fileId}`;
+    this.connect(wsUrl);
+    
+    // Send context if provided
+    if (context && this.isConnected()) {
+      this.send(JSON.stringify({
+        action: 'set-context',
+        context: { fileId, ...context }
+      }));
+    }
+  }
+
+  /**
+   * Send a chat message
+   */
+  sendMessage(message: string): void {
+    if (!this.isConnected()) {
+      console.error('WebSocket is not connected');
+      return;
+    }
+
+    this.isWaitingForResponse.set(true);
+    this.currentMessage.set('');
+    
+    // Add user message to history
+    this.addChatMessage({
+      role: 'user',
+      content: message,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Send to server
+    this.send(JSON.stringify({
+      action: 'chat',
+      message,
+      timestamp: new Date().toISOString()
+    }));
+  }
+
+  /**
+   * Handle incoming WebSocket messages
+   */
+  protected override onMessage(event: MessageEvent): void {
+    try {
+      const data = JSON.parse(event.data);
+      
+      // Handle different message types
+      switch (data.type) {
+        case 'chat-response':
+          this.addChatMessage({
+            role: 'assistant',
+            content: data.message,
+            timestamp: new Date().toISOString(),
+            metadata: data.metadata
+          });
+          this.isWaitingForResponse.set(false);
+          break;
+          
+        case 'error':
+          this.addChatMessage({
+            role: 'system',
+            content: `Error: ${data.message}`,
+            timestamp: new Date().toISOString()
+          });
+          this.isWaitingForResponse.set(false);
+          break;
+          
+        case 'thinking':
+          // Optional: show typing indicator
+          break;
+          
+        default:
+          console.log('Unknown message type:', data);
+      }
+    } catch (error) {
+      console.error('Failed to parse chat message:', error);
+      this.isWaitingForResponse.set(false);
+    }
+  }
+
+  /**
+   * Handle WebSocket errors
+   */
+  protected override onError(event: Event): void {
+    super.onError(event);
+    this.isWaitingForResponse.set(false);
+    this.addChatMessage({
+      role: 'system',
+      content: 'Connection error. Please try again.',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  /**
+   * Handle WebSocket close
+   */
+  protected override onClose(event: CloseEvent): void {
+    super.onClose(event);
+    this.isWaitingForResponse.set(false);
+  }
+
+  /**
+   * Add message to chat history
+   */
+  private addChatMessage(message: any): void {
+    this.chatHistory.update(history => [...history, message]);
+  }
+
+  /**
+   * Clear chat history
+   */
+  clearChatHistory(): void {
+    this.chatHistory.set([]);
+  }
+
+  /**
+   * Update current message
+   */
+  updateCurrentMessage(message: string): void {
+    this.currentMessage.set(message);
+  }
+
+  /**
+   * Get formatted chat history for display
+   */
+  getFormattedHistory(): any[] {
+    return this.chatHistory();
+  }
+
+  /**
+   * Disconnect and cleanup
+   */
+  override disconnect(): void {
+    this.isWaitingForResponse.set(false);
+    super.disconnect();
+  }
+}
+

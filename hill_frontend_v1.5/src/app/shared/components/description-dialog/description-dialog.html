@@ -1,0 +1,62 @@
+<p-dialog
+  [header]="getDialogTitle()"
+  [(visible)]="visible"
+  [modal]="true"
+  [style]="{ width: '50vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="description-dialog"
+>
+  <div class="dialog-body">
+    <!-- Description Editor -->
+    <div class="form-field">
+      <label for="description">
+        <i class="pi pi-file-edit"></i>
+        Description
+      </label>
+      <textarea
+        id="description"
+        pInputTextarea
+        [(ngModel)]="description"
+        (ngModelChange)="descriptionChange.emit($event)"
+        [rows]="rows"
+        [placeholder]="placeholder"
+        [maxlength]="maxLength"
+        [autoResize]="true"
+      ></textarea>
+      
+      <!-- Character Counter -->
+      <div class="character-counter" [class.warning]="isTooLong()">
+        <i class="pi pi-info-circle"></i>
+        <span>{{ description.length }} / {{ maxLength }} characters</span>
+        <span class="remaining" *ngIf="!isTooLong()">
+          ({{ getRemainingCharacters() }} remaining)
+        </span>
+        <span class="error" *ngIf="isTooLong()">
+          Exceeds maximum length!
+        </span>
+      </div>
+    </div>
+
+    <!-- Help Text -->
+    <div class="help-message">
+      <i class="pi pi-lightbulb"></i>
+      <span>Add a detailed description to help organize and identify this resource.</span>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickCancel()"
+      styleClass="p-button-text"
+    />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      (onClick)="onClickSave()"
+      [disabled]="isTooLong()"
+    />
+  </ng-template>
+</p-dialog>

@@ -5,7 +5,7 @@ from bson.json_util import dumps
 import simplejson as json
 
 from database import get_db
-from models import NewProjectRequest, UpdateProjectDescriptionsRequest
+from models import NewProjectRequest, UpdateProjectDescriptionsRequest, NewClassRequest, UpdateClassRequest
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -67,5 +67,39 @@ async def update_project_descriptions(request: UpdateProjectDescriptionsRequest)
             }
         )
     
+    return 'done'
+
+
+@router.post("/classes")
+async def add_class(class_: NewClassRequest):
+    """Add new class to project"""
+    db = get_db()
+    db['projects'].update_one(
+        {'_id': ObjectId(class_.projectId)}, 
+        {'$push': {
+            'classes': {
+                'name': class_.newClassName, 
+                'color': class_.newClassColor, 
+                'description': class_.description
+            }
+        }}
+    )
+    return 'done'
+
+
+@router.put("/classes")
+async def update_class(newClass: UpdateClassRequest):
+    """Update existing class"""
+    db = get_db()
+    db['projects'].update_one(
+        {'_id': ObjectId(newClass.projectId), 'classes.name': newClass.updatingClassName}, 
+        {'$set': {
+            'classes.$': {
+                'name': newClass.newClassName, 
+                'color': newClass.newClassColor, 
+                'description': newClass.description
+            }
+        }}
+    )
     return 'done'
 

@@ -1,0 +1,26 @@
+<p-toolbar styleClass="toolbar-component">
+  <div class="p-toolbar-group-start">
+    <p-menu #menu [model]="menuItems()" [popup]="true" />
+    <p-button 
+      icon="pi pi-bars" 
+      [rounded]="true" 
+      [text]="true" 
+      (onClick)="menu.toggle($event)" 
+    />
+  </div>
+  
+  <div class="p-toolbar-group-center">
+    <span class="page-title">{{ pageTitle }}</span>
+  </div>
+  
+  <div class="p-toolbar-group-end">
+    <p-button 
+      icon="pi pi-user" 
+      [rounded]="true" 
+      [text]="true" 
+      styleClass="mr-2"
+    />
+    <span class="user-name">{{ userName }}</span>
+    <span class="version">{{ version }}</span>
+  </div>
+</p-toolbar>

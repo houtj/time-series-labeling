@@ -1,0 +1,131 @@
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+// PrimeNG imports
+import { CardModule } from 'primeng/card';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { ConfirmationService } from 'primeng/api';
+
+// Core imports
+import { LabelModel } from '../../../../core/models';
+
+// Feature services
+import { LabelStateService, ChartService } from '../../services';
+
+/**
+ * Events Panel Component
+ * Displays and manages labeled events in a table
+ */
+@Component({
+  selector: 'app-events-panel',
+  imports: [
+    CommonModule,
+    CardModule,
+    TableModule,
+    ButtonModule,
+    TooltipModule,
+    ConfirmPopupModule
+  ],
+  standalone: true,
+  providers: [ConfirmationService],
+  templateUrl: './events-panel.html',
+  styleUrl: './events-panel.scss'
+})
+export class EventsPanelComponent {
+  @Input() labelInfo?: LabelModel;
+  
+  @Output() onRefresh = new EventEmitter<void>();
+  @Output() onEditDescription = new EventEmitter<{ event: LabelModel['events'][0]; index: number }>();
+  
+  private readonly labelState = inject(LabelStateService);
+  private readonly chartService = inject(ChartService);
+  private readonly confirmationService = inject(ConfirmationService);
+  
+  // Get events from label info
+  get events(): LabelModel['events'] {
+    return this.labelInfo?.events || [];
+  }
+  
+  /**
+   * Handle refresh button click
+   */
+  onClickRefresh(): void {
+    this.onRefresh.emit();
+  }
+  
+  /**
+   * Handle show all events
+   */
+  onClickUnhideAll(): void {
+    if (!this.labelInfo) return;
+    
+    this.labelInfo.events.forEach(e => e.hide = false);
+    this.labelState.updateLabel(this.labelInfo);
+  }
+  
+  /**
+   * Handle hide all events
+   */
+  onClickHideAll(): void {
+    if (!this.labelInfo) return;
+    
+    this.labelInfo.events.forEach(e => e.hide = true);
+    this.labelState.updateLabel(this.labelInfo);
+  }
+  
+  /**
+   * Handle remove all events
+   */
+  onClickRemoveAll(event: Event): void {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Remove all events?',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        if (!this.labelInfo) return;
+        this.labelInfo.events = [];
+        this.labelState.updateLabel(this.labelInfo);
+      }
+    });
+  }
+  
+  /**
+   * Handle select event (zoom to event on chart)
+   */
+  onClickSelectEvent(event: LabelModel['events'][0]): void {
+    this.chartService.zoomToEvent(event);
+  }
+  
+  /**
+   * Handle toggle event visibility
+   */
+  onClickToggleHide(event: LabelModel['events'][0]): void {
+    if (!this.labelInfo) return;
+    
+    const index = this.labelInfo.events.findIndex(e => e === event);
+    if (index !== -1) {
+      this.labelInfo.events[index].hide = !this.labelInfo.events[index].hide;
+      this.labelState.updateLabel(this.labelInfo);
+    }
+  }
+  
+  /**
+   * Handle remove event
+   */
+  onClickRemove(eventToRemove: LabelModel['events'][0]): void {
+    if (!this.labelInfo) return;
+    
+    this.labelInfo.events = this.labelInfo.events.filter(e => e !== eventToRemove);
+    this.labelState.updateLabel(this.labelInfo);
+  }
+  
+  /**
+   * Handle edit description
+   */
+  onClickEditDescription(event: LabelModel['events'][0], index: number): void {
+    this.onEditDescription.emit({ event, index });
+  }
+}

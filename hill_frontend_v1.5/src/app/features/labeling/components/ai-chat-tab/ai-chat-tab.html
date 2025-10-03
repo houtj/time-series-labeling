@@ -1,0 +1,94 @@
+<p-card styleClass="ai-chat-card">
+  <ng-template pTemplate="header">
+    <div class="chat-header">
+      <div class="header-title">
+        <i class="pi pi-comments"></i>
+        <span>💬 AI Assistant</span>
+      </div>
+      <div class="header-actions">
+        <p-button 
+          icon="pi pi-trash" 
+          label="Clear"
+          (onClick)="onClickClearChat()" 
+          [text]="true"
+          size="small"
+        />
+        <p-button 
+          icon="pi pi-times" 
+          (onClick)="onClickClose()" 
+          [rounded]="true" 
+          [text]="true"
+          size="small"
+        />
+      </div>
+    </div>
+  </ng-template>
+  
+  <div class="chat-content">
+    <div class="chat-messages" #chatMessages>
+      @if (chatHistory().length === 0) {
+        <div class="chat-empty">
+          <i class="pi pi-comments" style="font-size: 3rem;"></i>
+          <h4>Start a conversation!</h4>
+          <p>Ask questions about the data, get analysis insights, or request labeling guidance.</p>
+        </div>
+      } @else {
+        @for (message of chatHistory(); track $index) {
+          <div 
+            class="chat-message"
+            [ngClass]="message.sender === 'user' ? 'user-message' : 'assistant-message'"
+          >
+            <div class="message-avatar">
+              @if (message.sender === 'user') {
+                <i class="pi pi-user"></i>
+              } @else {
+                <i class="pi pi-sparkles"></i>
+              }
+            </div>
+            <div class="message-content">
+              <div class="message-text">{{ message.message }}</div>
+              <div class="message-footer">
+                <span class="message-timestamp">{{ formatTimestamp(message.timestamp) }}</span>
+                @if (message.tokenUsage) {
+                  <span class="token-usage">{{ message.tokenUsage }} tokens</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      }
+      
+      @if (isWaitingForResponse()) {
+        <div class="chat-message assistant-message">
+          <div class="message-avatar">
+            <i class="pi pi-sparkles"></i>
+          </div>
+          <div class="message-content thinking">
+            <div class="message-text">
+              <i class="pi pi-spin pi-spinner"></i> AI is thinking...
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    
+    <div class="chat-input-container">
+      <textarea 
+        [(ngModel)]="currentMessage" 
+        (keydown)="onChatInputKeydown($event)"
+        placeholder="Ask the AI assistant about your data... (Enter to send, Shift+Enter for new line)"
+        [disabled]="isWaitingForResponse()"
+        rows="3"
+        class="chat-input"
+      ></textarea>
+      <p-button 
+        icon="pi pi-send" 
+        (onClick)="onClickSendMessage()"
+        [disabled]="!currentMessage.trim() || isWaitingForResponse()"
+        [rounded]="true"
+        severity="primary"
+        styleClass="send-button"
+      />
+    </div>
+  </div>
+</p-card>

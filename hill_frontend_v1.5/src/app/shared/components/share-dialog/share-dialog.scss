@@ -1,0 +1,116 @@
+::ng-deep .share-dialog {
+  .p-dialog-header {
+    background-color: var(--primary-color);
+    color: white;
+    
+    .p-dialog-title {
+      font-weight: 600;
+    }
+  }
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  
+  label {
+    font-weight: 600;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    i {
+      color: var(--primary-color);
+      font-size: 1.1rem;
+    }
+  }
+  
+  input {
+    width: 100%;
+  }
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  
+  > i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    background-color: var(--primary-color-light);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    
+    .user-name {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+    
+    .user-email {
+      font-size: 0.9rem;
+      color: var(--text-color-secondary);
+    }
+  }
+}
+
+.info-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: var(--blue-50);
+  border-left: 3px solid var(--blue-500);
+  border-radius: var(--border-radius);
+  
+  i {
+    font-size: 1.2rem;
+    color: var(--blue-500);
+    margin-top: 0.1rem;
+  }
+  
+  span {
+    flex: 1;
+    color: var(--text-color);
+    line-height: 1.5;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  ::ng-deep .share-dialog {
+    .p-dialog {
+      width: 90vw !important;
+    }
+  }
+  
+  .user-item {
+    > i {
+      width: 32px;
+      height: 32px;
+      font-size: 1.2rem;
+    }
+  }
+}
+

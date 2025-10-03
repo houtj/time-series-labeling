@@ -1,0 +1,408 @@
+<div class="project-page card">
+  <!-- Header with project selector and actions -->
+  <div class="header">
+    <p-select
+      [options]="projects()"
+      optionLabel="projectName"
+      [(ngModel)]="selectedProject"
+      (onChange)="onChangeSelectedProject($event)"
+      [style]="{ minWidth: '300px' }"
+      placeholder="Select a project"
+    />
+    <div class="header-buttons">
+      <p-button
+        icon="pi pi-share-alt"
+        (onClick)="onClickShare($event)"
+        [rounded]="true"
+        [outlined]="true"
+        pTooltip="Share Project"
+      />
+    </div>
+  </div>
+
+  <!-- Main content area with classes and templates -->
+  <div class="bottom-area">
+    <!-- Classes Table -->
+    <div class="classes-area">
+      <p-table
+        [value]="classesList || []"
+        [tableStyle]="{ 'min-width': '10rem' }"
+        styleClass="p-datatable-gridlines"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [loading]="loading()"
+      >
+        <ng-template pTemplate="caption">
+          <div class="caption-area">
+            <span class="caption-title">Classes</span>
+            <div class="caption-buttons">
+              <p-button
+                icon="pi pi-plus"
+                (onClick)="onClickAddNewClass($event, false)"
+                [rounded]="true"
+                [text]="true"
+                pTooltip="Add Class"
+              />
+              <p-button
+                icon="pi pi-refresh"
+                (onClick)="onClickRefreshClass($event)"
+                [rounded]="true"
+                [text]="true"
+                pTooltip="Refresh"
+              />
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 70%">Name</th>
+            <th style="width: 30%">Color</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-class_>
+          <tr>
+            <td (click)="onClickUpdateClass($event, class_)" class="clickable">
+              {{ class_.name }}
+            </td>
+            <td>
+              <span [style.color]="class_.color">{{ class_.color }}</span>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="2" class="empty-message">
+              <div class="empty-state">
+                <i class="pi pi-tag"></i>
+                <p>No classes defined. Click + to add one.</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <!-- Templates Table -->
+    <div class="template-area">
+      <p-table
+        [value]="templateList || []"
+        [tableStyle]="{ 'min-width': '10rem' }"
+        styleClass="p-datatable-gridlines"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [loading]="loading()"
+      >
+        <ng-template pTemplate="caption">
+          <div class="caption-area">
+            <span class="caption-title">Templates</span>
+            <div class="caption-buttons">
+              <p-button
+                icon="pi pi-plus"
+                (onClick)="onClickAddNewTemplate($event, false)"
+                [rounded]="true"
+                [text]="true"
+                pTooltip="Add Template"
+              />
+              <p-button
+                icon="pi pi-refresh"
+                (onClick)="onClickRefreshTemplate($event)"
+                [rounded]="true"
+                [text]="true"
+                pTooltip="Refresh"
+              />
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 80%">Name</th>
+            <th style="width: 20%">File Type</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-template>
+          <tr>
+            <td (click)="onClickUpdateTemplate($event, template)" class="clickable">
+              {{ template.name }}
+            </td>
+            <td>{{ template.fileType }}</td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="2" class="empty-message">
+              <div class="empty-state">
+                <i class="pi pi-file"></i>
+                <p>No templates defined. Click + to add one.</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</div>
+
+<!-- Speed Dial for new project -->
+<p-speedDial
+  direction="up"
+  (onClick)="onClickAddNewProject($event, false)"
+/>
+
+<!-- Toast Messages -->
+<p-toast />
+
+<!-- Confirmation Popup -->
+<p-confirmpopup />
+
+<!-- New Project Dialog -->
+<p-dialog
+  header="Add New Project"
+  [(visible)]="addNewProjectDialogVisible"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="dialog-body">
+    <div class="form-field">
+      <label for="newProjectName">Project Name</label>
+      <input
+        id="newProjectName"
+        type="text"
+        pInputText
+        [(ngModel)]="newProjectName"
+        placeholder="Enter project name"
+      />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickDialogCancel($event, 'newProject')"
+      styleClass="p-button-text"
+    />
+    <p-button
+      label="Create"
+      icon="pi pi-check"
+      (onClick)="onClickAddNewProject($event, true)"
+    />
+  </ng-template>
+</p-dialog>
+
+<!-- New Class Dialog -->
+<p-dialog
+  header="Add New Class"
+  [(visible)]="addNewClassDialogVisible"
+  [modal]="true"
+  [style]="{ width: '50vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="dialog-body">
+    <div class="form-field">
+      <label for="newClassName">Class Name</label>
+      <input
+        id="newClassName"
+        type="text"
+        pInputText
+        [(ngModel)]="newClassName"
+        placeholder="Enter class name"
+      />
+    </div>
+
+    <div class="form-field">
+      <label for="newClassColor">Color</label>
+      <p-colorPicker
+        inputId="newClassColor"
+        [(ngModel)]="newClassColor"
+      />
+    </div>
+
+    <div class="form-field">
+      <label for="newClassDescription">Event Pattern Description</label>
+      <textarea
+        pTextarea
+        id="newClassDescription"
+        [(ngModel)]="newClassDescription"
+        [autoResize]="true"
+        [placeholder]="classDescriptionPlaceholder"
+        rows="6"
+        style="width: 100%"
+      ></textarea>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickDialogCancel($event, 'newClass')"
+      styleClass="p-button-text"
+    />
+    <p-button
+      label="Create"
+      icon="pi pi-check"
+      (onClick)="onClickAddNewClass($event, true)"
+    />
+  </ng-template>
+</p-dialog>
+
+<!-- Update Class Dialog -->
+<p-dialog
+  [header]="'Edit Class: ' + updatingClassName"
+  [(visible)]="updateClassDialogVisible"
+  [modal]="true"
+  [style]="{ width: '50vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="dialog-body">
+    <div class="form-field">
+      <label for="updateClassName">Class Name</label>
+      <input
+        id="updateClassName"
+        type="text"
+        pInputText
+        [(ngModel)]="newClassName"
+        placeholder="Enter class name"
+      />
+    </div>
+
+    <div class="form-field">
+      <label for="updateClassColor">Color</label>
+      <p-colorPicker
+        inputId="updateClassColor"
+        [(ngModel)]="newClassColor"
+      />
+    </div>
+
+    <div class="form-field">
+      <label for="updateClassDescription">Event Pattern Description</label>
+      <textarea
+        pTextarea
+        id="updateClassDescription"
+        [(ngModel)]="newClassDescription"
+        [autoResize]="true"
+        [placeholder]="classDescriptionPlaceholder"
+        rows="6"
+        style="width: 100%"
+      ></textarea>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickDialogCancel($event, 'updateClass')"
+      styleClass="p-button-text"
+    />
+    <p-button
+      label="Update"
+      icon="pi pi-check"
+      (onClick)="onClickUpdateClassOk($event)"
+    />
+  </ng-template>
+</p-dialog>
+
+<!-- New Template Dialog -->
+<p-dialog
+  header="Add New Template"
+  [(visible)]="addNewTemplateDialogVisible"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="dialog-body">
+    <div class="form-field">
+      <label for="newTemplateName">Template Name</label>
+      <input
+        id="newTemplateName"
+        type="text"
+        pInputText
+        [(ngModel)]="newTemplateName"
+        placeholder="Enter template name"
+      />
+    </div>
+
+    <div class="form-field">
+      <label for="fileTypeSelect">File Type</label>
+      <p-select
+        inputId="fileTypeSelect"
+        [options]="fileTypesList"
+        [(ngModel)]="selectedFileType"
+        optionLabel="name"
+        [style]="{ width: '100%' }"
+      />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickDialogCancel($event, 'newTemplate')"
+      styleClass="p-button-text"
+    />
+    <p-button
+      label="Create"
+      icon="pi pi-check"
+      (onClick)="onClickAddNewTemplate($event, true)"
+    />
+  </ng-template>
+</p-dialog>
+
+<!-- Share Project Dialog -->
+<p-dialog
+  [header]="'Share: ' + (selectedProject?.projectName || '')"
+  [(visible)]="shareDialogVisible"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="dialog-body">
+    <div class="form-field">
+      <label for="userSelect">Choose a user</label>
+      <p-select
+        inputId="userSelect"
+        [options]="usersList"
+        [(ngModel)]="selectedUser"
+        optionLabel="mail"
+        placeholder="Select user"
+        [style]="{ width: '100%' }"
+      />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickDialogCancel($event, 'shareProject')"
+      styleClass="p-button-text"
+    />
+    <p-button
+      label="Share"
+      icon="pi pi-check"
+      (onClick)="onClickShareOK($event)"
+    />
+  </ng-template>
+</p-dialog>
+
+<!-- Template Editor Dialog -->
+<app-template-editor-dialog
+  [(visible)]="templateEditorDialogVisible"
+  [templateId]="editingTemplateId"
+  [projectId]="selectedProject?._id?.$oid"
+  (onSave)="onTemplateEditorSave()"
+/>

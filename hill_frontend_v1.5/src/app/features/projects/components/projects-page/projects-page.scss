@@ -1,0 +1,143 @@
+.project-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--surface-card);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bottom-area {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.classes-area,
+.template-area {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface-card);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+
+  ::ng-deep .p-datatable {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    
+    .p-datatable-wrapper {
+      flex: 1;
+    }
+  }
+}
+
+.caption-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  .caption-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  
+  .caption-buttons {
+    display: flex;
+    gap: 0.25rem;
+  }
+}
+
+.clickable {
+  cursor: pointer;
+  color: var(--primary-color);
+  font-weight: 500;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-color-secondary);
+  
+  i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  
+  p {
+    font-size: 1rem;
+  }
+}
+
+// Dialog styles
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  
+  label {
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  input {
+    width: 100%;
+  }
+}
+
+// Speed dial positioning
+::ng-deep .p-speeddial {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+}
+
+// Responsive
+@media (max-width: 1024px) {
+  .bottom-area {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  ::ng-deep p-dialog {
+    .p-dialog {
+      width: 90vw !important;
+    }
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+}

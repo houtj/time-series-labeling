@@ -1,0 +1,84 @@
+<p-dialog
+  [header]="getDialogTitle()"
+  [(visible)]="visible"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="share-dialog"
+>
+  <div class="dialog-body">
+    <!-- User Selection -->
+    <div class="form-field">
+      <label for="userSelect">
+        <i class="pi pi-user"></i>
+        Choose a user to share this {{ getResourceTypeLabel() }} with
+      </label>
+      <p-select
+        inputId="userSelect"
+        [options]="usersList"
+        [(ngModel)]="selectedUser"
+        optionLabel="mail"
+        placeholder="Select user by email"
+        [style]="{ width: '100%' }"
+        [loading]="loading"
+        [disabled]="loading"
+      >
+        <ng-template pTemplate="selectedItem" let-user>
+          <div class="user-item" *ngIf="user">
+            <i class="pi pi-user"></i>
+            <div class="user-info">
+              <span class="user-name">{{ user.name }}</span>
+              <span class="user-email">{{ user.mail }}</span>
+            </div>
+          </div>
+        </ng-template>
+        <ng-template pTemplate="item" let-user>
+          <div class="user-item">
+            <i class="pi pi-user"></i>
+            <div class="user-info">
+              <span class="user-name">{{ user.name }}</span>
+              <span class="user-email">{{ user.mail }}</span>
+            </div>
+          </div>
+        </ng-template>
+      </p-select>
+    </div>
+
+    <!-- Optional Message -->
+    <div class="form-field">
+      <label for="message">
+        <i class="pi pi-comment"></i>
+        Add a message (optional)
+      </label>
+      <input
+        id="message"
+        type="text"
+        pInputText
+        [(ngModel)]="message"
+        placeholder="Add a note for the recipient..."
+      />
+    </div>
+
+    <!-- Info Message -->
+    <div class="info-message">
+      <i class="pi pi-info-circle"></i>
+      <span>The user will receive access to this {{ getResourceTypeLabel() }} and be notified.</span>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickCancel()"
+      styleClass="p-button-text"
+    />
+    <p-button
+      label="Share"
+      icon="pi pi-share-alt"
+      (onClick)="onClickShare()"
+      [disabled]="!selectedUser"
+    />
+  </ng-template>
+</p-dialog>

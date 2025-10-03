@@ -1,0 +1,185 @@
+<div class="labeling-toolbar">
+  <!-- Toggle Buttons Section -->
+  <div class="toolbar-section toggle-buttons">
+    <p-button
+      [icon]="labelToggleButton ? 'pi pi-tag' : 'pi pi-tag'"
+      (onClick)="onChangeLabelToggle($event)"
+      [rounded]="true"
+      [text]="!labelToggleButton"
+      [raised]="labelToggleButton"
+      [severity]="labelToggleButton ? 'primary' : undefined"
+      pTooltip="Label Mode: Click twice to define an event"
+      tooltipPosition="right"
+    />
+    <p-button
+      [icon]="guidelineToggleButton ? 'pi pi-minus' : 'pi pi-minus'"
+      (onClick)="onChangeGuidelineToggle($event)"
+      [rounded]="true"
+      [text]="!guidelineToggleButton"
+      [raised]="guidelineToggleButton"
+      [severity]="guidelineToggleButton ? 'primary' : undefined"
+      pTooltip="Guideline Mode: Click to create a horizontal line"
+      tooltipPosition="right"
+    />
+  </div>
+  
+  <!-- File Actions Section -->
+  <div class="toolbar-section file-actions">
+    <p-button 
+      icon="pi pi-save" 
+      (onClick)="onClickSave()" 
+      [rounded]="true" 
+      [text]="true"
+      pTooltip="Save Labels"
+      tooltipPosition="bottom"
+    />
+    <p-button 
+      icon="pi pi-share-alt" 
+      (onClick)="onClickShare()" 
+      [rounded]="true" 
+      [text]="true"
+      pTooltip="Share Folder"
+      tooltipPosition="bottom"
+    />
+    <p-button 
+      icon="pi pi-file-import" 
+      (onClick)="onClickImport()" 
+      [rounded]="true" 
+      [text]="true"
+      pTooltip="Import Labels"
+      tooltipPosition="bottom"
+    />
+    <p-button 
+      icon="pi pi-file-export" 
+      (onClick)="onClickExport()" 
+      [rounded]="true" 
+      [text]="true"
+      pTooltip="Export Labels"
+      tooltipPosition="bottom"
+    />
+    <p-button 
+      icon="pi pi-download" 
+      (onClick)="onClickDownload()" 
+      [rounded]="true" 
+      [text]="true"
+      pTooltip="Download Data"
+      tooltipPosition="bottom"
+    />
+  </div>
+  
+  <!-- AI/Agent Actions Section -->
+  <div class="toolbar-section ai-actions">
+    <p-button 
+      icon="pi pi-comments" 
+      (onClick)="onClickToggleAiChat()" 
+      [rounded]="true" 
+      [text]="true"
+      pTooltip="AI Assistant"
+      tooltipPosition="bottom"
+    />
+    <p-button 
+      icon="pi pi-file-edit" 
+      (onClick)="onClickEditDescriptions()" 
+      [rounded]="true" 
+      [text]="true"
+      pTooltip="Edit Class Descriptions"
+      tooltipPosition="bottom"
+    />
+    <p-button 
+      icon="pi pi-cog" 
+      (onClick)="onClickAutoAnnotate()" 
+      [rounded]="true" 
+      [text]="true"
+      [loading]="isAutoAnnotationRunning()"
+      pTooltip="Auto-Annotation Agent"
+      tooltipPosition="bottom"
+    />
+  </div>
+</div>
+
+<!-- Label Selection Dialog -->
+<p-dialog
+  [closable]="false"
+  [modal]="true"
+  [(visible)]="labelSelectionDialogVisible"
+  [style]="{width: '50vw'}"
+  header="Select Event Class">
+  <div class="dialog-body">
+    <div class="dialog-content">
+      <label for="eventClass">Select a Class</label>
+      <p-select
+        inputId="eventClass"
+        [options]="classList"
+        [(ngModel)]="selectedClass"
+        optionLabel="name"
+        placeholder="Select a class"
+        appendTo="body"
+        [style]="{width: '100%'}"
+      />
+      <label for="eventDescription">Description</label>
+      <input 
+        id="eventDescription" 
+        type="text" 
+        pInputText 
+        [(ngModel)]="selectedEventDescription"
+        placeholder="Add a description for this event"
+        [style]="{width: '100%'}"
+      />
+    </div>
+    <div class="dialog-buttons">
+      <p-button 
+        icon="pi pi-check" 
+        (onClick)="onClickSelectClass()" 
+        [rounded]="true" 
+        [text]="true"
+        label="OK"
+      />
+      <p-button 
+        icon="pi pi-times" 
+        (onClick)="onClickDialogCancel('label')" 
+        [rounded]="true" 
+        [text]="true"
+        label="Cancel"
+      />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Guideline Selection Dialog -->
+<p-dialog
+  [closable]="false"
+  [modal]="true"
+  [(visible)]="guidelineSelectionDialogVisible"
+  [style]="{width: '50vw'}"
+  header="Select Channel for Guideline">
+  <div class="dialog-body">
+    <div class="dialog-content">
+      <label for="channelSelect">Select a Channel</label>
+      <p-select
+        inputId="channelSelect"
+        [options]="channelList"
+        [(ngModel)]="selectedYAxis"
+        optionLabel="channelName"
+        placeholder="Select a channel"
+        appendTo="body"
+        [style]="{width: '100%'}"
+      />
+    </div>
+    <div class="dialog-buttons">
+      <p-button 
+        icon="pi pi-check" 
+        (onClick)="onClickSelectChannel()" 
+        [rounded]="true" 
+        [text]="true"
+        label="OK"
+      />
+      <p-button 
+        icon="pi pi-times" 
+        (onClick)="onClickDialogCancel('guideline')" 
+        [rounded]="true" 
+        [text]="true"
+        label="Cancel"
+      />
+    </div>
+  </div>
+</p-dialog>

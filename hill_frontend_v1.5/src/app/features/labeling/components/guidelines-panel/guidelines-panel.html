@@ -1,0 +1,115 @@
+<p-card styleClass="guidelines-panel-card">
+  <ng-template pTemplate="header">
+    <div class="panel-header">
+      <div class="header-title">
+        <i class="pi pi-list"></i>
+        <span>Guidelines</span>
+      </div>
+      <div class="header-actions">
+        <p-button 
+          icon="pi pi-refresh" 
+          (onClick)="onClickRefresh()" 
+          [rounded]="true" 
+          [text]="true"
+          pTooltip="Refresh"
+          size="small"
+        />
+        <p-button 
+          icon="pi pi-eye" 
+          (onClick)="onClickUnhideAll()" 
+          [rounded]="true" 
+          [text]="true"
+          pTooltip="Show All"
+          size="small"
+        />
+        <p-button 
+          icon="pi pi-eye-slash" 
+          (onClick)="onClickHideAll()" 
+          [rounded]="true" 
+          [text]="true"
+          pTooltip="Hide All"
+          size="small"
+        />
+        <p-button 
+          icon="pi pi-trash" 
+          (onClick)="onClickRemoveAll($event)" 
+          [rounded]="true" 
+          [text]="true"
+          pTooltip="Remove All"
+          severity="danger"
+          size="small"
+        />
+      </div>
+    </div>
+  </ng-template>
+  
+  <div class="panel-content">
+    <p-table 
+      [value]="guidelines" 
+      sortMode="multiple" 
+      [scrollable]="true" 
+      scrollHeight="flex"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="channelName" style="width: 40%;">
+            Channel Name <p-sortIcon field="channelName" />
+          </th>
+          <th pSortableColumn="y" style="width: 35%;">
+            Value <p-sortIcon field="y" />
+          </th>
+          <th style="width: 25%;">Actions</th>
+        </tr>
+      </ng-template>
+      
+      <ng-template pTemplate="body" let-guideline>
+        <tr>
+          <td>
+            <span 
+              class="guideline-channel"
+              [style.color]="guideline.color"
+            >
+              {{ guideline.channelName }}
+            </span>
+          </td>
+          <td>
+            <span class="guideline-value">{{ guideline.y }}</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button 
+                [icon]="guideline.hide ? 'pi pi-eye-slash' : 'pi pi-eye'" 
+                (onClick)="onClickToggleHide(guideline)" 
+                [rounded]="true" 
+                [text]="true"
+                [pTooltip]="guideline.hide ? 'Show' : 'Hide'"
+                size="small"
+              />
+              <p-button 
+                icon="pi pi-trash" 
+                (onClick)="onClickRemove(guideline)" 
+                [rounded]="true" 
+                [text]="true"
+                pTooltip="Remove"
+                severity="danger"
+                size="small"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      
+      <ng-template pTemplate="empty">
+        <tr>
+          <td colspan="3" class="empty-message">
+            <i class="pi pi-info-circle"></i>
+            <span>No guidelines defined. Use the guideline mode to create guidelines.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</p-card>
+
+<p-confirmpopup />

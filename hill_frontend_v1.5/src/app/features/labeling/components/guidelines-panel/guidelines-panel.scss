@@ -1,0 +1,134 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.guidelines-panel-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  
+  :host ::ng-deep {
+    .p-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    .p-card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0;
+    }
+    
+    .p-card-content {
+      flex: 1;
+      overflow: hidden;
+      padding: 0;
+    }
+  }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-color);
+  
+  i {
+    color: var(--primary-color);
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.panel-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.guideline-channel {
+  font-weight: 500;
+}
+
+.guideline-value {
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 2rem !important;
+  color: var(--text-color-secondary);
+  
+  i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--orange-500);
+  }
+}
+
+// PrimeNG table overrides
+:host ::ng-deep {
+  .p-datatable {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    
+    .p-datatable-wrapper {
+      flex: 1;
+      overflow: auto;
+    }
+    
+    .p-datatable-thead > tr > th {
+      background: var(--surface-section);
+      color: var(--text-color);
+      font-weight: 600;
+      border-color: var(--surface-border);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    
+    .p-datatable-tbody > tr {
+      &:hover {
+        background: var(--surface-hover);
+      }
+      
+      > td {
+        border-color: var(--surface-border);
+        color: var(--text-color);
+      }
+    }
+  }
+}
+
+

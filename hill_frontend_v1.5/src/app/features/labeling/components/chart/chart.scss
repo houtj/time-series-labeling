@@ -1,0 +1,51 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.chart-plot {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
+
+// Override Plotly default styles to match PrimeNG theme
+:host ::ng-deep {
+  .plotly {
+    .main-svg {
+      background-color: var(--surface-ground) !important;
+    }
+    
+    .draglayer {
+      cursor: crosshair;
+    }
+  }
+  
+  // Style Plotly modebar
+  .modebar {
+    background-color: transparent !important;
+    
+    .modebar-btn {
+      svg {
+        fill: var(--text-color-secondary);
+      }
+      
+      &:hover svg {
+        fill: var(--primary-color);
+      }
+    }
+  }
+}
+

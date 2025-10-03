@@ -1,0 +1,36 @@
+<p-dialog
+  [header]="title"
+  [(visible)]="visible"
+  [modal]="true"
+  [style]="{ width: '450px' }"
+  [draggable]="false"
+  [resizable]="false"
+  [styleClass]="'confirmation-dialog ' + getSeverityClass()"
+>
+  <div class="dialog-body">
+    <!-- Icon and Message -->
+    <div class="confirmation-content">
+      <div class="icon-container" [class]="getSeverityClass()">
+        <i [class]="icon"></i>
+      </div>
+      <div class="message-container">
+        <p [innerHTML]="message"></p>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      [label]="cancelLabel"
+      [icon]="cancelIcon"
+      (onClick)="onClickCancel()"
+      styleClass="p-button-text"
+    />
+    <p-button
+      [label]="confirmLabel"
+      [icon]="confirmIcon"
+      (onClick)="onClickConfirm()"
+      [severity]="getConfirmButtonSeverity()"
+    />
+  </ng-template>
+</p-dialog>

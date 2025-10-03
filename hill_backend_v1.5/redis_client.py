@@ -45,7 +45,19 @@ class RedisQueueClient:
         """
         data = {'file_id': file_id}
         if metadata:
-            data.update(metadata)
+            # Convert all values to strings to avoid Redis type errors
+            for key, value in metadata.items():
+                if value is None:
+                    data[key] = ''
+                elif isinstance(value, bool):
+                    data[key] = str(value).lower()  # 'true' or 'false'
+                elif isinstance(value, (int, float)):
+                    data[key] = str(value)
+                elif isinstance(value, str):
+                    data[key] = value
+                else:
+                    # For complex types, convert to string
+                    data[key] = str(value)
         
         try:
             msg_id = self.client.xadd(self.FILE_PARSING_QUEUE, data)

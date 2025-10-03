@@ -1,0 +1,138 @@
+<p-card styleClass="events-panel-card">
+  <ng-template pTemplate="header">
+    <div class="panel-header">
+      <div class="header-title">
+        <i class="pi pi-calendar"></i>
+        <span>Events</span>
+      </div>
+      <div class="header-actions">
+        <p-button 
+          icon="pi pi-refresh" 
+          (onClick)="onClickRefresh()" 
+          [rounded]="true" 
+          [text]="true"
+          pTooltip="Refresh"
+          size="small"
+        />
+        <p-button 
+          icon="pi pi-eye" 
+          (onClick)="onClickUnhideAll()" 
+          [rounded]="true" 
+          [text]="true"
+          pTooltip="Show All"
+          size="small"
+        />
+        <p-button 
+          icon="pi pi-eye-slash" 
+          (onClick)="onClickHideAll()" 
+          [rounded]="true" 
+          [text]="true"
+          pTooltip="Hide All"
+          size="small"
+        />
+        <p-button 
+          icon="pi pi-trash" 
+          (onClick)="onClickRemoveAll($event)" 
+          [rounded]="true" 
+          [text]="true"
+          pTooltip="Remove All"
+          severity="danger"
+          size="small"
+        />
+      </div>
+    </div>
+  </ng-template>
+  
+  <div class="panel-content">
+    <p-table 
+      [value]="events" 
+      sortMode="multiple" 
+      [scrollable]="true" 
+      scrollHeight="flex"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="className" style="width: 20%;">
+            Event Name <p-sortIcon field="className" />
+          </th>
+          <th pSortableColumn="start" style="width: 17%;">
+            Start <p-sortIcon field="start" />
+          </th>
+          <th pSortableColumn="end" style="width: 17%;">
+            End <p-sortIcon field="end" />
+          </th>
+          <th pSortableColumn="labeler" style="width: 16%;">
+            Labeler <p-sortIcon field="labeler" />
+          </th>
+          <th pSortableColumn="description" style="width: 18%;">
+            Description
+          </th>
+          <th style="width: 12%;">Actions</th>
+        </tr>
+      </ng-template>
+      
+      <ng-template pTemplate="body" let-event let-index="rowIndex">
+        <tr>
+          <td>
+            <span 
+              class="event-name clickable"
+              (click)="onClickSelectEvent(event)"
+              [style.color]="event.color"
+            >
+              {{ event.className }}
+            </span>
+          </td>
+          <td>{{ event.start }}</td>
+          <td>{{ event.end }}</td>
+          <td>{{ event.labeler }}</td>
+          <td>
+            <div class="description-cell">
+              <span class="description-text">{{ event.description || '-' }}</span>
+              <p-button 
+                icon="pi pi-pencil" 
+                (onClick)="onClickEditDescription(event, index)" 
+                [rounded]="true" 
+                [text]="true"
+                pTooltip="Edit Description"
+                size="small"
+              />
+            </div>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button 
+                [icon]="event.hide ? 'pi pi-eye-slash' : 'pi pi-eye'" 
+                (onClick)="onClickToggleHide(event)" 
+                [rounded]="true" 
+                [text]="true"
+                [pTooltip]="event.hide ? 'Show' : 'Hide'"
+                size="small"
+              />
+              <p-button 
+                icon="pi pi-trash" 
+                (onClick)="onClickRemove(event)" 
+                [rounded]="true" 
+                [text]="true"
+                pTooltip="Remove"
+                severity="danger"
+                size="small"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      
+      <ng-template pTemplate="empty">
+        <tr>
+          <td colspan="6" class="empty-message">
+            <i class="pi pi-info-circle"></i>
+            <span>No events labeled yet. Use the label mode to create events.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</p-card>
+
+<p-confirmpopup />

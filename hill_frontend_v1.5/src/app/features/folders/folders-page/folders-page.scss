@@ -1,0 +1,134 @@
+.folders-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.folders-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  
+  ::ng-deep .p-datatable {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    
+    .p-datatable-wrapper {
+      flex: 1;
+    }
+  }
+}
+
+.caption-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.caption-text-area {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  
+  .caption-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+}
+
+.table-buttons-area {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.folder-name {
+  cursor: pointer;
+  color: var(--primary-color);
+  font-weight: 500;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-color-secondary);
+  
+  i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  
+  p {
+    font-size: 1.1rem;
+  }
+}
+
+// Dialog styles
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  
+  label {
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  input {
+    width: 100%;
+  }
+}
+
+.template-field {
+  .template-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    
+    p-dropdown {
+      flex: 1;
+    }
+  }
+}
+
+// Speed dial positioning
+::ng-deep .p-speeddial {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  ::ng-deep p-dialog {
+    .p-dialog {
+      width: 90vw !important;
+    }
+  }
+  
+  .caption-area {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .caption-text-area {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

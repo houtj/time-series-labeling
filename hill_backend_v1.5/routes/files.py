@@ -73,6 +73,8 @@ async def upload_files(data: Annotated[str, Form()], user: Annotated[str, Form()
                 file_id=str(newFileId),
                 metadata={'filename': file.filename, 'folder_id': folderId}
             )
+            # Update status to queued
+            db['files'].update_one({'_id': newFileId}, {'$set': {'parsing': 'queued'}})
             logger.info(f"File {newFileId} added to parsing queue")
         except Exception as e:
             logger.error(f"Failed to add file {newFileId} to Redis queue: {e}")
