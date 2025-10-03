@@ -38,41 +38,67 @@
       <div class="panels-area">
         @if (labelInfo) {
           <div class="panels-container">
-            <!-- Guidelines Panel -->
-            <div class="panel-slot">
-              <app-guidelines-panel 
-                [labelInfo]="labelInfo"
-                (onRefresh)="onRefreshPage()"
-              />
+            <!-- Left Side: Guidelines Tab (with optional AI/Agent tabs) -->
+            <div class="left-tabs">
+              <p-tabs value="0">
+                <p-tablist>
+                  <p-tab value="0">
+                    <i class="pi pi-list"></i>
+                    <span>Guidelines</span>
+                  </p-tab>
+                  @if (aiChatVisible) {
+                    <p-tab value="1">
+                      <i class="pi pi-comments"></i>
+                      <span>AI Assistant</span>
+                      <button (click)="onAiChatClose(); $event.stopPropagation()" class="tab-close-btn">
+                        <i class="pi pi-times"></i>
+                      </button>
+                    </p-tab>
+                  }
+                  @if (autoDetectionVisible) {
+                    <p-tab [value]="aiChatVisible ? '2' : '1'">
+                      <i class="pi pi-cog"></i>
+                      <span>Auto-Detection</span>
+                      <button (click)="onAutoDetectionClose(); $event.stopPropagation()" class="tab-close-btn">
+                        <i class="pi pi-times"></i>
+                      </button>
+                    </p-tab>
+                  }
+                </p-tablist>
+                <p-tabpanels>
+                  <p-tabpanel value="0">
+                    <app-guidelines-panel 
+                      [labelInfo]="labelInfo"
+                      (onRefresh)="onRefreshPage()"
+                    />
+                  </p-tabpanel>
+                  @if (aiChatVisible) {
+                    <p-tabpanel value="1">
+                      <app-ai-chat-tab (onClose)="onAiChatClose()" />
+                    </p-tabpanel>
+                  }
+                  @if (autoDetectionVisible) {
+                    <p-tabpanel [value]="aiChatVisible ? '2' : '1'">
+                      <app-auto-detection-panel 
+                        [fileId]="fileId"
+                        [folderId]="folderId"
+                        [projectId]="projectInfo()?._id?.$oid"
+                        (onClose)="onAutoDetectionClose()"
+                      />
+                    </p-tabpanel>
+                  }
+                </p-tabpanels>
+              </p-tabs>
             </div>
 
-            <!-- Events Panel -->
-            <div class="panel-slot">
+            <!-- Right Side: Events Panel -->
+            <div class="right-panel">
               <app-events-panel 
                 [labelInfo]="labelInfo"
                 (onRefresh)="onRefreshPage()"
                 (onEditDescription)="onEditEventDescription($event)"
               />
             </div>
-            
-            <!-- AI Chat Panel (when visible) -->
-            @if (aiChatVisible) {
-              <div class="panel-slot overlay-panel">
-                <app-ai-chat-tab (onClose)="onAiChatClose()" />
-              </div>
-            }
-            
-            <!-- Auto-Detection Panel (when visible) -->
-            @if (autoDetectionVisible) {
-              <div class="panel-slot overlay-panel">
-                <app-auto-detection-panel 
-                  [fileId]="fileId"
-                  [folderId]="folderId"
-                  [projectId]="projectInfo()?._id?.$oid"
-                  (onClose)="onAutoDetectionClose()"
-                />
-              </div>
-            }
           </div>
         } @else {
           <div class="empty-state">

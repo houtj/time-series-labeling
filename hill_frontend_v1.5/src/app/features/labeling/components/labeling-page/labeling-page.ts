@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs';
 import { Splitter } from 'primeng/splitter';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 
 // Core imports
 import { UserStateService } from '../../../../core/services';
@@ -41,6 +42,11 @@ import { AutoDetectionPanelComponent } from '../auto-detection-panel/auto-detect
     CommonModule,
     Splitter,
     ToastModule,
+    Tabs,
+    TabList,
+    Tab,
+    TabPanels,
+    TabPanel,
     ChartComponent,
     LabelingToolbarComponent,
     EventsPanelComponent,

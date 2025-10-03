@@ -24,8 +24,8 @@ from routes import (
 )
 
 # Import WebSocket handlers
-from websockets.chat import handle_websocket as handle_chat_ws
-from websockets.auto_detect import handle_websocket as handle_auto_detect_ws
+from ws_handlers.chat import handle_websocket as handle_chat_ws
+from ws_handlers.auto_detect import handle_websocket as handle_auto_detect_ws
 
 # Initialize app
 app = FastAPI(
@@ -126,5 +126,5 @@ if __name__ == '__main__':
         host=settings.HOST, 
         port=settings.PORT, 
         reload=settings.DEBUG,
-        ws='none'  # Disable auto websocket detection, use FastAPI's built-in
+        # ws='none'  # Disable auto websocket detection, use FastAPI's built-in
     )
