@@ -15,30 +15,41 @@
       </div>
     </ng-template>
 
-    <ng-template pTemplate="content">
+    <ng-template pTemplate="content" let-files>
       <div class="upload-content">
         <!-- Show progress during upload -->
-        <div *ngIf="isUploading" class="upload-progress">
-          <div class="progress-bar">
-            <div class="progress-fill" [style.width.%]="uploadProgress"></div>
+        @if (isUploading) {
+          <div class="upload-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="uploadProgress"></div>
+            </div>
+            <span class="progress-text">{{ uploadProgress }}%</span>
           </div>
-          <span class="progress-text">{{ uploadProgress }}%</span>
-        </div>
+        }
 
-        <!-- Show uploaded files after completion -->
-        <ul *ngIf="!isUploading && uploadProgress === 100 && uploadedFileNames.length > 0" class="uploaded-files-list">
-          <li *ngFor="let fileName of uploadedFileNames" class="uploaded-file-item">
-            <i class="pi pi-check-circle"></i>
-            <span>{{ fileName }}</span>
-          </li>
-        </ul>
-
-        <!-- Show instructions when idle -->
-        <div *ngIf="!isUploading && uploadedFileNames.length === 0" class="upload-instructions">
-          <i class="pi pi-inbox"></i>
-          <p>No files selected</p>
-          <p class="help-text">Supported formats: .xlsx, .xls, .csv</p>
-        </div>
+        <!-- Show selected files (before or after upload) -->
+        @if (files && files.length > 0) {
+          <ul class="uploaded-files-list">
+            @for (file of files; track file.name) {
+              <li class="uploaded-file-item">
+                @if (uploadProgress === 100) {
+                  <i class="pi pi-check-circle"></i>
+                } @else {
+                  <i class="pi pi-file"></i>
+                }
+                <span>{{ file.name }}</span>
+                <span class="file-size">{{ formatFileSize(file.size) }}</span>
+              </li>
+            }
+          </ul>
+        } @else if (!isUploading) {
+          <!-- Show instructions when idle -->
+          <div class="upload-instructions">
+            <i class="pi pi-inbox"></i>
+            <p>No files selected</p>
+            <p class="help-text">Supported formats: .xlsx, .xls, .csv</p>
+          </div>
+        }
       </div>
     </ng-template>
   </p-fileUpload>

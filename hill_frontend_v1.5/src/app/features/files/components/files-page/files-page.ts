@@ -246,7 +246,7 @@ export class FilesPageComponent implements OnInit, OnDestroy {
       formData.append('data', this.folderInfo._id?.$oid || '');
       formData.append('user', this.userInfo.name);
       formData.append('file', file, file.name);
-      this.http.post(`${environment.apiUrl}/events`, formData).subscribe({
+      this.http.post(`${environment.apiUrl}/labels/events`, formData).subscribe({
         next: () => {
           this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Labels imported' });
           this.loadFolderAndFiles();
@@ -261,10 +261,9 @@ export class FilesPageComponent implements OnInit, OnDestroy {
 
   onClickDownload(event: MouseEvent): void {
     if (!this.folderInfo) return;
-    const fileIds = this.files().map(f => f._id?.$oid || '');
-    this.filesRepo.downloadJsonFiles({ password: '', folderId: this.folderInfo._id?.$oid || '', filesId: fileIds }).subscribe({
-      next: (response: any) => {
-        const uri = this.sanitizer.bypassSecurityTrustUrl('data:text/json;charset=UTF-8,' + encodeURIComponent(JSON.stringify(response)));
+    this.filesRepo.downloadJsonFiles(this.folderInfo._id?.$oid || '').subscribe({
+      next: (response: string) => {
+        const uri = this.sanitizer.bypassSecurityTrustUrl('data:text/json;charset=UTF-8,' + encodeURIComponent(response));
         this.downloadUri = uri;
         this.downloadDialogVisible = true;
       },

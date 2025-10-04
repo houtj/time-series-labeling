@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, ViewChild, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 
 // PrimeNG imports
@@ -10,11 +12,13 @@ import { MessageService } from 'primeng/api';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { DialogModule } from 'primeng/dialog';
 
 // Core imports
 import { UserStateService } from '../../../../core/services';
-import { LabelsRepository, UsersRepository } from '../../../../core/repositories';
+import { LabelsRepository, UsersRepository, FilesRepository } from '../../../../core/repositories';
 import { FileModel, FolderModel, LabelModel, ProjectModel, DataModel, UserModel } from '../../../../core/models';
+import { environment } from '../../../../../environments/environment';
 
 // Feature services
 import { LabelStateService, AutoDetectionService } from '../../services';
@@ -52,6 +56,9 @@ import { AutoDetectionPanelComponent } from '../auto-detection-panel/auto-detect
     Tab,
     TabPanels,
     TabPanel,
+    ButtonModule,
+    TooltipModule,
+    DialogModule,
     ChartComponent,
     LabelingToolbarComponent,
     EventsPanelComponent,
@@ -83,6 +90,9 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   private readonly aiChatService = inject(AiChatService);
   private readonly labelsRepo = inject(LabelsRepository);
   private readonly usersRepo = inject(UsersRepository);
+  private readonly filesRepo = inject(FilesRepository);
+  private readonly http = inject(HttpClient);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly messageService = inject(MessageService);
   
   private subscriptions = new Subscription();
@@ -90,6 +100,8 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   // Dialog visibility
   protected shareDialogVisible = false;
   protected descriptionDialogVisible = false;
+  protected downloadDialogVisible = false;
+  protected downloadUri?: SafeResourceUrl;
   
   // Selected event for description editing
   protected selectedEvent?: LabelModel['events'][0];
@@ -253,36 +265,107 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
    * Handle import labels
    */
   onImportLabels(): void {
-    // TODO: Implement import labels functionality
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Info',
-      detail: 'Import functionality coming soon'
-    });
+    const input = document.getElementById('fileImportInput') as HTMLInputElement;
+    const file = input?.files?.[0];
+    const userInfo = this.userState.userInfo();
+    
+    if (!file || !this.labelInfo || !userInfo || !this.fileInfo) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Missing required information'
+      });
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('data', this.labelInfo._id?.$oid || '');
+    formData.append('user', userInfo.name);
+    formData.append('file', file, file.name);
+    
+    this.subscriptions.add(
+      this.http.post(`${environment.apiUrl}/labels/event`, formData).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Labels imported successfully'
+          });
+          // Reload the page data
+          this.onRefreshPage();
+          // Clear the file input
+          input.value = '';
+        },
+        error: (error: any) => {
+          console.error('Failed to import labels:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to import labels'
+          });
+          // Clear the file input
+          input.value = '';
+        }
+      })
+    );
   }
   
   /**
    * Handle export labels
    */
   onExportLabels(): void {
-    // TODO: Implement export labels functionality
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Info',
-      detail: 'Export functionality coming soon'
-    });
+    if (!this.labelInfo) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No label data available'
+      });
+      return;
+    }
+    
+    // Create download URI with events data
+    const json = JSON.stringify(this.labelInfo.events);
+    const uri = this.sanitizer.bypassSecurityTrustUrl(
+      'data:text/json;charset=UTF-8,' + encodeURIComponent(json)
+    );
+    this.downloadUri = uri;
+    this.downloadDialogVisible = true;
   }
   
   /**
    * Handle download data
    */
   onDownloadData(): void {
-    // TODO: Implement download data functionality
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Info',
-      detail: 'Download functionality coming soon'
-    });
+    if (!this.fileId) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No file selected'
+      });
+      return;
+    }
+    
+    // Get the file data and create download URI
+    this.subscriptions.add(
+      this.filesRepo.getFile(this.fileId).subscribe({
+        next: (result: { fileInfo: FileModel; data: DataModel[] }) => {
+          const json = JSON.stringify(result.data);
+          const uri = this.sanitizer.bypassSecurityTrustUrl(
+            'data:text/json;charset=UTF-8,' + encodeURIComponent(json)
+          );
+          this.downloadUri = uri;
+          this.downloadDialogVisible = true;
+        },
+        error: (error: any) => {
+          console.error('Failed to download data:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to download data'
+          });
+        }
+      })
+    );
   }
   
   /**

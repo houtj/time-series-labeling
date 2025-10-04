@@ -188,6 +188,14 @@ export class LabelingToolbarComponent {
    * Handle import button click
    */
   onClickImport(): void {
+    // Trigger the hidden file input
+    document.getElementById('fileImportInput')?.click();
+  }
+  
+  /**
+   * Handle file import input change
+   */
+  onChangeImportInput(event: Event): void {
     this.onImport.emit();
   }
   

@@ -77,14 +77,10 @@ export class FilesRepository extends BaseRepository<FileModel> {
   }
 
   /**
-   * Download JSON files
+   * Download JSON files (all files data in folder)
    */
-  downloadJsonFiles(data: {
-    password: string;
-    folderId: string;
-    filesId: string[];
-  }): Observable<any> {
-    return this.apiService.post(`${this.basePath}/download`, data);
+  downloadJsonFiles(folderId: string): Observable<string> {
+    return this.apiService.get<string>(`${this.basePath}/data/${folderId}`);
   }
 
   /**

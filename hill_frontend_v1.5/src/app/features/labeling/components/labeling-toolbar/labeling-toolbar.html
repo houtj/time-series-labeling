@@ -49,6 +49,14 @@
       pTooltip="Import Labels"
       tooltipPosition="bottom"
     />
+    <input 
+      id="fileImportInput" 
+      type="file" 
+      (change)="onChangeImportInput($event)" 
+      style="display: none;" 
+      accept=".json" 
+      [multiple]="false"
+    />
     <p-button 
       icon="pi pi-file-export" 
       (onClick)="onClickExport()" 

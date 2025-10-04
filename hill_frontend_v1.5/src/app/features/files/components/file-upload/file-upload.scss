@@ -69,15 +69,31 @@
     background-color: var(--surface-card);
     border-radius: var(--border-radius);
     margin-bottom: 0.5rem;
+    border: 1px solid var(--surface-border);
     
     i {
-      color: var(--green-500);
       font-size: 1.2rem;
+      flex-shrink: 0;
+      
+      &.pi-check-circle {
+        color: var(--green-500);
+      }
+      
+      &.pi-file {
+        color: var(--primary-color);
+      }
     }
     
-    span {
+    > span:first-of-type {
       flex: 1;
       font-weight: 500;
+      color: var(--text-color);
+    }
+    
+    .file-size {
+      font-size: 0.875rem;
+      color: var(--text-color-secondary);
+      font-weight: 400;
     }
   }
 }
