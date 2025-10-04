@@ -5,36 +5,12 @@
   overflow: hidden;
 }
 
-.ai-chat-card {
+.ai-chat-container {
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  
-  :host ::ng-deep {
-    .p-card {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow: hidden;
-    }
-    
-    .p-card-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      padding: 0;
-    }
-    
-    .p-card-content {
-      flex: 1;
-      overflow: hidden;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-    }
-  }
+  background: var(--surface-card);
 }
 
 .chat-header {
@@ -64,20 +40,15 @@
   gap: 0.5rem;
 }
 
-.chat-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-height: 0; // Important for flex scrolling
 }
 
 .chat-empty {
@@ -140,6 +111,24 @@
       }
     }
   }
+  
+  &.system-message {
+    justify-content: center;
+    
+    .message-avatar {
+      background: var(--blue-500);
+    }
+    
+    .message-content {
+      background: var(--blue-50);
+      color: var(--blue-900);
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      max-width: 80%;
+      text-align: center;
+      border: 1px solid var(--blue-200);
+    }
+  }
 }
 
 .message-avatar {
@@ -188,42 +177,50 @@
 
 .chat-input-container {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: row;
+  gap: 0.75rem;
   padding: 1rem;
   background: var(--surface-section);
   border-top: 1px solid var(--surface-border);
   align-items: flex-end;
+  flex-shrink: 0; // Prevent input from shrinking
+}
+
+.chat-input {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: none; // Disable manual resizing
+  min-height: 72px; // 3 rows
+  max-height: 120px; // Max height before scrolling
+  line-height: 1.5;
   
-  .chat-input {
-    flex: 1;
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--surface-border);
-    border-radius: var(--border-radius);
-    background: var(--surface-card);
-    color: var(--text-color);
-    font-family: inherit;
-    font-size: 0.875rem;
-    resize: vertical;
-    min-height: 3rem;
-    max-height: 10rem;
-    
-    &:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 0.2rem var(--primary-color-transparent);
-    }
-    
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.2);
   }
   
-  :host ::ng-deep {
-    .send-button {
-      flex-shrink: 0;
-    }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--surface-100);
+  }
+  
+  &::placeholder {
+    color: var(--text-color-secondary);
+    opacity: 0.6;
+  }
+}
+
+:host ::ng-deep {
+  .send-button {
+    flex-shrink: 0;
+    align-self: flex-end;
   }
 }
 

@@ -5,6 +5,13 @@
   overflow: hidden;
 }
 
+.events-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .events-panel-card {
   display: flex;
   flex-direction: column;

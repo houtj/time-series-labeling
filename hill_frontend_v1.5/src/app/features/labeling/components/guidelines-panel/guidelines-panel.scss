@@ -5,6 +5,13 @@
   overflow: hidden;
 }
 
+.guidelines-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .guidelines-panel-card {
   display: flex;
   flex-direction: column;

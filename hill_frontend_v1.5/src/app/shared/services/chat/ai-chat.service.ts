@@ -72,20 +72,47 @@ export class AiChatService extends WebSocketBaseService {
       
       // Handle different message types
       switch (data.type) {
-        case 'chat-response':
-          this.addChatMessage({
-            role: 'assistant',
-            content: data.message,
-            timestamp: new Date().toISOString(),
-            metadata: data.metadata
-          });
+        case 'user_message_received':
+          // Message was received and processed by backend
+          break;
+          
+        case 'ai_response':
+          // Backend sends the full message object
+          this.addChatMessage(data.message);
           this.isWaitingForResponse.set(false);
+          break;
+          
+        case 'event_added':
+          // New event was added by AI
+          this.addChatMessage({
+            role: 'system',
+            content: `✅ ${data.data.message}`,
+            timestamp: new Date().toISOString()
+          });
+          break;
+          
+        case 'guideline_added':
+          // New guideline was added by AI
+          this.addChatMessage({
+            role: 'system',
+            content: `✅ ${data.data.message}`,
+            timestamp: new Date().toISOString()
+          });
+          break;
+          
+        case 'data_updated':
+          // AI has updated the labels/guidelines
+          this.addChatMessage({
+            role: 'system',
+            content: `✅ ${data.message}`,
+            timestamp: new Date().toISOString()
+          });
           break;
           
         case 'error':
           this.addChatMessage({
             role: 'system',
-            content: `Error: ${data.message}`,
+            content: `❌ Error: ${data.message}`,
             timestamp: new Date().toISOString()
           });
           this.isWaitingForResponse.set(false);

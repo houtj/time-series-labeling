@@ -61,34 +61,53 @@
   height: 100%;
   padding: 1rem;
   overflow: hidden;
+  
+  .left-tabs {
+    flex: 1; // 1 part
+  }
+  
+  .right-tabs {
+    flex: 2; // 2 parts (takes more width)
+  }
 }
 
 .left-tabs {
-  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   
-  .tab-close-btn {
-    background: transparent;
-    border: none;
-    padding: 0.25rem;
-    margin-left: 0.5rem;
-    cursor: pointer;
-    color: var(--text-color-secondary);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--border-radius);
-    transition: all 0.2s;
+  .tabs-with-actions {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
     
-    &:hover {
-      background: var(--surface-hover);
-      color: var(--text-color);
-    }
-    
-    i {
-      font-size: 0.875rem;
+    .tab-actions {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      display: flex;
+      gap: 0.25rem;
+      z-index: 10;
+      background: transparent;
+      
+      :host ::ng-deep {
+        p-button button {
+          color: var(--text-color);
+          
+          &:hover {
+            background-color: var(--surface-hover);
+          }
+          
+          &.p-button-danger {
+            color: var(--red-500);
+            
+            &:hover {
+              background-color: var(--red-50);
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -130,11 +149,45 @@
   }
 }
 
-.right-panel {
-  flex: 1;
+.right-tabs {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  
+  .tabs-with-actions {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    
+    .tab-actions {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      display: flex;
+      gap: 0.25rem;
+      z-index: 10;
+      background: transparent;
+      
+      :host ::ng-deep {
+        p-button button {
+          color: var(--text-color);
+          
+          &:hover {
+            background-color: var(--surface-hover);
+          }
+          
+          &.p-button-danger {
+            color: var(--red-500);
+            
+            &:hover {
+              background-color: var(--red-50);
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 .placeholder-message {

@@ -40,64 +40,102 @@
           <div class="panels-container">
             <!-- Left Side: Guidelines Tab (with optional AI/Agent tabs) -->
             <div class="left-tabs">
-              <p-tabs value="0">
-                <p-tablist>
-                  <p-tab value="0">
-                    <i class="pi pi-list"></i>
-                    <span>Guidelines</span>
-                  </p-tab>
-                  @if (aiChatVisible) {
-                    <p-tab value="1">
-                      <i class="pi pi-comments"></i>
-                      <span>AI Assistant</span>
-                      <button (click)="onAiChatClose(); $event.stopPropagation()" class="tab-close-btn">
-                        <i class="pi pi-times"></i>
-                      </button>
+              <div class="tabs-with-actions">
+                <p-tabs [(value)]="activeTab">
+                  <p-tablist>
+                    <p-tab value="0">
+                      <i class="pi pi-list"></i>
+                      <span>Guidelines</span>
                     </p-tab>
-                  }
-                  @if (autoDetectionVisible) {
-                    <p-tab [value]="aiChatVisible ? '2' : '1'">
-                      <i class="pi pi-cog"></i>
-                      <span>Auto-Detection</span>
-                      <button (click)="onAutoDetectionClose(); $event.stopPropagation()" class="tab-close-btn">
-                        <i class="pi pi-times"></i>
-                      </button>
-                    </p-tab>
-                  }
-                </p-tablist>
-                <p-tabpanels>
-                  <p-tabpanel value="0">
-                    <app-guidelines-panel 
-                      [labelInfo]="labelInfo"
-                      (onRefresh)="onRefreshPage()"
-                    />
-                  </p-tabpanel>
-                  @if (aiChatVisible) {
-                    <p-tabpanel value="1">
-                      <app-ai-chat-tab (onClose)="onAiChatClose()" />
-                    </p-tabpanel>
-                  }
-                  @if (autoDetectionVisible) {
-                    <p-tabpanel [value]="aiChatVisible ? '2' : '1'">
-                      <app-auto-detection-panel 
-                        [fileId]="fileId"
-                        [folderId]="folderId"
-                        [projectId]="projectInfo()?._id?.$oid"
-                        (onClose)="onAutoDetectionClose()"
+                    @if (aiChatVisible) {
+                      <p-tab value="1">
+                        <i class="pi pi-comments"></i>
+                        <span>AI Assistant</span>
+                      </p-tab>
+                    }
+                    @if (autoDetectionVisible) {
+                      <p-tab [value]="aiChatVisible ? '2' : '1'">
+                        <i class="pi pi-cog"></i>
+                        <span>Auto-Detection</span>
+                      </p-tab>
+                    }
+                  </p-tablist>
+                  <p-tabpanels>
+                    <p-tabpanel value="0">
+                      <app-guidelines-panel 
+                        [labelInfo]="labelInfo"
+                        (onRefresh)="onRefreshPage()"
                       />
                     </p-tabpanel>
+                    @if (aiChatVisible) {
+                      <p-tabpanel value="1">
+                        <app-ai-chat-tab (onClose)="onAiChatClose()" />
+                      </p-tabpanel>
+                    }
+                    @if (autoDetectionVisible) {
+                      <p-tabpanel [value]="aiChatVisible ? '2' : '1'">
+                        <app-auto-detection-panel 
+                          [fileId]="fileId"
+                          [folderId]="folderId"
+                          [projectId]="projectInfo()?._id?.$oid"
+                          (onClose)="onAutoDetectionClose()"
+                        />
+                      </p-tabpanel>
+                    }
+                  </p-tabpanels>
+                </p-tabs>
+                <div class="tab-actions">
+                  @for (action of getLeftToolbarActions(); track action.icon) {
+                    <p-button 
+                      [icon]="action.icon"
+                      [severity]="action.severity || 'secondary'"
+                      [pTooltip]="action.label"
+                      tooltipPosition="bottom"
+                      (onClick)="action.action($event)"
+                      [disabled]="action.disabled"
+                      [rounded]="true"
+                      [text]="true"
+                    />
                   }
-                </p-tabpanels>
-              </p-tabs>
+                </div>
+              </div>
             </div>
 
-            <!-- Right Side: Events Panel -->
-            <div class="right-panel">
-              <app-events-panel 
-                [labelInfo]="labelInfo"
-                (onRefresh)="onRefreshPage()"
-                (onEditDescription)="onEditEventDescription($event)"
-              />
+            <!-- Right Side: Events Tabs -->
+            <div class="right-tabs">
+              <div class="tabs-with-actions">
+                <p-tabs value="0">
+                  <p-tablist>
+                    <p-tab value="0">
+                      <i class="pi pi-calendar"></i>
+                      <span>Events</span>
+                    </p-tab>
+                  </p-tablist>
+                  <p-tabpanels>
+                    <p-tabpanel value="0">
+                      <app-events-panel 
+                        [labelInfo]="labelInfo"
+                        (onRefresh)="onRefreshPage()"
+                        (onEditDescription)="onEditEventDescription($event)"
+                      />
+                    </p-tabpanel>
+                  </p-tabpanels>
+                </p-tabs>
+                <div class="tab-actions">
+                  @for (action of getRightToolbarActions(); track action.icon) {
+                    <p-button 
+                      [icon]="action.icon"
+                      [severity]="action.severity || 'secondary'"
+                      [pTooltip]="action.label"
+                      tooltipPosition="bottom"
+                      (onClick)="action.action($event)"
+                      [disabled]="action.disabled"
+                      [rounded]="true"
+                      [text]="true"
+                    />
+                  }
+                </div>
+              </div>
             </div>
           </div>
         } @else {

@@ -2,7 +2,6 @@ import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 // PrimeNG imports
-import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -15,6 +14,9 @@ import { LabelModel } from '../../../../core/models';
 // Feature services
 import { LabelStateService, ChartService } from '../../services';
 
+// Feature models
+import { ToolbarAction } from '../../models/toolbar-action.model';
+
 /**
  * Events Panel Component
  * Displays and manages labeled events in a table
@@ -23,7 +25,6 @@ import { LabelStateService, ChartService } from '../../services';
   selector: 'app-events-panel',
   imports: [
     CommonModule,
-    CardModule,
     TableModule,
     ButtonModule,
     TooltipModule,
@@ -47,6 +48,36 @@ export class EventsPanelComponent {
   // Get events from label info
   get events(): LabelModel['events'] {
     return this.labelInfo?.events || [];
+  }
+  
+  /**
+   * Get toolbar actions for this panel
+   * Called by parent to render buttons in tab header
+   */
+  getToolbarActions(): ToolbarAction[] {
+    return [
+      {
+        icon: 'pi pi-refresh',
+        label: 'Refresh',
+        action: () => this.onClickRefresh()
+      },
+      {
+        icon: 'pi pi-eye',
+        label: 'Show All',
+        action: () => this.onClickUnhideAll()
+      },
+      {
+        icon: 'pi pi-eye-slash',
+        label: 'Hide All',
+        action: () => this.onClickHideAll()
+      },
+      {
+        icon: 'pi pi-trash',
+        label: 'Remove All',
+        severity: 'danger',
+        action: (event?: Event) => this.onClickRemoveAll(event!)
+      }
+    ];
   }
   
   /**

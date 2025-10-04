@@ -1,46 +1,4 @@
-<p-card styleClass="auto-detection-card">
-  <ng-template pTemplate="header">
-    <div class="panel-header">
-      <div class="header-title">
-        <i class="pi pi-cog"></i>
-        <span>🤖 Auto-Annotation Agent</span>
-      </div>
-      <div class="header-actions">
-        @if (isRunning()) {
-          <p-button 
-            icon="pi pi-stop" 
-            label="Stop"
-            (onClick)="onClickStopAutoAnnotation()" 
-            severity="danger"
-            size="small"
-          />
-        } @else {
-          <p-button 
-            icon="pi pi-play" 
-            label="Start"
-            (onClick)="onClickStartAutoAnnotation()" 
-            severity="success"
-            size="small"
-          />
-        }
-        <p-button 
-          icon="pi pi-trash" 
-          label="Clear"
-          (onClick)="onClickClearLog()" 
-          [text]="true"
-          size="small"
-        />
-        <p-button 
-          icon="pi pi-times" 
-          (onClick)="onClickClose()" 
-          [rounded]="true" 
-          [text]="true"
-          size="small"
-        />
-      </div>
-    </div>
-  </ng-template>
-  
+<div class="auto-detection-container">
   <div class="panel-content">
     <div class="inference-log" #inferenceLog>
       @if (inferenceHistory().length === 0) {
@@ -100,4 +58,4 @@
       }
     </div>
   </div>
-</p-card>
+</div>

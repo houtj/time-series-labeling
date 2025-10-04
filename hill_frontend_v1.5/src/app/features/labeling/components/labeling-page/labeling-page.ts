@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -8,6 +8,8 @@ import { Splitter } from 'primeng/splitter';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 // Core imports
 import { UserStateService } from '../../../../core/services';
@@ -19,6 +21,9 @@ import { LabelStateService, AutoDetectionService } from '../../services';
 
 // Shared services
 import { AiChatService } from '../../../../shared/services';
+
+// Feature models
+import { ToolbarAction } from '../../models/toolbar-action.model';
 
 // Shared components
 import { ShareDialogComponent, DescriptionDialogComponent } from '../../../../shared/components';
@@ -54,7 +59,9 @@ import { AutoDetectionPanelComponent } from '../auto-detection-panel/auto-detect
     AiChatTabComponent,
     AutoDetectionPanelComponent,
     ShareDialogComponent,
-    DescriptionDialogComponent
+    DescriptionDialogComponent,
+    ButtonModule,
+    TooltipModule
   ],
   standalone: true,
   providers: [MessageService],
@@ -62,6 +69,12 @@ import { AutoDetectionPanelComponent } from '../auto-detection-panel/auto-detect
   styleUrl: './labeling-page.scss'
 })
 export class LabelingPageComponent implements OnInit, OnDestroy {
+  // ViewChild references to panel components
+  @ViewChild(GuidelinesPanelComponent) guidelinesPanel?: GuidelinesPanelComponent;
+  @ViewChild(EventsPanelComponent) eventsPanel?: EventsPanelComponent;
+  @ViewChild(AiChatTabComponent) aiChatTab?: AiChatTabComponent;
+  @ViewChild(AutoDetectionPanelComponent) autoDetectionPanel?: AutoDetectionPanelComponent;
+  
   // Injected services
   private readonly route = inject(ActivatedRoute);
   private readonly userState = inject(UserStateService);
@@ -85,6 +98,9 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   // Panel visibility
   protected aiChatVisible = false;
   protected autoDetectionVisible = false;
+  
+  // Active tab (0 = Guidelines, 1 = AI Assistant, 2 = Auto-Detection)
+  protected activeTab = '0';
   
   // Route parameters
   protected fileId?: string;
@@ -287,6 +303,9 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   onAutoAnnotate(): void {
     this.autoDetectionVisible = true;
     
+    // Switch to Auto-Detection tab (value depends on if AI chat is visible)
+    this.activeTab = this.aiChatVisible ? '2' : '1';
+    
     // Connect to auto-detection service if not already connected
     if (!this.autoDetectionService.isConnected()) {
       this.autoDetectionService.connectAutoDetection(this.fileId!, this.folderId!);
@@ -298,6 +317,9 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
    */
   onToggleAiChat(): void {
     this.aiChatVisible = true;
+    
+    // Switch to AI Assistant tab
+    this.activeTab = '1';
     
     // Connect to AI chat service if not already connected
     if (!this.aiChatService.isConnected()) {
@@ -314,6 +336,13 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   onAiChatClose(): void {
     this.aiChatVisible = false;
     this.aiChatService.disconnect();
+    
+    // If auto-detection is visible, switch to it, otherwise switch to Guidelines
+    if (this.autoDetectionVisible) {
+      this.activeTab = '1'; // Auto-detection becomes tab 1 when AI chat closes
+    } else {
+      this.activeTab = '0'; // Switch back to Guidelines
+    }
   }
   
   /**
@@ -322,13 +351,46 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   onAutoDetectionClose(): void {
     this.autoDetectionVisible = false;
     this.autoDetectionService.disconnect();
+    
+    // If AI chat is visible, switch to it, otherwise switch to Guidelines
+    if (this.aiChatVisible) {
+      this.activeTab = '1'; // AI chat is always tab 1
+    } else {
+      this.activeTab = '0'; // Switch back to Guidelines
+    }
   }
   
   /**
-   * Handle refresh (reload page)
+   * Handle refresh (reload label data from backend)
    */
   onRefreshPage(): void {
-    window.location.reload();
+    if (!this.fileInfo?._id?.$oid) return;
+    
+    const fileId = this.fileInfo._id.$oid;
+    const labelId = this.fileInfo.label;
+    
+    // Refetch label data
+    this.subscriptions.add(
+      this.labelsRepo.getLabel(labelId).subscribe({
+        next: (label: LabelModel) => {
+          this.labelInfo = label;
+          this.labelState.updateLabel(label);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Refreshed',
+            detail: 'Label data reloaded from database'
+          });
+        },
+        error: (error: any) => {
+          console.error('Failed to refresh label data:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to refresh label data'
+          });
+        }
+      })
+    );
   }
   
   /**
@@ -353,5 +415,33 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
         this.labelState.updateLabel(this.labelInfo);
       }
     }
+  }
+  
+  /**
+   * Get toolbar actions for the current left tab
+   */
+  getLeftToolbarActions(): ToolbarAction[] {
+    if (this.activeTab === '0') {
+      return this.guidelinesPanel?.getToolbarActions() || [];
+    }
+    if (this.activeTab === '1') {
+      if (this.aiChatVisible) {
+        return this.aiChatTab?.getToolbarActions() || [];
+      }
+      if (this.autoDetectionVisible) {
+        return this.autoDetectionPanel?.getToolbarActions() || [];
+      }
+    }
+    if (this.activeTab === '2' && this.autoDetectionVisible) {
+      return this.autoDetectionPanel?.getToolbarActions() || [];
+    }
+    return [];
+  }
+  
+  /**
+   * Get toolbar actions for the right tab (events)
+   */
+  getRightToolbarActions(): ToolbarAction[] {
+    return this.eventsPanel?.getToolbarActions() || [];
   }
 }

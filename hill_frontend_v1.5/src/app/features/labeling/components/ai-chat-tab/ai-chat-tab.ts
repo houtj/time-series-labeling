@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 // PrimeNG imports
-import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 
 // Shared services
 import { AiChatService } from '../../../../shared/services';
+
+// Feature models
+import { ToolbarAction } from '../../models/toolbar-action.model';
 
 /**
  * AI Chat Tab Component
@@ -18,7 +20,6 @@ import { AiChatService } from '../../../../shared/services';
   imports: [
     CommonModule,
     FormsModule,
-    CardModule,
     ButtonModule
   ],
   standalone: true,
@@ -43,6 +44,25 @@ export class AiChatTabComponent implements AfterViewChecked {
       this.scrollToBottom();
       this.shouldScrollToBottom = false;
     }
+  }
+  
+  /**
+   * Get toolbar actions for this panel
+   * Called by parent to render buttons in tab header
+   */
+  getToolbarActions(): ToolbarAction[] {
+    return [
+      {
+        icon: 'pi pi-trash',
+        label: 'Clear Chat',
+        action: () => this.onClearChat()
+      },
+      {
+        icon: 'pi pi-times',
+        label: 'Close',
+        action: () => this.onClose.emit()
+      }
+    ];
   }
   
   /**
@@ -72,6 +92,13 @@ export class AiChatTabComponent implements AfterViewChecked {
    */
   onClickClearChat(): void {
     this.aiChatService.clearChatHistory();
+  }
+  
+  /**
+   * Clear chat (alias for toolbar)
+   */
+  onClearChat(): void {
+    this.onClickClearChat();
   }
   
   /**

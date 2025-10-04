@@ -1,31 +1,5 @@
-<p-card styleClass="ai-chat-card">
-  <ng-template pTemplate="header">
-    <div class="chat-header">
-      <div class="header-title">
-        <i class="pi pi-comments"></i>
-        <span>💬 AI Assistant</span>
-      </div>
-      <div class="header-actions">
-        <p-button 
-          icon="pi pi-trash" 
-          label="Clear"
-          (onClick)="onClickClearChat()" 
-          [text]="true"
-          size="small"
-        />
-        <p-button 
-          icon="pi pi-times" 
-          (onClick)="onClickClose()" 
-          [rounded]="true" 
-          [text]="true"
-          size="small"
-        />
-      </div>
-    </div>
-  </ng-template>
-  
-  <div class="chat-content">
-    <div class="chat-messages" #chatMessages>
+<div class="ai-chat-container">
+  <div class="chat-messages" #chatMessages>
       @if (chatHistory().length === 0) {
         <div class="chat-empty">
           <i class="pi pi-comments" style="font-size: 3rem;"></i>
@@ -36,22 +10,21 @@
         @for (message of chatHistory(); track $index) {
           <div 
             class="chat-message"
-            [ngClass]="message.sender === 'user' ? 'user-message' : 'assistant-message'"
+            [ngClass]="message.role === 'user' ? 'user-message' : (message.role === 'assistant' ? 'assistant-message' : 'system-message')"
           >
             <div class="message-avatar">
-              @if (message.sender === 'user') {
+              @if (message.role === 'user') {
                 <i class="pi pi-user"></i>
-              } @else {
+              } @else if (message.role === 'assistant') {
                 <i class="pi pi-sparkles"></i>
+              } @else {
+                <i class="pi pi-info-circle"></i>
               }
             </div>
             <div class="message-content">
-              <div class="message-text">{{ message.message }}</div>
+              <div class="message-text">{{ message.content }}</div>
               <div class="message-footer">
                 <span class="message-timestamp">{{ formatTimestamp(message.timestamp) }}</span>
-                @if (message.tokenUsage) {
-                  <span class="token-usage">{{ message.tokenUsage }} tokens</span>
-                }
               </div>
             </div>
           </div>
@@ -70,9 +43,9 @@
           </div>
         </div>
       }
-    </div>
-    
-    <div class="chat-input-container">
+  </div>
+  
+  <div class="chat-input-container">
       <textarea 
         [(ngModel)]="currentMessage" 
         (keydown)="onChatInputKeydown($event)"
@@ -89,6 +62,5 @@
         severity="primary"
         styleClass="send-button"
       />
-    </div>
   </div>
-</p-card>
+</div>

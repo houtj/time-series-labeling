@@ -1,48 +1,4 @@
-<p-card styleClass="events-panel-card">
-  <ng-template pTemplate="header">
-    <div class="panel-header">
-      <div class="header-title">
-        <i class="pi pi-calendar"></i>
-        <span>Events</span>
-      </div>
-      <div class="header-actions">
-        <p-button 
-          icon="pi pi-refresh" 
-          (onClick)="onClickRefresh()" 
-          [rounded]="true" 
-          [text]="true"
-          pTooltip="Refresh"
-          size="small"
-        />
-        <p-button 
-          icon="pi pi-eye" 
-          (onClick)="onClickUnhideAll()" 
-          [rounded]="true" 
-          [text]="true"
-          pTooltip="Show All"
-          size="small"
-        />
-        <p-button 
-          icon="pi pi-eye-slash" 
-          (onClick)="onClickHideAll()" 
-          [rounded]="true" 
-          [text]="true"
-          pTooltip="Hide All"
-          size="small"
-        />
-        <p-button 
-          icon="pi pi-trash" 
-          (onClick)="onClickRemoveAll($event)" 
-          [rounded]="true" 
-          [text]="true"
-          pTooltip="Remove All"
-          severity="danger"
-          size="small"
-        />
-      </div>
-    </div>
-  </ng-template>
-  
+<div class="events-panel">
   <div class="panel-content">
     <p-table 
       [value]="events" 
@@ -133,6 +89,6 @@
       </ng-template>
     </p-table>
   </div>
-</p-card>
+</div>
 
 <p-confirmpopup />

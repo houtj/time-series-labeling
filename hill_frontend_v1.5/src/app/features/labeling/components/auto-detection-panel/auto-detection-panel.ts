@@ -2,11 +2,13 @@ import { Component, Input, Output, EventEmitter, inject, AfterViewChecked, ViewC
 import { CommonModule } from '@angular/common';
 
 // PrimeNG imports
-import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 
 // Feature services
 import { AutoDetectionService } from '../../services';
+
+// Feature models
+import { ToolbarAction } from '../../models/toolbar-action.model';
 
 /**
  * Auto-Detection Panel Component
@@ -16,7 +18,6 @@ import { AutoDetectionService } from '../../services';
   selector: 'app-auto-detection-panel',
   imports: [
     CommonModule,
-    CardModule,
     ButtonModule
   ],
   standalone: true,
@@ -44,6 +45,47 @@ export class AutoDetectionPanelComponent implements AfterViewChecked {
       this.scrollToBottom();
       this.shouldScrollToBottom = false;
     }
+  }
+  
+  /**
+   * Get toolbar actions for this panel
+   * Called by parent to render buttons in tab header
+   */
+  getToolbarActions(): ToolbarAction[] {
+    const actions: ToolbarAction[] = [];
+    
+    // Start/Stop button (conditional)
+    if (this.isRunning()) {
+      actions.push({
+        icon: 'pi pi-stop',
+        label: 'Stop',
+        severity: 'danger',
+        action: () => this.onClickStopAutoAnnotation()
+      });
+    } else {
+      actions.push({
+        icon: 'pi pi-play',
+        label: 'Start',
+        severity: 'success',
+        action: () => this.onClickStartAutoAnnotation()
+      });
+    }
+    
+    // Clear and Close buttons
+    actions.push(
+      {
+        icon: 'pi pi-trash',
+        label: 'Clear Log',
+        action: () => this.onClearLog()
+      },
+      {
+        icon: 'pi pi-times',
+        label: 'Close',
+        action: () => this.onClose.emit()
+      }
+    );
+    
+    return actions;
   }
   
   /**
@@ -75,6 +117,13 @@ export class AutoDetectionPanelComponent implements AfterViewChecked {
    */
   onClickClearLog(): void {
     this.autoDetectionService.clearInferenceHistory();
+  }
+  
+  /**
+   * Clear log (alias for toolbar)
+   */
+  onClearLog(): void {
+    this.onClickClearLog();
   }
   
   /**
