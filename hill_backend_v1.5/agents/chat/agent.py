@@ -98,6 +98,7 @@ class AddEventTool(BaseTool):
                 'color': class_info['color'],
                 'description': description,
                 'labeler': current_user_name or 'AI Assistant',
+                'lastUpdate': datetime.now(tz=timezone.utc).isoformat(),
                 'start': start,
                 'end': end,
                 'hide': False
@@ -131,7 +132,7 @@ class AddEventTool(BaseTool):
                 {'$set': {
                     'nbEvent': new_nb_events,
                     'lastModifier': current_user_name or 'AI Assistant',
-                    'lastUpdate': datetime.now(tz=timezone.utc)
+                    'lastUpdate': datetime.now(tz=timezone.utc).isoformat()
                 }}
             )
             

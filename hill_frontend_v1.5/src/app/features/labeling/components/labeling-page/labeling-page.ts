@@ -21,7 +21,7 @@ import { FileModel, FolderModel, LabelModel, ProjectModel, DataModel, UserModel 
 import { environment } from '../../../../../environments/environment';
 
 // Feature services
-import { LabelStateService, AutoDetectionService } from '../../services';
+import { LabelStateService, AutoDetectionService, LabelingActionsService } from '../../services';
 
 // Shared services
 import { AiChatService } from '../../../../shared/services';
@@ -71,7 +71,7 @@ import { AutoDetectionPanelComponent } from '../auto-detection-panel/auto-detect
     TooltipModule
   ],
   standalone: true,
-  providers: [MessageService],
+  providers: [MessageService, LabelingActionsService],
   templateUrl: './labeling-page.html',
   styleUrl: './labeling-page.scss'
 })
@@ -88,11 +88,7 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   private readonly labelState = inject(LabelStateService);
   private readonly autoDetectionService = inject(AutoDetectionService);
   private readonly aiChatService = inject(AiChatService);
-  private readonly labelsRepo = inject(LabelsRepository);
-  private readonly usersRepo = inject(UsersRepository);
-  private readonly filesRepo = inject(FilesRepository);
-  private readonly http = inject(HttpClient);
-  private readonly sanitizer = inject(DomSanitizer);
+  private readonly labelingActions = inject(LabelingActionsService);
   private readonly messageService = inject(MessageService);
   
   private subscriptions = new Subscription();
@@ -175,6 +171,14 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
         this.folderId = params.get('folderId') || undefined;
       })
     );
+    
+    // Listen for AI chat label updates
+    this.subscriptions.add(
+      this.aiChatService.labelUpdated$.subscribe(() => {
+        // Reload label data when AI adds events/guidelines
+        this.onRefreshPage();
+      })
+    );
   }
   
   ngOnDestroy(): void {
@@ -198,23 +202,7 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
     if (!this.labelInfo) return;
     
     this.subscriptions.add(
-      this.labelsRepo.saveLabel(this.labelInfo).subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Labels saved successfully'
-          });
-        },
-        error: (error: any) => {
-          console.error('Failed to save labels:', error);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to save labels'
-          });
-        }
-      })
+      this.labelingActions.saveLabel(this.labelInfo).subscribe()
     );
   }
   
@@ -229,32 +217,14 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
    * Handle share folder confirmation
    */
   onShareFolderConfirm(event: { user: UserModel; message: string }): void {
-    if (!this.folderInfo || !this.userState.userInfo()) return;
-    
-    const data = {
-      folder: this.folderInfo,
-      user: event.user,
-      userName: this.userState.userInfo()!.name,
-      message: event.message
-    };
+    if (!this.folderInfo) return;
     
     this.subscriptions.add(
-      this.usersRepo.shareFolderWithUser(data).subscribe({
+      this.labelingActions.shareFolder(this.folderInfo, event.user, event.message).subscribe({
         next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Folder shared successfully'
-          });
           this.shareDialogVisible = false;
         },
-        error: (error: any) => {
-          console.error('Failed to share folder:', error);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to share folder'
-          });
+        error: () => {
           this.shareDialogVisible = false;
         }
       })
@@ -265,11 +235,9 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
    * Handle import labels
    */
   onImportLabels(): void {
-    const input = document.getElementById('fileImportInput') as HTMLInputElement;
-    const file = input?.files?.[0];
     const userInfo = this.userState.userInfo();
     
-    if (!file || !this.labelInfo || !userInfo || !this.fileInfo) {
+    if (!this.labelInfo || !userInfo || !this.fileInfo) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
@@ -278,91 +246,45 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
       return;
     }
     
-    const formData = new FormData();
-    formData.append('data', this.labelInfo._id?.$oid || '');
-    formData.append('user', userInfo.name);
-    formData.append('file', file, file.name);
-    
-    this.subscriptions.add(
-      this.http.post(`${environment.apiUrl}/labels/event`, formData).subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Labels imported successfully'
-          });
-          // Reload the page data
-          this.onRefreshPage();
-          // Clear the file input
-          input.value = '';
-        },
-        error: (error: any) => {
-          console.error('Failed to import labels:', error);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to import labels'
-          });
-          // Clear the file input
-          input.value = '';
-        }
-      })
-    );
+    try {
+      this.subscriptions.add(
+        this.labelingActions.importLabels('fileImportInput', this.labelInfo, userInfo, this.fileInfo).subscribe({
+          next: (freshLabel: LabelModel) => {
+            // Update local reference with fresh label data
+            this.labelInfo = freshLabel;
+          }
+        })
+      );
+    } catch (error) {
+      // Error already handled by service
+    }
   }
   
   /**
    * Handle export labels
    */
   onExportLabels(): void {
-    if (!this.labelInfo) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No label data available'
-      });
-      return;
-    }
+    if (!this.labelInfo) return;
     
-    // Create download URI with events data
-    const json = JSON.stringify(this.labelInfo.events);
-    const uri = this.sanitizer.bypassSecurityTrustUrl(
-      'data:text/json;charset=UTF-8,' + encodeURIComponent(json)
-    );
-    this.downloadUri = uri;
-    this.downloadDialogVisible = true;
+    try {
+      this.downloadUri = this.labelingActions.exportLabels(this.labelInfo);
+      this.downloadDialogVisible = true;
+    } catch (error) {
+      // Error already handled by service
+    }
   }
   
   /**
    * Handle download data
    */
   onDownloadData(): void {
-    if (!this.fileId) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No file selected'
-      });
-      return;
-    }
+    if (!this.fileId) return;
     
-    // Get the file data and create download URI
     this.subscriptions.add(
-      this.filesRepo.getFile(this.fileId).subscribe({
-        next: (result: { fileInfo: FileModel; data: DataModel[] }) => {
-          const json = JSON.stringify(result.data);
-          const uri = this.sanitizer.bypassSecurityTrustUrl(
-            'data:text/json;charset=UTF-8,' + encodeURIComponent(json)
-          );
+      this.labelingActions.downloadData(this.fileId).subscribe({
+        next: (uri: SafeResourceUrl) => {
           this.downloadUri = uri;
           this.downloadDialogVisible = true;
-        },
-        error: (error: any) => {
-          console.error('Failed to download data:', error);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to download data'
-          });
         }
       })
     );
@@ -449,28 +371,13 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   onRefreshPage(): void {
     if (!this.fileInfo?._id?.$oid) return;
     
-    const fileId = this.fileInfo._id.$oid;
     const labelId = this.fileInfo.label;
     
-    // Refetch label data
+    // Refetch label data using service
     this.subscriptions.add(
-      this.labelsRepo.getLabel(labelId).subscribe({
+      this.labelingActions.refreshLabelData(labelId).subscribe({
         next: (label: LabelModel) => {
           this.labelInfo = label;
-          this.labelState.updateLabel(label);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Refreshed',
-            detail: 'Label data reloaded from database'
-          });
-        },
-        error: (error: any) => {
-          console.error('Failed to refresh label data:', error);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to refresh label data'
-          });
         }
       })
     );

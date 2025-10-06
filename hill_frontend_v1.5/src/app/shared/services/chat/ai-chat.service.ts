@@ -1,6 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { WebSocketBaseService } from '../../../core/services/websocket/websocket-base.service';
 import { environment } from '../../../../environments/environment';
+import { Subject } from 'rxjs';
 
 /**
  * AI Chat Service
@@ -15,6 +16,9 @@ export class AiChatService extends WebSocketBaseService {
   readonly chatHistory = signal<any[]>([]);
   readonly isWaitingForResponse = signal<boolean>(false);
   readonly currentMessage = signal<string>('');
+  
+  // Observable for label updates (when AI adds events/guidelines)
+  readonly labelUpdated$ = new Subject<void>();
   
   constructor() {
     super();
@@ -89,6 +93,8 @@ export class AiChatService extends WebSocketBaseService {
             content: `✅ ${data.data.message}`,
             timestamp: new Date().toISOString()
           });
+          // Notify labeling page to reload label data
+          this.labelUpdated$.next();
           break;
           
         case 'guideline_added':
@@ -98,6 +104,8 @@ export class AiChatService extends WebSocketBaseService {
             content: `✅ ${data.data.message}`,
             timestamp: new Date().toISOString()
           });
+          // Notify labeling page to reload label data
+          this.labelUpdated$.next();
           break;
           
         case 'data_updated':

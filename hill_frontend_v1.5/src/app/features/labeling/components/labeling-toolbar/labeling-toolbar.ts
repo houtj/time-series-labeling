@@ -13,7 +13,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { FileModel, FolderModel, LabelModel, ProjectModel, UserModel } from '../../../../core/models';
 
 // Feature services
-import { LabelStateService, AutoDetectionService } from '../../services';
+import { LabelStateService, AutoDetectionService, LabelingActionsService } from '../../services';
 
 // Core services
 import { UserStateService } from '../../../../core/services';
@@ -57,6 +57,7 @@ export class LabelingToolbarComponent {
   private readonly labelState = inject(LabelStateService);
   private readonly autoDetectionService = inject(AutoDetectionService);
   private readonly userState = inject(UserStateService);
+  private readonly labelingActions = inject(LabelingActionsService);
   
   // Local toggle button states
   protected labelToggleButton = false;
@@ -256,9 +257,12 @@ export class LabelingToolbarComponent {
       hide: false
     };
     
-    // Add to label info
+    // Add to label info (optimistic update)
     this.labelInfo.events.push(newEvent);
     this.labelState.updateLabel(this.labelInfo);
+    
+    // Auto-save to database
+    this.labelingActions.queueAutoSave(this.labelInfo);
     
     // Clear selection and close dialog
     this.labelState.clearLabelSelection();

@@ -6,4 +6,5 @@
 export * from './chart.service';
 export * from './label-state.service';
 export * from './auto-detection.service';
+export * from './labeling-actions.service';
 

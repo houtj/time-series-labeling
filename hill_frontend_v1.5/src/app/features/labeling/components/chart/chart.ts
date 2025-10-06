@@ -6,7 +6,7 @@ import * as Plotly from 'plotly.js-dist-min';
 import { DataModel, LabelModel } from '../../../../core/models';
 
 // Feature services
-import { ChartService, LabelStateService } from '../../services';
+import { ChartService, LabelStateService, LabelingActionsService } from '../../services';
 
 /**
  * Chart Component
@@ -27,6 +27,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
   
   private readonly chartService = inject(ChartService);
   private readonly labelState = inject(LabelStateService);
+  private readonly labelingActions = inject(LabelingActionsService);
   
   private resizeObserver?: ResizeObserver;
   
@@ -134,10 +135,13 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
         if (selectedYAxis) {
           const newGuideline = this.chartService.createGuideline(selectedYAxis);
           
-          // Add guideline to label info
+          // Add guideline to label info (optimistic update)
           if (this.labelInfo) {
             this.labelInfo.guidelines.push(newGuideline);
             this.labelState.updateLabel(this.labelInfo);
+            
+            // Auto-save to database
+            this.labelingActions.queueAutoSave(this.labelInfo);
           }
           
           // Reset button state
