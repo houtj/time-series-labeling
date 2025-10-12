@@ -6,6 +6,7 @@ hill_workers/test.py
 hill_backend/test/*
 hill_backend/mongodb_data/*
 hill_backend/data_folder/*
+redis_data/*
 
 # SSL certificates
 *.pem
