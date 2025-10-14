@@ -27,7 +27,7 @@ import { environment } from '../../../../../environments/environment';
 import { FileUploadComponent } from '../file-upload/file-upload';
 
 // Shared components
-import { ShareDialogComponent, DescriptionDialogComponent } from '../../../../shared/components';
+import { ShareDialogComponent, DescriptionDialogComponent, TemplateEditorDialogComponent } from '../../../../shared/components';
 
 @Component({
   selector: 'app-files-page',
@@ -43,7 +43,8 @@ import { ShareDialogComponent, DescriptionDialogComponent } from '../../../../sh
     Toast,
     FileUploadComponent,
     ShareDialogComponent,
-    DescriptionDialogComponent
+    DescriptionDialogComponent,
+    TemplateEditorDialogComponent
   ],
   standalone: true,
   providers: [ConfirmationService, MessageService],
@@ -83,6 +84,9 @@ export class FilesPageComponent implements OnInit, OnDestroy {
   selectedFileDescription = '';
   downloadUri?: SafeUrl;
   downloadDialogVisible = false;
+  templateEditorDialogVisible = false;
+  editingTemplateId?: string;
+  editingProjectId?: string;
   filterText = '';
 
   ngOnInit(): void {
@@ -144,7 +148,7 @@ export class FilesPageComponent implements OnInit, OnDestroy {
       icon: 'pi pi-exclamation-triangle',
       acceptButtonStyleClass: 'p-button-danger p-button-sm',
       accept: () => {
-        this.filesRepo.deleteFile(file._id?.$oid || '', this.folderId || '').subscribe({
+        this.filesRepo.deleteFile(file).subscribe({
           next: () => {
             this.messageService.add({ severity: 'success', summary: 'Success', detail: 'File deleted' });
             this.loadFolderAndFiles();
@@ -195,6 +199,40 @@ export class FilesPageComponent implements OnInit, OnDestroy {
 
   onClickShareFolder(event: MouseEvent): void {
     this.shareDialogVisible = true;
+  }
+
+  onClickEditTemplate(event: MouseEvent): void {
+    if (!this.folderInfo?.template?.id) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'No Template',
+        detail: 'This folder has no associated template'
+      });
+      return;
+    }
+
+    if (!this.folderInfo?.project?.id) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Project Not Found',
+        detail: 'Unable to find the associated project'
+      });
+      return;
+    }
+
+    this.editingTemplateId = this.folderInfo.template.id;
+    this.editingProjectId = this.folderInfo.project.id;
+    this.templateEditorDialogVisible = true;
+  }
+
+  onTemplateEditorSave(): void {
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Template Updated',
+      detail: 'The template has been updated successfully'
+    });
+    // Optionally reload folder info to get updated template data
+    this.loadFolderAndFiles();
   }
 
   onShareFolder(event: { user: UserModel; message: string }): void {

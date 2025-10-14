@@ -101,6 +101,9 @@ export class FoldersPageComponent implements OnInit, OnDestroy {
         if (user.folderList && user.folderList.length > 0) {
           this.loadFolders(user.folderList);
         } else {
+          // No folders - clear the list
+          this.folders.set([]);
+          this.userState.setFolderList([]);
           this.loading.set(false);
         }
         

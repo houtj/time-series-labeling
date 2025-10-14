@@ -19,12 +19,17 @@ async def create_template(request: NewTemplateRequest):
     db = get_db()
     projectId = ObjectId(request.projectId)
     
-    # Add new template
+    # Add new template with complete default structure
     new_template = {
         'templateName': request.templateName,
         'fileType': request.fileType,
         'channels': [],
-        'x': {},
+        'x': {
+            'name': '',
+            'regex': '',
+            'unit': '',
+            'isTime': False
+        },
         'headRow': 0,
         'skipRow': 0,
         'sheetName': 0

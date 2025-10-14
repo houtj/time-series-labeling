@@ -137,8 +137,8 @@ def parse_file(db, f, data_folder_path):
             raise Exception(f'x axis not found for regex {x_regex}')
         x = df[c]
     
-    # Convert to time if needed
-    if templateInfo['x']['isTime'] == True:
+    # Convert to time if needed (default to False if not specified)
+    if templateInfo.get('x', {}).get('isTime', False):
         try:
             x = pd.to_datetime(x).dt.strftime('%Y-%m-%d %H:%M:%S')
         except:
@@ -151,7 +151,7 @@ def parse_file(db, f, data_folder_path):
     json_dict.append({
         'x': True,
         'name': templateInfo['x']['name'],
-        'unit': templateInfo['x']['unit'],
+        'unit': templateInfo['x'].get('unit', ''),
         'data': x
     })
     

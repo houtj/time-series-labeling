@@ -118,33 +118,44 @@ async def delete_file(file: str):
     
     file = json.loads(file)
     label_id = file['label']
+    file_id = file['_id']['$oid']
     
+    # Get folder info before deletion
+    result = db['folders'].find_one({'fileList': file_id})
+    folder_id = str(result['_id']) if result else None
+    
+    # Delete database records first (always succeeds)
     # Delete label
     db['labels'].delete_one({'_id': ObjectId(label_id)})
     
     # Update folder
     if file['nbEvent'] == 'unlabeled':
         update_dict = {
-            '$pull': {'fileList': file['_id']['$oid']}, 
+            '$pull': {'fileList': file_id}, 
             '$inc': {'nbTotalFiles': -1}
         }
     else:
         update_dict = {
-            '$pull': {'fileList': file['_id']['$oid']}, 
+            '$pull': {'fileList': file_id}, 
             '$inc': {'nbTotalFiles': -1, 'nbLabeledFiles': -1}
         }
-    
-    result = db['folders'].find_one({'fileList': file['_id']['$oid']})
-    folder_id = str(result['_id'])
-    db['folders'].update_many({'fileList': file['_id']['$oid']}, update_dict)
+    db['folders'].update_many({'fileList': file_id}, update_dict)
     
     # Delete file document
-    db['files'].delete_one({'_id': ObjectId(file['_id']['$oid'])})
+    db['files'].delete_one({'_id': ObjectId(file_id)})
     
-    # Delete file directory
-    file_path = Path(data_folder_path) / folder_id / file['_id']['$oid']
-    if file_path.exists():
-        shutil.rmtree(file_path, ignore_errors=True)
+    # Try to delete file directory (don't fail if directory doesn't exist)
+    try:
+        if folder_id:
+            file_path = Path(data_folder_path) / folder_id / file_id
+            if file_path.exists():
+                shutil.rmtree(file_path, ignore_errors=True)
+                logger.info(f"Deleted file directory: {file_path}")
+            else:
+                logger.warning(f"File directory not found (already deleted?): {file_path}")
+    except Exception as e:
+        # Log the error but don't fail the request
+        logger.warning(f"Failed to delete file directory for {file_id}: {e}")
     
     return 'done'
 

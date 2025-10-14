@@ -62,8 +62,8 @@ export class FilesRepository extends BaseRepository<FileModel> {
   /**
    * Delete file
    */
-  deleteFile(fileId: string, folderId: string): Observable<string> {
-    const params = this.buildParams({ fileId, folderId });
+  deleteFile(file: FileModel): Observable<string> {
+    const params = this.buildParams({ file: JSON.stringify(file) });
     return this.apiService.delete(this.basePath, params);
   }
 

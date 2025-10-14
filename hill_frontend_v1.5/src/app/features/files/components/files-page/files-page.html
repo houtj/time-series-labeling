@@ -35,8 +35,9 @@
             <p-button icon="pi pi-download" (onClick)="onClickDownload($event)" [rounded]="true" [text]="true" pTooltip="Download Data" />
             <p-button icon="pi pi-file-import" (onClick)="onClickImportLabels($event)" [rounded]="true" [text]="true" pTooltip="Import Labels" />
             <input id="fileImportInput" type="file" (change)="onChangeImportInput($event)" style="display: none;" accept=".json" />
-            <p-button icon="pi pi-file-export" (onClick)="onClickExportLabels($event)" [rounded]="true" [text]="true" pTooltip="Export Labels" />
             <p-button icon="pi pi-share-alt" (onClick)="onClickShareFolder($event)" [rounded]="true" [text]="true" pTooltip="Share Folder" />
+            <p-button icon="pi pi-cog" (onClick)="onClickEditTemplate($event)" [rounded]="true" [text]="true" pTooltip="Edit Template" />
+            <p-button icon="pi pi-file-export" (onClick)="onClickExportLabels($event)" [rounded]="true" [text]="true" pTooltip="Export Labels" />
             <p-button icon="pi pi-refresh" (onClick)="onClickRefresh($event)" [rounded]="true" [text]="true" pTooltip="Refresh" />
           </div>
         </div>
@@ -137,6 +138,14 @@
   [maxLength]="500"
   [rows]="5"
   (onSave)="onSaveDescription($event)"
+/>
+
+<!-- Template Editor Dialog -->
+<app-template-editor-dialog
+  [(visible)]="templateEditorDialogVisible"
+  [templateId]="editingTemplateId"
+  [projectId]="editingProjectId"
+  (onSave)="onTemplateEditorSave()"
 />
 
 <!-- Download Dialog -->

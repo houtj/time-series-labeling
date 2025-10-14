@@ -5,9 +5,12 @@ from bson.json_util import dumps
 import simplejson as json
 from pathlib import Path
 import shutil
+import logging
 
 from database import get_db, get_data_folder_path
 from models import NewFolderRequest
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/folders", tags=["folders"])
 
@@ -89,10 +92,17 @@ async def delete_folder(folder: str):
     # Delete folder document
     db['folders'].delete_one({'_id': ObjectId(folder_id)})
     
-    # Delete folder directory
-    folder_path = Path(data_folder_path) / folder_id
-    if folder_path.exists():
-        shutil.rmtree(folder_path, ignore_errors=True)
+    # Try to delete folder directory (don't fail if directory doesn't exist)
+    try:
+        folder_path = Path(data_folder_path) / folder_id
+        if folder_path.exists():
+            shutil.rmtree(folder_path, ignore_errors=True)
+            logger.info(f"Deleted folder directory: {folder_path}")
+        else:
+            logger.warning(f"Folder directory not found (already deleted?): {folder_path}")
+    except Exception as e:
+        # Log the error but don't fail the request
+        logger.warning(f"Failed to delete folder directory for {folder_id}: {e}")
     
     return 'done'
 
