@@ -169,7 +169,7 @@
           [rounded]="true"
           [text]="true"
           (onClick)="onClickManagement($event)"
-          pTooltip="Manage Projects"
+          pTooltip="Edit Template"
         />
       </div>
     </div>
@@ -197,4 +197,12 @@
   [resourceType]="'folder'"
   [resourceName]="selectedFolder?.name || ''"
   (onShare)="onShareFolder($event)"
+/>
+
+<!-- Template Editor Dialog -->
+<app-template-editor-dialog
+  [(visible)]="templateEditorDialogVisible"
+  [templateId]="editingTemplateId"
+  [projectId]="editingProjectId"
+  (onSave)="onTemplateEditorSave()"
 />

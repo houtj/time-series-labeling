@@ -13,9 +13,9 @@ import { Checkbox } from 'primeng/checkbox';
 import { MessageService } from 'primeng/api';
 
 // Core imports
-import { TemplatesRepository } from '../../../../core/repositories';
-import { TemplateModel } from '../../../../core/models';
-import { environment } from '../../../../../environments/environment';
+import { TemplatesRepository } from '../../../core/repositories';
+import { TemplateModel } from '../../../core/models';
+import { environment } from '../../../../environments/environment';
 
 /**
  * Template Editor Dialog Component

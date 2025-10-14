@@ -22,8 +22,8 @@ import { UserStateService } from '../../../../core/services';
 import { ProjectsRepository, UsersRepository, TemplatesRepository } from '../../../../core/repositories';
 import { ProjectModel, UserModel, TemplateModel } from '../../../../core/models';
 
-// Feature components
-import { TemplateEditorDialogComponent } from '../template-editor-dialog/template-editor-dialog';
+// Shared components
+import { TemplateEditorDialogComponent } from '../../../../shared/components';
 
 @Component({
   selector: 'app-projects-page',

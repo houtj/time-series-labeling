@@ -21,7 +21,7 @@ import { FoldersRepository, UsersRepository, ProjectsRepository } from '../../..
 import { FolderModel, ProjectModel, UserModel } from '../../../core/models';
 
 // Shared components
-import { ShareDialogComponent } from '../../../shared/components';
+import { ShareDialogComponent, TemplateEditorDialogComponent } from '../../../shared/components';
 
 @Component({
   selector: 'app-folders-page',
@@ -36,7 +36,8 @@ import { ShareDialogComponent } from '../../../shared/components';
     SpeedDial,
     ConfirmPopupModule,
     Toast,
-    ShareDialogComponent
+    ShareDialogComponent,
+    TemplateEditorDialogComponent
   ],
   standalone: true,
   providers: [ConfirmationService, MessageService],
@@ -73,6 +74,10 @@ export class FoldersPageComponent implements OnInit, OnDestroy {
   usersList?: UserModel[];
   selectedUser?: UserModel;
   selectedFolder?: FolderModel;
+  
+  templateEditorDialogVisible = false;
+  editingTemplateId?: string;
+  editingProjectId?: string;
   
   filterText = '';
 
@@ -323,10 +328,35 @@ export class FoldersPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Navigate to projects management
+   * Open template editor for selected template
    */
   onClickManagement(event: MouseEvent): void {
-    this.router.navigate(['/projects']);
+    if (!this.newFolderTemplate || !this.newFolderProject) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'No Template Selected',
+        detail: 'Please select a project and template first'
+      });
+      return;
+    }
+    
+    this.editingTemplateId = this.newFolderTemplate.id;
+    this.editingProjectId = this.newFolderProject._id?.$oid;
+    this.templateEditorDialogVisible = true;
+  }
+
+  /**
+   * Handle template editor save - refresh projects to get updated templates
+   */
+  onTemplateEditorSave(): void {
+    if (this.userInfo?.projectList) {
+      this.loadProjects(this.userInfo.projectList);
+    }
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Template Updated',
+      detail: 'The template has been updated successfully'
+    });
   }
 
   /**
