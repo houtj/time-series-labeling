@@ -12,7 +12,7 @@ import { ConfirmationService } from 'primeng/api';
 import { LabelModel } from '../../../../core/models';
 
 // Feature services
-import { LabelStateService } from '../../services';
+import { LabelStateService, LabelingActionsService } from '../../services';
 
 // Feature models
 import { ToolbarAction } from '../../models/toolbar-action.model';
@@ -42,6 +42,7 @@ export class GuidelinesPanelComponent {
   
   private readonly labelState = inject(LabelStateService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly labelingActions = inject(LabelingActionsService);
   
   // Get guidelines from label info
   get guidelines(): LabelModel['guidelines'] {
@@ -93,6 +94,9 @@ export class GuidelinesPanelComponent {
     
     this.labelInfo.guidelines.forEach(g => g.hide = false);
     this.labelState.updateLabel(this.labelInfo);
+    
+    // Auto-save to database
+    this.labelingActions.queueAutoSave(this.labelInfo);
   }
   
   /**
@@ -103,6 +107,9 @@ export class GuidelinesPanelComponent {
     
     this.labelInfo.guidelines.forEach(g => g.hide = true);
     this.labelState.updateLabel(this.labelInfo);
+    
+    // Auto-save to database
+    this.labelingActions.queueAutoSave(this.labelInfo);
   }
   
   /**
@@ -117,6 +124,9 @@ export class GuidelinesPanelComponent {
         if (!this.labelInfo) return;
         this.labelInfo.guidelines = [];
         this.labelState.updateLabel(this.labelInfo);
+        
+        // Auto-save to database
+        this.labelingActions.queueAutoSave(this.labelInfo);
       }
     });
   }
@@ -131,6 +141,9 @@ export class GuidelinesPanelComponent {
     if (index !== -1) {
       this.labelInfo.guidelines[index].hide = !this.labelInfo.guidelines[index].hide;
       this.labelState.updateLabel(this.labelInfo);
+      
+      // Auto-save to database
+      this.labelingActions.queueAutoSave(this.labelInfo);
     }
   }
   
@@ -142,5 +155,8 @@ export class GuidelinesPanelComponent {
     
     this.labelInfo.guidelines = this.labelInfo.guidelines.filter(g => g !== guidelineToRemove);
     this.labelState.updateLabel(this.labelInfo);
+    
+    // Auto-save to database
+    this.labelingActions.queueAutoSave(this.labelInfo);
   }
 }

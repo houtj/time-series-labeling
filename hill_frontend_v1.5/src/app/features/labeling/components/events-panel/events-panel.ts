@@ -12,7 +12,7 @@ import { ConfirmationService } from 'primeng/api';
 import { LabelModel } from '../../../../core/models';
 
 // Feature services
-import { LabelStateService, ChartService } from '../../services';
+import { LabelStateService, ChartService, LabelingActionsService } from '../../services';
 
 // Feature models
 import { ToolbarAction } from '../../models/toolbar-action.model';
@@ -44,6 +44,7 @@ export class EventsPanelComponent {
   private readonly labelState = inject(LabelStateService);
   private readonly chartService = inject(ChartService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly labelingActions = inject(LabelingActionsService);
   
   // Get events from label info
   get events(): LabelModel['events'] {
@@ -95,6 +96,9 @@ export class EventsPanelComponent {
     
     this.labelInfo.events.forEach(e => e.hide = false);
     this.labelState.updateLabel(this.labelInfo);
+    
+    // Auto-save to database
+    this.labelingActions.queueAutoSave(this.labelInfo);
   }
   
   /**
@@ -105,6 +109,9 @@ export class EventsPanelComponent {
     
     this.labelInfo.events.forEach(e => e.hide = true);
     this.labelState.updateLabel(this.labelInfo);
+    
+    // Auto-save to database
+    this.labelingActions.queueAutoSave(this.labelInfo);
   }
   
   /**
@@ -119,6 +126,9 @@ export class EventsPanelComponent {
         if (!this.labelInfo) return;
         this.labelInfo.events = [];
         this.labelState.updateLabel(this.labelInfo);
+        
+        // Auto-save to database
+        this.labelingActions.queueAutoSave(this.labelInfo);
       }
     });
   }
@@ -140,6 +150,9 @@ export class EventsPanelComponent {
     if (index !== -1) {
       this.labelInfo.events[index].hide = !this.labelInfo.events[index].hide;
       this.labelState.updateLabel(this.labelInfo);
+      
+      // Auto-save to database
+      this.labelingActions.queueAutoSave(this.labelInfo);
     }
   }
   
@@ -151,6 +164,9 @@ export class EventsPanelComponent {
     
     this.labelInfo.events = this.labelInfo.events.filter(e => e !== eventToRemove);
     this.labelState.updateLabel(this.labelInfo);
+    
+    // Auto-save to database
+    this.labelingActions.queueAutoSave(this.labelInfo);
   }
   
   /**

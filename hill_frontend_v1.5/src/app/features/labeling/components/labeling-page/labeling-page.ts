@@ -404,6 +404,9 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
       // Update label in state
       if (this.labelInfo) {
         this.labelState.updateLabel(this.labelInfo);
+        
+        // Auto-save to database
+        this.labelingActions.saveLabel(this.labelInfo).subscribe();
       }
     }
   }
