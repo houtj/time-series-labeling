@@ -138,8 +138,19 @@ export class ProjectsPageComponent implements OnInit, OnDestroy {
         this.projects.set(projects);
         this.userState.setProjectList(projects);
         
-        // Select first project by default
-        if (projects.length > 0 && !this.selectedProject) {
+        // Update selectedProject to the refreshed object
+        if (this.selectedProject) {
+          // Find the updated version of the currently selected project
+          const updatedProject = projects.find(
+            p => p._id?.$oid === this.selectedProject?._id?.$oid
+          );
+          if (updatedProject) {
+            this.selectedProject = updatedProject;
+            this.classesList = this.selectedProject.classes;
+            this.templateList = this.selectedProject.templates;
+          }
+        } else if (projects.length > 0) {
+          // Select first project by default if no project is selected
           this.selectedProject = projects[0];
           this.classesList = this.selectedProject.classes;
           this.templateList = this.selectedProject.templates;
@@ -397,10 +408,8 @@ export class ProjectsPageComponent implements OnInit, OnDestroy {
 
       const data = {
         projectId: this.selectedProject._id?.$oid || '',
-        template: {
-          name: this.newTemplateName,
-          fileType: this.selectedFileType.name
-        }
+        templateName: this.newTemplateName,
+        fileType: this.selectedFileType.name
       };
 
       this.templatesRepo.createTemplate(data).subscribe({

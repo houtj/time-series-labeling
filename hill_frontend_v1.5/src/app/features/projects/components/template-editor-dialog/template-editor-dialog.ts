@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { Component, effect, input, model, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -37,12 +37,16 @@ import { environment } from '../../../../../environments/environment';
   templateUrl: './template-editor-dialog.html',
   styleUrl: './template-editor-dialog.scss'
 })
-export class TemplateEditorDialogComponent implements OnChanges {
-  @Input() visible = false;
-  @Input() templateId?: string;
-  @Input() projectId?: string;
-  @Output() visibleChange = new EventEmitter<boolean>();
-  @Output() onSave = new EventEmitter<void>();
+export class TemplateEditorDialogComponent {
+  // Two-way bindable signal for dialog visibility
+  visible = model<boolean>(false);
+  
+  // Inputs using modern signal-based API
+  templateId = input<string | undefined>(undefined);
+  projectId = input<string | undefined>(undefined);
+  
+  // Outputs
+  onSave = output<void>();
 
   // Inject services
   private readonly templatesRepo = inject(TemplatesRepository);
@@ -57,19 +61,27 @@ export class TemplateEditorDialogComponent implements OnChanges {
   fileTypesList = [{ name: '.xlsx' }, { name: '.xls' }, { name: '.csv' }];
   selectedFileType = { name: '.xlsx' };
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['visible'] && this.visible && this.templateId) {
-      this.loadTemplate();
-    }
+  constructor() {
+    // Use effect to react to input changes - more declarative and cleaner than ngOnChanges
+    effect(() => {
+      const isVisible = this.visible();
+      const id = this.templateId();
+      
+      // Load template when dialog becomes visible and has a templateId
+      if (isVisible && id) {
+        this.loadTemplate();
+      }
+    });
   }
 
   /**
    * Load template data
    */
   private loadTemplate(): void {
-    if (!this.templateId) return;
+    const id = this.templateId();
+    if (!id) return;
 
-    this.templatesRepo.getTemplate(this.templateId).subscribe({
+    this.templatesRepo.getTemplate(id).subscribe({
       next: (template) => {
         this.template = template;
         this.templateName = template.templateName || '';
@@ -154,8 +166,19 @@ export class TemplateEditorDialogComponent implements OnChanges {
     formData.append('file', file);
     formData.append('templateId', this.template._id?.$oid || '');
 
-    this.http.post<any>(`${environment.apiUrl}/extract-columns`, formData).subscribe({
+    this.http.post<any>(`${environment.apiUrl}/templates/extract-columns`, formData).subscribe({
       next: (response) => {
+        // Check if backend returned an error object
+        if (response.error) {
+          console.error('Failed to extract columns:', response.error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'File Processing Failed',
+            detail: response.error
+          });
+          return;
+        }
+        
         this.autoMapColumnsToTemplate(response.columns);
         this.messageService.add({
           severity: 'success',
@@ -221,12 +244,13 @@ export class TemplateEditorDialogComponent implements OnChanges {
    * Save template changes
    */
   onClickSave(event: MouseEvent): void {
-    if (!this.template || !this.projectId) return;
+    const projectId = this.projectId();
+    if (!this.template || !projectId) return;
 
     // Update file type
     this.template.fileType = this.selectedFileType.name;
 
-    this.templatesRepo.updateTemplate(this.projectId, this.template).subscribe({
+    this.templatesRepo.updateTemplate(projectId, this.template).subscribe({
       next: () => {
         this.messageService.add({
           severity: 'success',
@@ -255,7 +279,6 @@ export class TemplateEditorDialogComponent implements OnChanges {
   }
 
   private closeDialog(): void {
-    this.visible = false;
-    this.visibleChange.emit(false);
+    this.visible.set(false);
   }
 }

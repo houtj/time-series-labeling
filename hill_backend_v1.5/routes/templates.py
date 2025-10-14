@@ -24,7 +24,10 @@ async def create_template(request: NewTemplateRequest):
         'templateName': request.templateName,
         'fileType': request.fileType,
         'channels': [],
-        'x': {}
+        'x': {},
+        'headRow': 0,
+        'skipRow': 0,
+        'sheetName': 0
     }
     result = db['templates'].insert_one(new_template)
     new_template_id = result.inserted_id
@@ -108,7 +111,8 @@ async def extract_columns(file: UploadFile, templateId: Annotated[str, Form()]):
             return {'error': 'Template not found'}
         
         # Create temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=file.filename) as tmp_file:
+        file_ext = os.path.splitext(file.filename)[1] if file.filename else template.get('fileType', '.csv')
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp_file:
             content = await file.read()
             tmp_file.write(content)
             tmp_file_path = tmp_file.name

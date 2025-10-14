@@ -33,7 +33,8 @@ export class TemplatesRepository extends BaseRepository<TemplateModel> {
    */
   createTemplate(data: {
     projectId: string;
-    template: Partial<TemplateModel>;
+    templateName: string;
+    fileType: string;
   }): Observable<string> {
     return this.apiService.post(this.basePath, data);
   }
