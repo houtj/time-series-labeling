@@ -330,7 +330,8 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
     if (!this.aiChatService.isConnected()) {
       this.aiChatService.connectChat(this.fileId!, {
         folderId: this.folderId,
-        projectId: this.projectInfo()?._id?.$oid
+        projectId: this.projectInfo()?._id?.$oid,
+        userName: this.userState.userInfo()?.name
       });
     }
   }

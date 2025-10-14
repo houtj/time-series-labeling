@@ -1,4 +1,4 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, effect } from '@angular/core';
 import { WebSocketBaseService } from '../../../core/services/websocket/websocket-base.service';
 import { environment } from '../../../../environments/environment';
 import { Subject } from 'rxjs';
@@ -20,24 +20,41 @@ export class AiChatService extends WebSocketBaseService {
   // Observable for label updates (when AI adds events/guidelines)
   readonly labelUpdated$ = new Subject<void>();
   
+  // Store context to send after connection
+  private pendingContext: { fileId: string; context: any } | null = null;
+  
   constructor() {
     super();
+    
+    // Send pending context when connection is established
+    effect(() => {
+      if (this.isConnected() && this.pendingContext) {
+        // Small delay to ensure connection is fully ready
+        setTimeout(() => {
+          if (this.pendingContext) {
+            this.send(JSON.stringify({
+              action: 'set-context',
+              context: this.pendingContext.context
+            }));
+            this.pendingContext = null; // Clear after sending
+          }
+        }, 100);
+      }
+    });
   }
 
   /**
    * Connect to AI chat WebSocket
    */
-  connectChat(fileId: string, context?: { folderId?: string; projectId?: string }): void {
+  connectChat(fileId: string, context?: { folderId?: string; projectId?: string; userName?: string }): void {
     const wsUrl = `${environment.wsUrl}/chat/${fileId}`;
-    this.connect(wsUrl);
     
-    // Send context if provided
-    if (context && this.isConnected()) {
-      this.send(JSON.stringify({
-        action: 'set-context',
-        context: { fileId, ...context }
-      }));
+    // Store context to send after connection is established
+    if (context) {
+      this.pendingContext = { fileId, context: { fileId, ...context } };
     }
+    
+    this.connect(wsUrl);
   }
 
   /**

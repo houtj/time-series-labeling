@@ -1,5 +1,5 @@
 """Chat Agent Package"""
-from .agent import generate_ai_response, pending_notifications, queue_websocket_notification
+from .agent import generate_ai_response, pending_notifications, queue_websocket_notification, set_current_user
 
-__all__ = ['generate_ai_response', 'pending_notifications', 'queue_websocket_notification']
+__all__ = ['generate_ai_response', 'pending_notifications', 'queue_websocket_notification', 'set_current_user']
 

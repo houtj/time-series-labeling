@@ -5,11 +5,14 @@ Handles WebSocket connections for chat assistant
 from fastapi import WebSocket, WebSocketDisconnect
 from datetime import datetime, timezone
 from database import get_db
-from agents.chat import generate_ai_response, pending_notifications
+from agents.chat import generate_ai_response, pending_notifications, set_current_user
 import json
 
 # Store active WebSocket connections
 active_connections: dict[str, WebSocket] = {}
+
+# Store user context for each file
+user_contexts: dict[str, dict] = {}
 
 
 async def handle_websocket(websocket: WebSocket, file_id: str):
@@ -21,6 +24,18 @@ async def handle_websocket(websocket: WebSocket, file_id: str):
         while True:
             # Receive message from frontend
             data = await websocket.receive_json()
+            
+            # Handle set-context action
+            if data.get('action') == 'set-context':
+                context = data.get('context', {})
+                user_contexts[file_id] = context
+                # Set user name for the agent
+                if 'userName' in context:
+                    print(f"Setting current user to: {context['userName']}")
+                    set_current_user(context['userName'])
+                else:
+                    print(f"No userName in context: {context}")
+                continue
             
             # Handle cancellation
             if data.get('type') == 'cancel_request':
@@ -105,6 +120,8 @@ async def handle_websocket(websocket: WebSocket, file_id: str):
     except WebSocketDisconnect:
         if file_id in active_connections:
             del active_connections[file_id]
+        if file_id in user_contexts:
+            del user_contexts[file_id]
     except Exception as e:
         await websocket.send_json({
             'type': 'error',

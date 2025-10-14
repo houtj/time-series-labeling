@@ -25,7 +25,13 @@ azure_chat_model = AzureChatOpenAI(
 
 # Global variables to store context for tools
 current_file_id = None
-current_user_name = None
+current_user_name = "AI Assistant"  # Default to "AI Assistant"
+
+
+def set_current_user(user_name: str):
+    """Set the current user name for labeling"""
+    global current_user_name
+    current_user_name = user_name or "AI Assistant"
 
 # Store pending notifications to be sent by the websocket handler
 pending_notifications: dict[str, list[dict]] = {}
@@ -93,11 +99,13 @@ class AddEventTool(BaseTool):
                 return "Error: Label not found"
                 
             # Create new event
+            labeler_name = current_user_name or 'AI Assistant'
+            print(f"Creating event with labeler: {labeler_name}")
             new_event = {
                 'className': class_name,
                 'color': class_info['color'],
                 'description': description,
-                'labeler': current_user_name or 'AI Assistant',
+                'labeler': labeler_name,
                 'lastUpdate': datetime.now(tz=timezone.utc).isoformat(),
                 'start': start,
                 'end': end,
@@ -127,11 +135,13 @@ class AddEventTool(BaseTool):
                     new_nb_events += f'{len(events_labeler)} by {labeler};'
                 new_nb_events = new_nb_events.rstrip(';')
                 
+            last_modifier = current_user_name or 'AI Assistant'
+            print(f"Updating file with lastModifier: {last_modifier}")
             db['files'].update_one(
                 {'_id': ObjectId(current_file_id)},
                 {'$set': {
                     'nbEvent': new_nb_events,
-                    'lastModifier': current_user_name or 'AI Assistant',
+                    'lastModifier': last_modifier,
                     'lastUpdate': datetime.now(tz=timezone.utc).isoformat()
                 }}
             )
@@ -281,7 +291,7 @@ async def generate_ai_response(messages: list[dict], file_id: str) -> str:
         
         # Set global context for tools
         current_file_id = file_id
-        current_user_name = "AI Assistant"
+        # current_user_name is set by set_current_user() from WebSocket handler
         
         # Get project context
         project_context = await get_project_context(file_id)
