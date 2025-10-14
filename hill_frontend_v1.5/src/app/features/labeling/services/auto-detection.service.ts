@@ -62,6 +62,9 @@ export class AutoDetectionService extends WebSocketBaseService {
       this.send(JSON.stringify({ command: 'cancel_auto_detection' }));
       this.isRunning.set(false);
       
+      // Remove view-sync shapes when stopping
+      this.chartService.removeViewSyncShapes();
+      
       this.addInferenceLog({
         type: 'info',
         message: '⏹️ Auto-annotation stopped by user',
@@ -148,6 +151,8 @@ export class AutoDetectionService extends WebSocketBaseService {
         };
         
       case 'detection_completed':
+        // Remove view-sync shapes when detection completes
+        this.chartService.removeViewSyncShapes();
         return {
           type: 'success',
           message: `🎉 Detection completed successfully! Saved ${messageData.total_events || 0} events to database`,
@@ -155,6 +160,8 @@ export class AutoDetectionService extends WebSocketBaseService {
         };
         
       case 'detection_failed':
+        // Remove view-sync shapes when detection fails
+        this.chartService.removeViewSyncShapes();
         return {
           type: 'error',
           message: `❌ Detection failed: ${messageData.message || 'Unknown error'}`,
@@ -187,6 +194,8 @@ export class AutoDetectionService extends WebSocketBaseService {
         
       case 'error':
         this.isRunning.set(false);
+        // Remove view-sync shapes on error
+        this.chartService.removeViewSyncShapes();
         return {
           type: 'error',
           message: `❌ Error: ${messageData.message || 'Unknown error'}`,
@@ -228,6 +237,10 @@ export class AutoDetectionService extends WebSocketBaseService {
   protected override onError(event: Event): void {
     super.onError(event);
     this.isRunning.set(false);
+    
+    // Remove view-sync shapes on WebSocket error
+    this.chartService.removeViewSyncShapes();
+    
     this.addInferenceLog({
       type: 'error',
       message: '❌ WebSocket connection error',
@@ -241,6 +254,9 @@ export class AutoDetectionService extends WebSocketBaseService {
   protected override onClose(event: CloseEvent): void {
     super.onClose(event);
     this.isRunning.set(false);
+    
+    // Remove view-sync shapes when WebSocket closes
+    this.chartService.removeViewSyncShapes();
   }
 
   /**
@@ -269,6 +285,10 @@ export class AutoDetectionService extends WebSocketBaseService {
    */
   override disconnect(): void {
     this.isRunning.set(false);
+    
+    // Remove view-sync shapes when disconnecting
+    this.chartService.removeViewSyncShapes();
+    
     super.disconnect();
   }
 }

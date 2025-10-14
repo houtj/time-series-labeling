@@ -267,7 +267,7 @@ export class ChartService {
   }
 
   /**
-   * Zoom chart to specific x-axis range by index
+   * Show agent's focus area with a rectangle and pan view if needed
    * Used by auto-detection to sync view with agent's current analysis window
    */
   zoomToRange(startIdx: number, endIdx: number): void {
@@ -276,7 +276,6 @@ export class ChartService {
     }
     
     // Get the x-axis data values at the specified indices
-    // The indices correspond to the data point positions in the time series
     const plotData = (this.plotlyChartElement as any).data;
     if (plotData && plotData.length > 0 && plotData[0].x) {
       const xData = plotData[0].x;
@@ -289,10 +288,81 @@ export class ChartService {
       const startValue = xData[safeStartIdx];
       const endValue = xData[safeEndIdx];
       
-      // Update the layout and apply zoom
-      this.layout.xaxis!.range![0] = startValue;
-      this.layout.xaxis!.range![1] = endValue;
-      Plotly.relayout(this.plotlyChartElement, { xaxis: this.layout.xaxis });
+      // Remove any existing view-sync rectangles
+      this.removeViewSyncShapes();
+      
+      // Add new view-sync rectangle
+      const viewSyncRect: any = {
+        type: 'rect',
+        xref: 'x',
+        yref: 'paper',
+        x0: startValue,
+        x1: endValue,
+        y0: 0,
+        y1: 1,
+        fillcolor: 'transparent',
+        line: {
+          color: 'red',
+          width: 2,
+          dash: 'dot'
+        },
+        viewSync: true // Marker to identify view-sync shapes
+      };
+      
+      this.layout.shapes = this.layout.shapes || [];
+      this.layout.shapes.push(viewSyncRect);
+      
+      // Check if rectangle is within current view range
+      const currentRange = this.layout.xaxis!.range || [xData[0], xData[xData.length - 1]];
+      const currentStart = currentRange[0];
+      const currentEnd = currentRange[1];
+      const rangeLength = currentEnd - currentStart;
+      
+      // If rectangle is outside view, pan to include it while keeping range length constant
+      let needsPan = false;
+      let newStart = currentStart;
+      let newEnd = currentEnd;
+      
+      if (startValue < currentStart) {
+        // Rectangle starts before view - pan left
+        newStart = startValue;
+        newEnd = startValue + rangeLength;
+        needsPan = true;
+      } else if (endValue > currentEnd) {
+        // Rectangle ends after view - pan right
+        newEnd = endValue;
+        newStart = endValue - rangeLength;
+        needsPan = true;
+      }
+      
+      // Apply updates
+      if (needsPan) {
+        this.layout.xaxis!.range = [newStart, newEnd];
+        Plotly.relayout(this.plotlyChartElement, { 
+          shapes: this.layout.shapes,
+          xaxis: this.layout.xaxis 
+        });
+      } else {
+        Plotly.relayout(this.plotlyChartElement, { shapes: this.layout.shapes });
+      }
+    }
+  }
+  
+  /**
+   * Remove all view-sync rectangles from the chart
+   */
+  removeViewSyncShapes(): void {
+    if (!this.plotlyChartElement) {
+      return; // Chart not initialized yet
+    }
+    
+    // Filter out shapes with viewSync marker
+    const hadViewSyncShapes = this.layout.shapes?.some((s: any) => s.viewSync === true);
+    this.layout.shapes = this.layout.shapes?.filter((s: any) => s.viewSync !== true);
+    
+    // Only update if we actually removed something
+    if (hadViewSyncShapes) {
+      Plotly.relayout(this.plotlyChartElement, { shapes: this.layout.shapes });
     }
   }
 
