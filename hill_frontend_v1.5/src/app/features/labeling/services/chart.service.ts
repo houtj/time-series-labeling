@@ -267,6 +267,36 @@ export class ChartService {
   }
 
   /**
+   * Zoom chart to specific x-axis range by index
+   * Used by auto-detection to sync view with agent's current analysis window
+   */
+  zoomToRange(startIdx: number, endIdx: number): void {
+    if (!this.plotlyChartElement) {
+      return; // Chart not initialized yet
+    }
+    
+    // Get the x-axis data values at the specified indices
+    // The indices correspond to the data point positions in the time series
+    const plotData = (this.plotlyChartElement as any).data;
+    if (plotData && plotData.length > 0 && plotData[0].x) {
+      const xData = plotData[0].x;
+      
+      // Ensure indices are within bounds
+      const safeStartIdx = Math.max(0, Math.min(startIdx, xData.length - 1));
+      const safeEndIdx = Math.max(0, Math.min(endIdx, xData.length - 1));
+      
+      // Get the actual x values at these indices
+      const startValue = xData[safeStartIdx];
+      const endValue = xData[safeEndIdx];
+      
+      // Update the layout and apply zoom
+      this.layout.xaxis!.range![0] = startValue;
+      this.layout.xaxis!.range![1] = endValue;
+      Plotly.relayout(this.plotlyChartElement, { xaxis: this.layout.xaxis });
+    }
+  }
+
+  /**
    * Trigger chart resize
    * Dispatches a window resize event which Plotly's responsive mode will catch
    */

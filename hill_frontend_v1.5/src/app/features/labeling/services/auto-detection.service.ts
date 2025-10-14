@@ -1,6 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { WebSocketBaseService } from '../../../core/services/websocket/websocket-base.service';
 import { environment } from '../../../../environments/environment';
+import { ChartService } from './chart.service';
 
 /**
  * Auto-Detection Service
@@ -13,6 +14,8 @@ export class AutoDetectionService extends WebSocketBaseService {
   // State
   readonly isRunning = signal<boolean>(false);
   readonly inferenceHistory = signal<any[]>([]);
+  
+  private readonly chartService = inject(ChartService);
   
   constructor() {
     super();
@@ -34,7 +37,7 @@ export class AutoDetectionService extends WebSocketBaseService {
       this.isRunning.set(true);
       
       const message = {
-        action: 'start',
+        command: 'start_auto_detection',
         fileId,
         folderId,
         projectId,
@@ -56,7 +59,7 @@ export class AutoDetectionService extends WebSocketBaseService {
    */
   stopAutoAnnotation(): void {
     if (this.isConnected()) {
-      this.send(JSON.stringify({ action: 'stop' }));
+      this.send(JSON.stringify({ command: 'cancel_auto_detection' }));
       this.isRunning.set(false);
       
       this.addInferenceLog({
@@ -74,35 +77,148 @@ export class AutoDetectionService extends WebSocketBaseService {
     try {
       const data = JSON.parse(event.data);
       
-      // Add to inference history
-      this.addInferenceLog({
-        type: data.type || 'received-message',
-        message: data.message || event.data,
-        details: data.details,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Check if annotation is complete
-      if (data.type === 'complete' || data.status === 'complete') {
-        this.isRunning.set(false);
-        this.addInferenceLog({
-          type: 'success',
-          message: '✅ Auto-annotation completed successfully',
-          timestamp: new Date().toISOString()
-        });
+      // Handle plot view synchronization
+      if (data.type === 'plot_view_sync' && data.data) {
+        const { start_idx, end_idx, agent } = data.data;
+        if (typeof start_idx === 'number' && typeof end_idx === 'number') {
+          // Zoom the chart to the agent's current view window
+          this.chartService.zoomToRange(start_idx, end_idx);
+          
+          // Log the view sync for transparency
+          this.addInferenceLog({
+            type: 'view-sync',
+            message: `🔍 ${agent} is analyzing data range [${start_idx}, ${end_idx}]`,
+            timestamp: new Date().toISOString()
+          });
+        }
+        return; // Don't add to general history
       }
       
-      // Check for errors
-      if (data.type === 'error') {
+      // Format message based on type
+      const formattedLog = this.formatMessage(data);
+      if (formattedLog) {
+        this.addInferenceLog(formattedLog);
+      }
+      
+      // Update running state based on message type
+      if (data.type === 'detection_completed' || data.type === 'detection_failed') {
         this.isRunning.set(false);
-        this.addInferenceLog({
-          type: 'error',
-          message: `❌ Error: ${data.message}`,
-          timestamp: new Date().toISOString()
-        });
       }
     } catch (error) {
       console.error('Failed to parse auto-detection message:', error);
+    }
+  }
+  
+  /**
+   * Format incoming messages for human-readable display
+   */
+  private formatMessage(data: any): any | null {
+    const timestamp = new Date().toISOString();
+    const messageData = data.data || {};
+    
+    switch (data.type) {
+      case 'detection_started':
+        return {
+          type: 'info',
+          message: '🚀 Starting multi-agent event detection system...',
+          timestamp
+        };
+        
+      case 'analysis_started':
+        return {
+          type: 'info',
+          message: '🔬 Multi-agent analysis initiated - Planner → Identifier → Validator',
+          timestamp
+        };
+        
+      case 'analysis_progress':
+        // Show progress updates
+        return {
+          type: 'info',
+          message: `⚙️ ${messageData.message || 'Analysis in progress...'}`,
+          details: messageData.token_usage ? { token_usage: messageData.token_usage } : undefined,
+          timestamp
+        };
+        
+      case 'analysis_completed':
+        return {
+          type: 'success',
+          message: `✅ Analysis completed - Found ${messageData.events_found || 0} potential events`,
+          timestamp
+        };
+        
+      case 'detection_completed':
+        return {
+          type: 'success',
+          message: `🎉 Detection completed successfully! Saved ${messageData.total_events || 0} events to database`,
+          timestamp
+        };
+        
+      case 'detection_failed':
+        return {
+          type: 'error',
+          message: `❌ Detection failed: ${messageData.message || 'Unknown error'}`,
+          timestamp
+        };
+        
+      case 'events_saved':
+        return {
+          type: 'success',
+          message: `💾 Saved ${messageData.events_count || 0} auto-detected events`,
+          timestamp
+        };
+        
+      case 'llm_interaction':
+        // Format agent reasoning with clear labels
+        const agent = messageData.agent || 'Agent';
+        const agentIcon = this.getAgentIcon(agent);
+        const tokenInfo = messageData.token_usage ? ` • ${messageData.token_usage} tokens` : '';
+        
+        return {
+          type: 'agent-reasoning',
+          message: `${agentIcon} ${agent} Agent Reasoning${tokenInfo}`,
+          details: {
+            '📤 Sent to LLM': messageData.sent_message || 'N/A',
+            '📥 Received from LLM': messageData.received_message || 'N/A',
+            'Total Token Usage': messageData.total_token_usage || messageData.token_usage || 0
+          },
+          timestamp
+        };
+        
+      case 'error':
+        this.isRunning.set(false);
+        return {
+          type: 'error',
+          message: `❌ Error: ${messageData.message || 'Unknown error'}`,
+          timestamp
+        };
+        
+      default:
+        // Handle unknown message types gracefully
+        if (messageData.message) {
+          return {
+            type: 'info',
+            message: messageData.message,
+            timestamp
+          };
+        }
+        return null;
+    }
+  }
+  
+  /**
+   * Get emoji icon for specific agent
+   */
+  private getAgentIcon(agent: string): string {
+    switch (agent.toLowerCase()) {
+      case 'planner':
+        return '📋';
+      case 'identifier':
+        return '🔍';
+      case 'validator':
+        return '✓';
+      default:
+        return '🤖';
     }
   }
 

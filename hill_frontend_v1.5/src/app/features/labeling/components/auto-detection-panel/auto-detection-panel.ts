@@ -154,16 +154,28 @@ export class AutoDetectionPanelComponent implements AfterViewChecked {
   }
   
   /**
+   * Convert object to array of key-value pairs for template iteration
+   */
+  objectEntries(obj: any): Array<{ key: string; value: any }> {
+    if (!obj || typeof obj !== 'object') return [];
+    return Object.entries(obj).map(([key, value]) => ({ key, value }));
+  }
+  
+  /**
    * Get icon for log entry type
    */
   getLogIcon(type: string): string {
     switch (type) {
       case 'agent-header':
         return 'pi pi-robot';
+      case 'agent-reasoning':
+        return 'pi pi-brain';
       case 'sent-message':
         return 'pi pi-arrow-up';
       case 'received-message':
         return 'pi pi-arrow-down';
+      case 'view-sync':
+        return 'pi pi-eye';
       case 'info':
         return 'pi pi-info-circle';
       case 'warning':

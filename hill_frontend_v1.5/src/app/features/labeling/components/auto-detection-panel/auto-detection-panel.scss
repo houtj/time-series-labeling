@@ -134,6 +134,23 @@
       color: var(--primary-color);
     }
   }
+  
+  &.log-agent-reasoning {
+    border-left-color: var(--indigo-500);
+    background: var(--indigo-50);
+    
+    .log-icon i {
+      color: var(--indigo-500);
+    }
+  }
+  
+  &.log-view-sync {
+    border-left-color: var(--cyan-500);
+    
+    .log-icon i {
+      color: var(--cyan-500);
+    }
+  }
 }
 
 .log-header {
@@ -197,6 +214,38 @@
     color: var(--text-color-secondary);
     white-space: pre-wrap;
     word-wrap: break-word;
+  }
+}
+
+.reasoning-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  
+  .detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .detail-content {
+    padding: 0.5rem;
+    background: var(--surface-card);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--text-color-secondary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border-left: 2px solid var(--indigo-500);
   }
 }
 

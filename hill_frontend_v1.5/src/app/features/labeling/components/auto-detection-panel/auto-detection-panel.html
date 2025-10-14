@@ -34,7 +34,18 @@
             </div>
             @if (log.details && log.type !== 'agent-header') {
               <div class="log-details">
-                <pre>{{ formatDetails(log.details) }}</pre>
+                @if (log.type === 'agent-reasoning') {
+                  <div class="reasoning-details">
+                    @for (item of objectEntries(log.details); track item.key) {
+                      <div class="detail-section">
+                        <div class="detail-label">{{ item.key }}:</div>
+                        <div class="detail-content">{{ item.value }}</div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <pre>{{ formatDetails(log.details) }}</pre>
+                }
               </div>
             }
           </div>
