@@ -56,8 +56,9 @@
 
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 70%">Name</th>
-            <th style="width: 30%">Color</th>
+            <th style="width: 65%">Name</th>
+            <th style="width: 25%">Color</th>
+            <th style="width: 10%"></th>
           </tr>
         </ng-template>
 
@@ -69,12 +70,22 @@
             <td>
               <span [style.color]="class_.color">{{ class_.color }}</span>
             </td>
+            <td>
+              <p-button
+                icon="pi pi-times"
+                (onClick)="onClickDeleteClass($event, class_)"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete Class"
+              />
+            </td>
           </tr>
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="2" class="empty-message">
+            <td colspan="3" class="empty-message">
               <div class="empty-state">
                 <i class="pi pi-tag"></i>
                 <p>No classes defined. Click + to add one.</p>
@@ -119,8 +130,9 @@
 
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 80%">Name</th>
+            <th style="width: 70%">Name</th>
             <th style="width: 20%">File Type</th>
+            <th style="width: 10%"></th>
           </tr>
         </ng-template>
 
@@ -130,12 +142,22 @@
               {{ template.name }}
             </td>
             <td>{{ template.fileType }}</td>
+            <td>
+              <p-button
+                icon="pi pi-times"
+                (onClick)="onClickDeleteTemplate($event, template)"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete Template"
+              />
+            </td>
           </tr>
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="2" class="empty-message">
+            <td colspan="3" class="empty-message">
               <div class="empty-state">
                 <i class="pi pi-file"></i>
                 <p>No templates defined. Click + to add one.</p>

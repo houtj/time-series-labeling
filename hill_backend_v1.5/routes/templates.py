@@ -175,3 +175,19 @@ async def extract_columns(file: UploadFile, templateId: Annotated[str, Form()]):
     except Exception as e:
         return {'error': f'Failed to process file: {str(e)}'}
 
+
+@router.delete("")
+async def delete_template(templateId: str, projectId: str):
+    """Delete template"""
+    db = get_db()
+    
+    # Delete template document
+    db['templates'].delete_one({'_id': ObjectId(templateId)})
+    
+    # Remove template from project
+    db['projects'].update_one(
+        {'_id': ObjectId(projectId)},
+        {'$pull': {'templates': {'id': templateId}}}
+    )
+    
+    return 'done'

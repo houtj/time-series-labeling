@@ -380,6 +380,41 @@ export class ProjectsPageComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Delete class
+   */
+  onClickDeleteClass(event: MouseEvent, class_: ProjectModel['classes'][0]): void {
+    if (!this.selectedProject) return;
+
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: `Are you sure you want to delete class "${class_.name}"?`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger p-button-sm',
+      accept: () => {
+        const projectId = this.selectedProject!._id?.$oid || '';
+        this.projectsRepo.deleteClass(projectId, class_.name).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Class deleted successfully'
+            });
+            this.loadUserAndProjects();
+          },
+          error: (error) => {
+            console.error('Failed to delete class:', error);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Failed to delete class'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  /**
    * Refresh classes list
    */
   onClickRefreshClass(event: MouseEvent): void {
@@ -447,6 +482,41 @@ export class ProjectsPageComponent implements OnInit, OnDestroy {
    */
   onTemplateEditorSave(): void {
     this.loadUserAndProjects();
+  }
+
+  /**
+   * Delete template
+   */
+  onClickDeleteTemplate(event: MouseEvent, template: ProjectModel['templates'][0]): void {
+    if (!this.selectedProject) return;
+
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: `Are you sure you want to delete template "${template.name}"?`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger p-button-sm',
+      accept: () => {
+        const projectId = this.selectedProject!._id?.$oid || '';
+        this.templatesRepo.deleteTemplate(template.id, projectId).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Template deleted successfully'
+            });
+            this.loadUserAndProjects();
+          },
+          error: (error) => {
+            console.error('Failed to delete template:', error);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Failed to delete template'
+            });
+          }
+        });
+      }
+    });
   }
 
   /**

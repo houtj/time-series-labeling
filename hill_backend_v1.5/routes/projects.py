@@ -103,3 +103,13 @@ async def update_class(newClass: UpdateClassRequest):
     )
     return 'done'
 
+
+@router.delete("/classes")
+async def delete_class(projectId: str, className: str):
+    """Delete class from project"""
+    db = get_db()
+    db['projects'].update_one(
+        {'_id': ObjectId(projectId)},
+        {'$pull': {'classes': {'name': className}}}
+    )
+    return 'done'

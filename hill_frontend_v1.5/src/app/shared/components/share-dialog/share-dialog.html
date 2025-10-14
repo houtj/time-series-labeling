@@ -23,6 +23,7 @@
         [style]="{ width: '100%' }"
         [loading]="loading"
         [disabled]="loading"
+        appendTo="body"
       >
         <ng-template pTemplate="selectedItem" let-user>
           <div class="user-item" *ngIf="user">

@@ -42,8 +42,8 @@ export class TemplatesRepository extends BaseRepository<TemplateModel> {
   /**
    * Delete template
    */
-  deleteTemplate(template: TemplateModel): Observable<string> {
-    const params = this.buildParams({ template: JSON.stringify(template) });
+  deleteTemplate(templateId: string, projectId: string): Observable<string> {
+    const params = this.buildParams({ templateId, projectId });
     return this.apiService.delete(this.basePath, params);
   }
 
