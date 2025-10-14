@@ -75,10 +75,18 @@
           <td>{{ folder.nbTotalFiles }}</td>
           <td>
             <p-button
+              icon="pi pi-cog"
+              (onClick)="onClickEditFolderTemplate($event, folder)"
+              [rounded]="true"
+              [text]="true"
+              pTooltip="Edit Template"
+            />
+            <p-button
               icon="pi pi-share-alt"
               (onClick)="onClickShare($event, folder)"
               [rounded]="true"
               [text]="true"
+              pTooltip="Share Folder"
             />
             <p-button
               icon="pi pi-times"
@@ -86,6 +94,7 @@
               [rounded]="true"
               [text]="true"
               severity="danger"
+              pTooltip="Delete Folder"
             />
           </td>
         </tr>

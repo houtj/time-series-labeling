@@ -280,6 +280,35 @@ export class FoldersPageComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Open template editor for folder's template
+   */
+  onClickEditFolderTemplate(event: MouseEvent, folder: FolderModel): void {
+    if (!folder.template?.id) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'No Template',
+        detail: 'This folder has no associated template'
+      });
+      return;
+    }
+
+    // Find the project to get the project ID
+    const project = this.projectList?.find(p => p._id?.$oid === folder.project.id);
+    if (!project) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Project Not Found',
+        detail: 'Unable to find the associated project'
+      });
+      return;
+    }
+
+    this.editingTemplateId = folder.template.id;
+    this.editingProjectId = project._id?.$oid;
+    this.templateEditorDialogVisible = true;
+  }
+
+  /**
    * Handle share action from dialog
    */
   onShareFolder(event: { user: UserModel; message: string }): void {
