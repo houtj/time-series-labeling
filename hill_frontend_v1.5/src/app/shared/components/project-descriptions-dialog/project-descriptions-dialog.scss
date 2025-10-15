@@ -1,0 +1,170 @@
+::ng-deep .project-descriptions-dialog {
+  .p-dialog-content {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .dialog-body {
+    height: 100%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+
+    .p-scrollpanel {
+      flex: 1;
+      
+      .p-scrollpanel-wrapper {
+        border-right: none;
+      }
+
+      .p-scrollpanel-content {
+        padding: 1.5rem;
+        padding-right: 2rem;
+      }
+    }
+  }
+
+  .description-section {
+    margin-bottom: 1.5rem;
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+
+      i {
+        font-size: 1.5rem;
+        color: var(--primary-color);
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color);
+      }
+    }
+
+    .section-help {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: var(--surface-100);
+      border-left: 3px solid var(--primary-color);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: var(--text-color-secondary);
+      line-height: 1.5;
+    }
+  }
+
+  .full-width-textarea {
+    width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: vertical;
+    overflow-y: auto;
+  }
+
+  .general-description-textarea {
+    max-height: 300px;
+    min-height: 150px;
+  }
+
+  .class-description-textarea {
+    max-height: 250px;
+    min-height: 120px;
+  }
+
+  .classes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .class-item {
+    border: 1px solid var(--surface-border);
+    border-radius: 6px;
+    padding: 1rem;
+    background: var(--surface-card);
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--primary-color);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .class-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--surface-border);
+
+      .class-color-indicator {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .class-name {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: var(--text-color);
+      }
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    text-align: center;
+    color: var(--text-color-secondary);
+
+    i {
+      font-size: 3rem;
+      color: var(--surface-400);
+      margin-bottom: 1rem;
+    }
+
+    p {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+  }
+
+  .p-divider {
+    margin: 2rem 0;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  ::ng-deep .project-descriptions-dialog {
+    .p-dialog {
+      width: 95vw !important;
+      height: 90vh !important;
+    }
+
+    .dialog-body {
+      padding: 1rem;
+    }
+
+    .description-section {
+      .section-header {
+        h3 {
+          font-size: 1.1rem;
+        }
+      }
+    }
+  }
+}
+

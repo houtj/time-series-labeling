@@ -50,6 +50,9 @@ PLANNER_INIT_MESSAGE = """
 PLANNER TASK ASSIGNMENT
 =======================
 
+PROJECT CONTEXT:
+{general_description}
+
 EVENT PATTERNS TO IDENTIFY:
 {patterns}
 

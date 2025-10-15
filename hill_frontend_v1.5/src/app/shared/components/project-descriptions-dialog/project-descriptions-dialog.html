@@ -1,0 +1,89 @@
+<p-dialog
+  [header]="'Edit Project Descriptions: ' + projectName()"
+  [(visible)]="visible"
+  [modal]="true"
+  [style]="{ width: '70vw', height: '80vh' }"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="project-descriptions-dialog"
+>
+  <div class="dialog-body">
+    <p-scrollPanel [style]="{ width: '100%', height: '100%' }">
+      <!-- General Pattern Description Section -->
+      <div class="description-section">
+        <div class="section-header">
+          <i class="pi pi-book"></i>
+          <h3>General Pattern Description</h3>
+        </div>
+        <p class="section-help">
+          Provide an overall description of the patterns and context for this project.
+          This helps AI agents understand the general labeling goals.
+        </p>
+        <textarea
+          pInputTextarea
+          [(ngModel)]="editingGeneralDescription"
+          [placeholder]="getGeneralDescriptionPlaceholder()"
+          [autoResize]="false"
+          rows="8"
+          class="full-width-textarea general-description-textarea"
+        ></textarea>
+      </div>
+
+      <p-divider />
+
+      <!-- Class Descriptions Section -->
+      <div class="description-section">
+        <div class="section-header">
+          <i class="pi pi-tags"></i>
+          <h3>Event Class Descriptions</h3>
+        </div>
+        <p class="section-help">
+          Describe the visual patterns for each event class. Be specific about measurement behaviors.
+        </p>
+
+        @if (editingClassDescriptions.length === 0) {
+          <div class="empty-state">
+            <i class="pi pi-info-circle"></i>
+            <p>No classes defined yet. Add classes in the project settings first.</p>
+          </div>
+        } @else {
+          <div class="classes-list">
+            @for (class_ of editingClassDescriptions; track class_.name) {
+              <div class="class-item">
+                <div class="class-header">
+                  <span class="class-color-indicator" [style.background-color]="class_.color"></span>
+                  <span class="class-name">{{ class_.name }}</span>
+                </div>
+                <textarea
+                  pInputTextarea
+                  [(ngModel)]="class_.description"
+                  [placeholder]="getClassDescriptionPlaceholder()"
+                  [autoResize]="false"
+                  rows="6"
+                  class="full-width-textarea class-description-textarea"
+                ></textarea>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </p-scrollPanel>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      icon="pi pi-times"
+      (onClick)="onClickCancel()"
+      styleClass="p-button-text"
+      [disabled]="saving"
+    />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      (onClick)="onClickSave()"
+      [loading]="saving"
+    />
+  </ng-template>
+</p-dialog>
+

@@ -16,7 +16,7 @@ import { DialogModule } from 'primeng/dialog';
 
 // Core imports
 import { UserStateService } from '../../../../core/services';
-import { LabelsRepository, UsersRepository, FilesRepository } from '../../../../core/repositories';
+import { LabelsRepository, UsersRepository, FilesRepository, ProjectsRepository } from '../../../../core/repositories';
 import { FileModel, FolderModel, LabelModel, ProjectModel, DataModel, UserModel } from '../../../../core/models';
 import { environment } from '../../../../../environments/environment';
 
@@ -30,7 +30,7 @@ import { AiChatService } from '../../../../shared/services';
 import { ToolbarAction } from '../../models/toolbar-action.model';
 
 // Shared components
-import { ShareDialogComponent, DescriptionDialogComponent } from '../../../../shared/components';
+import { ShareDialogComponent, DescriptionDialogComponent, ProjectDescriptionsDialogComponent } from '../../../../shared/components';
 
 // Feature components
 import { ChartComponent } from '../chart/chart';
@@ -67,6 +67,7 @@ import { AutoDetectionPanelComponent } from '../auto-detection-panel/auto-detect
     AutoDetectionPanelComponent,
     ShareDialogComponent,
     DescriptionDialogComponent,
+    ProjectDescriptionsDialogComponent,
     ButtonModule,
     TooltipModule
   ],
@@ -86,6 +87,7 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly userState = inject(UserStateService);
   private readonly labelState = inject(LabelStateService);
+  private readonly projectsRepo = inject(ProjectsRepository);
   private readonly autoDetectionService = inject(AutoDetectionService);
   private readonly aiChatService = inject(AiChatService);
   private readonly labelingActions = inject(LabelingActionsService);
@@ -96,11 +98,13 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   // Dialog visibility
   protected shareDialogVisible = false;
   protected descriptionDialogVisible = false;
+  protected projectDescriptionsDialogVisible = false;
   protected downloadDialogVisible = false;
   protected downloadUri?: SafeResourceUrl;
   
   // Selected event for description editing
   protected selectedEvent?: LabelModel['events'][0];
+  protected selectedEventIndex?: number;
   protected selectedEventDescription = '';
   
   // Panel visibility
@@ -294,12 +298,38 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
    * Handle edit descriptions
    */
   onEditDescriptions(): void {
-    // TODO: Implement edit descriptions functionality (project class descriptions)
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Info',
-      detail: 'Edit descriptions functionality coming soon'
-    });
+    if (!this.projectInfo()) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Project information not available'
+      });
+      return;
+    }
+    this.projectDescriptionsDialogVisible = true;
+  }
+  
+  /**
+   * Handle project descriptions save
+   */
+  onProjectDescriptionsSave(): void {
+    // Reload project info to get updated descriptions
+    const currentProject = this.projectInfo();
+    if (currentProject?._id?.$oid) {
+      this.projectsRepo.getProject(currentProject._id.$oid).subscribe({
+        next: (updatedProject: ProjectModel) => {
+          // Update the project in the userState's project list
+          const currentProjectList = this.userState.projectList();
+          const updatedList = currentProjectList.map(p => 
+            p._id?.$oid === updatedProject._id?.$oid ? updatedProject : p
+          );
+          this.userState.setProjectList(updatedList);
+        },
+        error: (error: any) => {
+          console.error('Failed to reload project:', error);
+        }
+      });
+    }
   }
   
   /**
@@ -389,6 +419,7 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
    */
   onEditEventDescription(event: { event: LabelModel['events'][0]; index: number }): void {
     this.selectedEvent = event.event;
+    this.selectedEventIndex = event.index;
     this.selectedEventDescription = event.event.description || '';
     this.descriptionDialogVisible = true;
   }
@@ -397,17 +428,22 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
    * Handle save event description
    */
   onSaveEventDescription(newDescription: string): void {
-    if (this.selectedEvent) {
-      this.selectedEvent.description = newDescription;
+    if (this.selectedEvent && this.labelInfo && this.selectedEventIndex !== undefined) {
+      // Update the description in the event at the correct index
+      if (this.labelInfo.events && this.labelInfo.events[this.selectedEventIndex]) {
+        this.labelInfo.events[this.selectedEventIndex].description = newDescription;
+        
+        // Also update the selected event reference
+        this.selectedEvent.description = newDescription;
+      }
+      
       this.descriptionDialogVisible = false;
       
       // Update label in state
-      if (this.labelInfo) {
-        this.labelState.updateLabel(this.labelInfo);
-        
-        // Auto-save to database
-        this.labelingActions.saveLabel(this.labelInfo).subscribe();
-      }
+      this.labelState.updateLabel(this.labelInfo);
+      
+      // Auto-save to database
+      this.labelingActions.saveLabel(this.labelInfo).subscribe();
     }
   }
   

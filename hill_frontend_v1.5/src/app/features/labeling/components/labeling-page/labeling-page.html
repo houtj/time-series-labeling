@@ -170,6 +170,16 @@
   (onSave)="onSaveEventDescription($event)"
 />
 
+<!-- Project Descriptions Dialog -->
+<app-project-descriptions-dialog
+  [(visible)]="projectDescriptionsDialogVisible"
+  [projectId]="projectInfo()?._id?.$oid"
+  [projectName]="projectInfo()?.projectName || ''"
+  [classes]="projectInfo()?.classes || []"
+  [generalDescription]="projectInfo()?.general_pattern_description || ''"
+  (onSave)="onProjectDescriptionsSave()"
+/>
+
 <!-- Download Dialog -->
 <p-dialog
   header="Download"

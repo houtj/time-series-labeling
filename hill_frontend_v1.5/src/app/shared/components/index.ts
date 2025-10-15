@@ -7,3 +7,4 @@ export * from './share-dialog/share-dialog';
 export * from './description-dialog/description-dialog';
 export * from './confirmation-dialog/confirmation-dialog';
 export * from './template-editor-dialog/template-editor-dialog';
+export * from './project-descriptions-dialog/project-descriptions-dialog';

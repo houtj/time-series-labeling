@@ -11,6 +11,13 @@
     />
     <div class="header-buttons">
       <p-button
+        icon="pi pi-file-edit"
+        (onClick)="onClickEditDescriptions($event)"
+        [rounded]="true"
+        [outlined]="true"
+        pTooltip="Edit Project Descriptions"
+      />
+      <p-button
         icon="pi pi-share-alt"
         (onClick)="onClickShare($event)"
         [rounded]="true"
@@ -429,4 +436,14 @@
   [templateId]="editingTemplateId"
   [projectId]="selectedProject?._id?.$oid"
   (onSave)="onTemplateEditorSave()"
+/>
+
+<!-- Project Descriptions Dialog -->
+<app-project-descriptions-dialog
+  [(visible)]="projectDescriptionsDialogVisible"
+  [projectId]="selectedProject?._id?.$oid"
+  [projectName]="selectedProject?.projectName || ''"
+  [classes]="selectedProject?.classes || []"
+  [generalDescription]="selectedProject?.general_pattern_description || ''"
+  (onSave)="onProjectDescriptionsSave()"
 />

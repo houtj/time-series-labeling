@@ -23,7 +23,7 @@ import { ProjectsRepository, UsersRepository, TemplatesRepository } from '../../
 import { ProjectModel, UserModel, TemplateModel } from '../../../../core/models';
 
 // Shared components
-import { TemplateEditorDialogComponent } from '../../../../shared/components';
+import { TemplateEditorDialogComponent, ProjectDescriptionsDialogComponent } from '../../../../shared/components';
 
 @Component({
   selector: 'app-projects-page',
@@ -40,7 +40,8 @@ import { TemplateEditorDialogComponent } from '../../../../shared/components';
     Toast,
     ColorPicker,
     TextareaModule,
-    TemplateEditorDialogComponent
+    TemplateEditorDialogComponent,
+    ProjectDescriptionsDialogComponent
   ],
   standalone: true,
   providers: [ConfirmationService, MessageService],
@@ -93,6 +94,9 @@ export class ProjectsPageComponent implements OnInit, OnDestroy {
   shareDialogVisible = false;
   usersList?: UserModel[];
   selectedUser?: UserModel;
+  
+  // Project Descriptions
+  projectDescriptionsDialogVisible = false;
 
   ngOnInit(): void {
     this.userState.updatePageTitle('Project Settings');
@@ -279,6 +283,31 @@ export class ProjectsPageComponent implements OnInit, OnDestroy {
         this.shareDialogVisible = false;
       }
     });
+  }
+
+  /**
+   * Open project descriptions editor
+   */
+  onClickEditDescriptions(event: MouseEvent): void {
+    if (!this.selectedProject) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Please select a project first'
+      });
+      return;
+    }
+    this.projectDescriptionsDialogVisible = true;
+  }
+
+  /**
+   * Handle project descriptions save
+   */
+  onProjectDescriptionsSave(): void {
+    // Reload projects to get updated descriptions
+    if (this.userInfo?.projectList) {
+      this.loadProjects(this.userInfo.projectList);
+    }
   }
 
   // ==================== CLASS OPERATIONS ====================

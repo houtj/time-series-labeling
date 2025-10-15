@@ -47,7 +47,7 @@ class Settings:
     # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+    DEBUG: bool = True
 
 
 # Global settings instance

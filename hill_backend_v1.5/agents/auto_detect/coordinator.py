@@ -278,6 +278,13 @@ class AgentCoordinator:
             events_list = [cls['name'] for cls in self.project_info['classes']]
         events_list_str = ', '.join(events_list) if events_list else "No events defined"
         
+        # Extract general pattern description from project
+        general_description = ""
+        if self.project_info and 'general_pattern_description' in self.project_info:
+            general_description = self.project_info['general_pattern_description']
+        if not general_description:
+            general_description = "No general project context provided."
+        
         # Create patterns text from project classes
         patterns_text = ""
         if self.project_info and 'classes' in self.project_info:
@@ -292,6 +299,7 @@ class AgentCoordinator:
             patterns_text = "\n".join(pattern_parts)
         
         init_message = pt.PLANNER_INIT_MESSAGE.format(
+            general_description=general_description,
             patterns=patterns_text,
             statistics=self.stat,
             events_list=events_list_str,

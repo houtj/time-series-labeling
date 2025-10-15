@@ -47,12 +47,17 @@ export class ProjectsRepository extends BaseRepository<ProjectModel> {
   }
 
   /**
-   * Update project description
+   * Update project descriptions (general + all classes)
    */
-  updateDescription(projectId: string, description: string): Observable<string> {
-    return this.apiService.put(`${this.basePath}/description`, {
+  updateProjectDescriptions(
+    projectId: string,
+    generalDescription: string,
+    classDescriptions: Array<{ name: string; description: string }>
+  ): Observable<string> {
+    return this.apiService.put(`${this.basePath}/descriptions`, {
       projectId,
-      description
+      generalDescription,
+      classDescriptions
     });
   }
 

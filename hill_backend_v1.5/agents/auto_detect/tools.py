@@ -289,7 +289,7 @@ class PlotViewer:
         axes[-1].set_xlabel('Index')
 
         plt.tight_layout()
-        fig.savefig('test.png')
+        # fig.savefig('test.png')
 
         # Encode the figure to base64 without saving to disk
         buf = io.BytesIO()
