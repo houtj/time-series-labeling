@@ -63,7 +63,7 @@ A comprehensive time-series labeling tool for visualizing, annotating, and analy
 
 5. **Access the application**:
    - Open your browser to: http://localhost:4200
-   - Default login: (use the credentials you set up)
+   - The application will load and be ready to use
 
 ### One-Line Installation
 
