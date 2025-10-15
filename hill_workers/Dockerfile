@@ -10,12 +10,11 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
-COPY pyproject.toml .
-COPY uv.lock .
-COPY config.py .
-COPY database.py .
-COPY redis_client.py .
+# Copy dependency files first for better caching
+COPY pyproject.toml uv.lock ./
+
+# Copy source files
+COPY config.py database.py redis_client.py ./
 COPY workers/ ./workers/
 
 # Install uv

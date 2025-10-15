@@ -11,8 +11,10 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
+# Copy dependency files first for better caching
 COPY pyproject.toml uv.lock ./
+
+# Copy source files
 COPY config.py database.py main.py models.py redis_client.py ./
 COPY routes/ ./routes/
 COPY ws_handlers/ ./ws_handlers/
