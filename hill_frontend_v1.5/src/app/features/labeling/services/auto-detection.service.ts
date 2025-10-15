@@ -14,6 +14,7 @@ export class AutoDetectionService extends WebSocketBaseService {
   // State
   readonly isRunning = signal<boolean>(false);
   readonly inferenceHistory = signal<any[]>([]);
+  readonly detectionCompleted = signal<boolean>(false);
   
   private readonly chartService = inject(ChartService);
   
@@ -35,6 +36,7 @@ export class AutoDetectionService extends WebSocketBaseService {
   startAutoAnnotation(fileId: string, folderId: string, projectId: string): void {
     if (this.isConnected()) {
       this.isRunning.set(true);
+      this.detectionCompleted.set(false); // Reset completion state
       
       const message = {
         command: 'start_auto_detection',
@@ -153,6 +155,8 @@ export class AutoDetectionService extends WebSocketBaseService {
       case 'detection_completed':
         // Remove view-sync shapes when detection completes
         this.chartService.removeViewSyncShapes();
+        // Signal that detection has completed successfully
+        this.detectionCompleted.set(true);
         return {
           type: 'success',
           message: `🎉 Detection completed successfully! Saved ${messageData.total_events || 0} events to database`,

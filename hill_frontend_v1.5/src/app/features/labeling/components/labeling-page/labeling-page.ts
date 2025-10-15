@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, inject, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -133,6 +133,23 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
     }
     return undefined;
   });
+  
+  constructor() {
+    // Watch for auto-detection completion to refresh label data
+    effect(() => {
+      if (this.autoDetectionService.detectionCompleted()) {
+        // Refresh label data to show newly detected events
+        this.onRefreshPage();
+        
+        // Show success message
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Auto-Detection Complete',
+          detail: 'New events have been added to the chart'
+        });
+      }
+    });
+  }
   
   ngOnInit(): void {
     this.userState.updatePageLabel('Labeling');

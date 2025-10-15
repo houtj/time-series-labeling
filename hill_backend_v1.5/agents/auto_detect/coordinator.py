@@ -322,7 +322,7 @@ class AgentCoordinator:
                 'message': 'Multi-agent analysis started...'
             })
             
-            for chunk in workflow.stream(state, {"recursion_limit": 10}, stream_mode='updates'):
+            for chunk in workflow.stream(state, {"recursion_limit": 200}, stream_mode='updates'):
                 # Send any pending LLM notifications
                 await self.send_pending_llm_notifications()
                 
