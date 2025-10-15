@@ -20,8 +20,8 @@ COPY workers/ ./workers/
 # Install uv
 RUN pip install uv
 
-# Install dependencies
-RUN uv sync --frozen
+# Install dependencies (allow resolution for cross-platform compatibility)
+RUN uv sync
 
 # Create data folder
 RUN mkdir -p /app/data_folder
