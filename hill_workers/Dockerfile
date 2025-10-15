@@ -17,7 +17,6 @@ COPY config.py .
 COPY database.py .
 COPY redis_client.py .
 COPY workers/ ./workers/
-COPY .env .
 
 # Install uv
 RUN pip install uv
