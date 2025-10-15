@@ -2,6 +2,8 @@
 
 File parsing worker service using Redis Streams for task distribution.
 
+> **For development setup and contribution guidelines**, see [README.dev.md](../README.dev.md) in the project root.
+
 ## Architecture
 
 ```

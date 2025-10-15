@@ -1,134 +1,167 @@
 # Hill Sequence - Quick Start Guide
 
-This guide shows you how to quickly deploy Hill Sequence using the published Docker images.
+Get Hill Sequence running in under 5 minutes!
 
-## Prerequisites
+## What You'll Need
 
 - Docker and Docker Compose installed
-- At least 4GB of available RAM
-- 10GB of available disk space
+- 4GB+ RAM available
+- Azure OpenAI API credentials ([Get them here](https://azure.microsoft.com/en-us/products/ai-services/openai-service))
 
-## Quick Deployment
+## Quick Installation
 
-### 1. Create Project Directory
+### Step 1: Create Deployment Directory
+
 ```bash
-mkdir hill-sequence
-cd hill-sequence
+mkdir hill-app && cd hill-app
 ```
 
-### 2. Download Configuration Files
+### Step 2: Download Required Files
+
 ```bash
-# Download docker-compose file
-curl -O https://raw.githubusercontent.com/your-username/hill-sequence/main/docker-compose.prod.yml
-
-# Download environment template
-curl -O https://raw.githubusercontent.com/your-username/hill-sequence/main/env.example
-
-# Download MongoDB initialization script
-curl -O https://raw.githubusercontent.com/your-username/hill-sequence/main/init-mongo.js
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/docker-compose.prod.yml
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/env.example
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/init-mongo.js
 ```
 
-### 3. Configure Environment
+### Step 2.5: Create Data Directories
+
 ```bash
-# Copy and edit environment file
+# Create directories for persistent data
+mkdir -p mongodb_data app_data
+
+# Verify you're in the right directory
+ls -la
+# You should see: docker-compose.prod.yml, env.example, init-mongo.js, mongodb_data/, app_data/
+```
+
+### Step 3: Configure Environment
+
+```bash
+# Copy template
 cp env.example .env
 
-# Edit the .env file with your settings
+# Edit configuration (use your favorite editor)
 nano .env
+# or
+vim .env
 ```
 
-**Required environment variables:**
+**Required: Add your Azure OpenAI credentials**:
+
 ```bash
-# Your Docker Hub username
-DOCKER_USERNAME=your-dockerhub-username
-
-# Version to use (latest, v1.0.0, etc.)
-VERSION=latest
-
-# MongoDB credentials (change these!)
-MONGO_ROOT_USERNAME=admin
-MONGO_ROOT_PASSWORD=your_secure_password
-
-# Optional: Custom data paths
-MONGODB_DATA_PATH=./mongodb_data
-APP_DATA_PATH=./app_data
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4
+API_VERSION=2024-02-01
+API_KEY=your-actual-api-key-here
+API_ENDPOINT=https://your-resource.openai.azure.com/
 ```
 
-### 4. Start the Application
+**Optional: Change default password** (recommended for production):
+
 ```bash
-# Start all services
+MONGO_ROOT_PASSWORD=your-secure-password-here
+```
+
+### Step 4: Start the Application
+
+**IMPORTANT**: Make sure you're in the `hill-app` directory before running docker-compose!
+
+```bash
+# Verify you're in the correct directory
+pwd
+# Should show: /path/to/hill-app
+
+# Start the application
 docker-compose -f docker-compose.prod.yml up -d
-
-# View logs
-docker-compose -f docker-compose.prod.yml logs -f
 ```
 
-### 5. Access the Application
-- **Frontend**: http://localhost:4200
-- **Backend API**: http://localhost:8000
-- **MongoDB Express**: http://localhost:8081 (optional)
+This will:
+- Download Docker images (~2GB)
+- Start all services (MongoDB, Redis, Backend, Worker, Frontend)
+- Initialize the database
+- Takes 2-3 minutes on first run
 
-## One-Line Deployment
+**Note**: Data will be stored in `./mongodb_data` and `./app_data` directories relative to where you run docker-compose.
 
-For the fastest setup, you can use this single command:
+### Step 5: Access the Application
+
+Open your browser to: **http://localhost:4200**
+
+## One-Line Installation
+
+For the fastest setup, copy and paste this:
 
 ```bash
-# Create directory and download files
-mkdir hill-sequence && cd hill-sequence && \
-curl -O https://raw.githubusercontent.com/your-username/hill-sequence/main/docker-compose.prod.yml && \
-curl -O https://raw.githubusercontent.com/your-username/hill-sequence/main/env.example && \
-curl -O https://raw.githubusercontent.com/your-username/hill-sequence/main/init-mongo.js && \
+mkdir hill-app && cd hill-app && \
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/docker-compose.prod.yml && \
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/env.example && \
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/init-mongo.js && \
+mkdir -p mongodb_data app_data && \
 cp env.example .env && \
-echo "DOCKER_USERNAME=your-dockerhub-username" >> .env && \
-echo "VERSION=latest" >> .env && \
-docker-compose -f docker-compose.prod.yml up -d
+echo "✅ Files downloaded and directories created!" && \
+echo "Next steps:" && \
+echo "1. Edit .env with your OpenAI credentials" && \
+echo "2. Run: docker-compose -f docker-compose.prod.yml up -d"
 ```
 
-## Configuration Options
+## Verify Installation
 
-### Environment Variables
+Check that all services are running:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DOCKER_USERNAME` | your-username | Your Docker Hub username |
-| `VERSION` | latest | Image version to use |
-| `MONGO_ROOT_USERNAME` | root | MongoDB root username |
-| `MONGO_ROOT_PASSWORD` | example | MongoDB root password |
-| `MONGO_DATABASE` | hill_ts | Database name |
-| `MONGO_PORT` | 27017 | MongoDB port |
-| `BACKEND_PORT` | 8000 | Backend API port |
-| `FRONTEND_PORT` | 4200 | Frontend port |
-| `WORKER_REPLICAS` | 1 | Number of worker instances |
-| `MONGODB_DATA_PATH` | ./mongodb_data | MongoDB data directory |
-| `APP_DATA_PATH` | ./app_data | Application data directory |
-
-### Custom Data Paths
-
-For production deployments, use absolute paths:
-
-```bash
-# In your .env file
-MONGODB_DATA_PATH=/opt/hill_sequence/mongodb
-APP_DATA_PATH=/opt/hill_sequence/app_data
-```
-
-### Scaling Workers
-
-To scale the worker service:
-
-```bash
-# Scale to 3 workers
-docker-compose -f docker-compose.prod.yml up -d --scale worker=3
-```
-
-## Management Commands
-
-### View Status
 ```bash
 docker-compose -f docker-compose.prod.yml ps
 ```
 
+You should see 5 services running:
+- ✅ hill-mongodb (healthy)
+- ✅ hill-redis (healthy)
+- ✅ hill-backend (healthy)
+- ✅ hill-worker (healthy)
+- ✅ hill-frontend (healthy)
+
+## Common Issues
+
+### Port 4200 Already in Use
+
+Change the port in your `.env` file:
+
+```bash
+FRONTEND_PORT=4201
+```
+
+Restart the application:
+
+```bash
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+Access at: http://localhost:4201
+
+### Services Not Starting
+
+Check the logs:
+
+```bash
+docker-compose -f docker-compose.prod.yml logs
+```
+
+Common causes:
+- Not enough RAM (need 4GB minimum)
+- Docker not running
+- Port conflicts
+
+### AI Features Not Working
+
+Verify your OpenAI credentials in `.env`:
+- Check API_KEY is correct
+- Check API_ENDPOINT matches your Azure resource
+- Test your credentials at https://portal.azure.com
+
+## Managing the Application
+
 ### View Logs
+
 ```bash
 # All services
 docker-compose -f docker-compose.prod.yml logs -f
@@ -137,60 +170,118 @@ docker-compose -f docker-compose.prod.yml logs -f
 docker-compose -f docker-compose.prod.yml logs -f backend
 ```
 
-### Stop Services
+### Stop the Application
+
 ```bash
 docker-compose -f docker-compose.prod.yml down
 ```
 
-### Update to New Version
-```bash
-# Update environment variable
-echo "VERSION=v1.1.0" > .env
+Your data is preserved in `mongodb_data` and `app_data` directories.
 
-# Pull and restart
+### Restart the Application
+
+```bash
+# Make sure you're in the hill-app directory
+cd /path/to/hill-app
+
+# Restart
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Update to Latest Version
+
+```bash
+# Navigate to your installation directory
+cd /path/to/hill-app
+
+# Pull and restart with latest version
 docker-compose -f docker-compose.prod.yml pull
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-## Troubleshooting
+## Configuration Options
 
-### Port Conflicts
-If you get port conflicts, change the ports in your `.env` file:
+### Change Ports
+
+Edit `.env`:
+
 ```bash
-FRONTEND_PORT=4201
-BACKEND_PORT=8001
-MONGO_PORT=27018
+FRONTEND_PORT=8080        # Change frontend port
+MONGO_EXPRESS_PORT=8081   # Change database admin port
 ```
 
-### Permission Issues
-If you get permission errors with data directories:
+### Scale Workers
+
+For better performance with many files:
+
 ```bash
-# Create directories with proper permissions
-mkdir -p mongodb_data app_data
-chmod 755 mongodb_data app_data
+docker-compose -f docker-compose.prod.yml up -d --scale worker=3
 ```
 
-### Memory Issues
-If the application is slow or crashes:
+### Enable Database Admin UI
+
+Start with MongoDB Express:
+
 ```bash
-# Increase Docker memory limit to 4GB or more
-# In Docker Desktop: Settings > Resources > Memory
+docker-compose -f docker-compose.prod.yml --profile tools up -d
 ```
 
-### Database Connection Issues
-Check if MongoDB is running:
+Access at: http://localhost:8081
+- Username: admin
+- Password: admin (or what you set in .env)
+
+## Data Backup
+
+### Backup
+
 ```bash
-docker-compose -f docker-compose.prod.yml logs mongodb
+# Backup everything
+tar czf hill-backup-$(date +%Y%m%d).tar.gz mongodb_data app_data .env
 ```
 
-## Support
+### Restore
 
-For issues and questions:
-1. Check the troubleshooting section above
-2. Review service logs
-3. Check the [GitHub repository](https://github.com/your-username/hill-sequence)
-4. Open an issue on GitHub
+```bash
+# Extract backup
+tar xzf hill-backup-20240115.tar.gz
 
-## License
+# Restart application
+docker-compose -f docker-compose.prod.yml up -d
+```
 
-[Add your license information here]
+## Next Steps
+
+1. **Upload your first file**: Create a project → Add a folder → Upload CSV/Excel
+2. **Try AI auto-detection**: Open a file → Click "Auto-Detect" → Describe patterns
+3. **Chat with your data**: Click the chat icon → Ask questions about your data
+4. **Invite team members**: Share projects and folders for collaboration
+
+## Getting Help
+
+- **Documentation**: See [README.md](README.md) for full documentation
+- **Troubleshooting**: Check logs with `docker-compose logs`
+- **Issues**: Report at [GitHub Issues](https://github.com/houtj/time-series-labeling/issues)
+
+## Uninstall
+
+To completely remove the application:
+
+```bash
+# Stop and remove containers
+docker-compose -f docker-compose.prod.yml down
+
+# Remove data (careful - this deletes all your work!)
+rm -rf mongodb_data app_data
+
+# Remove downloaded images (optional)
+docker rmi houtj1990/hill-sequence-backend
+docker rmi houtj1990/hill-sequence-frontend
+docker rmi houtj1990/hill-sequence-worker
+```
+
+---
+
+**Need more control?** See [README.md](README.md) for advanced configuration and deployment options.
+
+**Developer?** See [README.dev.md](README.dev.md) for development setup and contribution guidelines.
+

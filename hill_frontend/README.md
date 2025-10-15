@@ -1,6 +1,10 @@
-# HillFrontend
+# Hill Sequence Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.3.
+Angular-based frontend for the Hill Sequence time-series labeling tool.
+
+> **For development setup and contribution guidelines**, see [README.dev.md](../README.dev.md) in the project root.
+
+This project uses [Angular CLI](https://github.com/angular/angular-cli) version 20.3.3.
 
 ## Development server
 

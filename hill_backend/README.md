@@ -2,6 +2,8 @@
 
 Refactored backend with clean architecture and improved maintainability.
 
+> **For development setup and contribution guidelines**, see [README.dev.md](../README.dev.md) in the project root.
+
 ## 🎯 What's New in v1.5
 
 ### Architecture Improvements

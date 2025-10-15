@@ -22,6 +22,20 @@ services:
       retries: 3
       start_period: 40s
 
+  # Redis for task queue
+  redis:
+    image: redis:7-alpine
+    container_name: hill-redis
+    restart: unless-stopped
+    networks:
+      - hill-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: redis-server --appendonly yes
+
   # MongoDB Express (Optional - for database management)
   mongo-express:
     image: mongo-express:1.0.0
@@ -45,16 +59,24 @@ services:
 
   # Backend API
   backend:
-    image: ${DOCKER_USERNAME:-your-username}/hill-sequence-backend:${VERSION:-latest}
+    image: ${DOCKER_USERNAME:-houtj1990}/hill-sequence-backend:${VERSION:-latest}
     container_name: hill-backend
     restart: unless-stopped
     environment:
       - MONGODB_URL=mongodb://${MONGO_ROOT_USERNAME:-root}:${MONGO_ROOT_PASSWORD:-example}@mongodb:27017/
       - DATA_FOLDER_PATH=/app/data_folder
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - API_VERSION=${API_VERSION}
+      - API_KEY=${API_KEY}
+      - API_ENDPOINT=${API_ENDPOINT}
     volumes:
       - app_data:/app/data_folder
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - hill-network
@@ -67,16 +89,20 @@ services:
 
   # Worker Service
   worker:
-    image: ${DOCKER_USERNAME:-your-username}/hill-sequence-worker:${VERSION:-latest}
+    image: ${DOCKER_USERNAME:-houtj1990}/hill-sequence-worker:${VERSION:-latest}
     container_name: hill-worker
     restart: unless-stopped
     environment:
       - MONGODB_URL=mongodb://${MONGO_ROOT_USERNAME:-root}:${MONGO_ROOT_PASSWORD:-example}@mongodb:27017/
       - DATA_FOLDER_PATH=/app/data_folder
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - app_data:/app/data_folder
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       backend:
         condition: service_healthy
@@ -87,7 +113,7 @@ services:
 
   # Frontend Application
   frontend:
-    image: ${DOCKER_USERNAME:-your-username}/hill-sequence-frontend:${VERSION:-latest}
+    image: ${DOCKER_USERNAME:-houtj1990}/hill-sequence-frontend:${VERSION:-latest}
     container_name: hill-frontend
     restart: unless-stopped
     ports:
@@ -98,7 +124,7 @@ services:
     networks:
       - hill-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4200/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4200/", "||", "exit", "1"]
       interval: 30s
       timeout: 10s
       retries: 3
