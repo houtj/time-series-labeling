@@ -39,7 +39,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [backend, frontend, worker]
+        include:
+          - service: backend
+            directory: hill_backend
+          - service: frontend
+            directory: hill_frontend
+          - service: worker
+            directory: hill_workers
     
     steps:
       - name: Checkout code
@@ -57,8 +63,8 @@ jobs:
       - name: Build and push ${{ matrix.service }}
         uses: docker/build-push-action@v5
         with:
-          context: ./hill_${{ matrix.service }}
-          file: ./hill_${{ matrix.service }}/Dockerfile
+          context: ./${{ matrix.directory }}
+          file: ./${{ matrix.directory }}/Dockerfile
           push: true
           tags: |
             ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.validate-tag.outputs.version }}
