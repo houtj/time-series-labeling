@@ -1,9 +1,10 @@
 /**
  * Production environment configuration
+ * Uses relative URLs to work with nginx proxy
  */
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:8000',
-  wsUrl: 'ws://localhost:8000/ws'
+  apiUrl: '/api',
+  wsUrl: `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws`
 };
 
