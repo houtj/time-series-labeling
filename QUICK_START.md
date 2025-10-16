@@ -19,9 +19,9 @@ mkdir hill-app && cd hill-app
 ### Step 2: Download Required Files
 
 ```bash
-curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/docker-compose.prod.yml
-curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/env.example
-curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/init-mongo.js
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/docker-compose.prod.yml
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/env.example
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/init-mongo.js
 ```
 
 ### Step 2.5: Create Data Directories
@@ -93,9 +93,9 @@ For the fastest setup, copy and paste this:
 
 ```bash
 mkdir hill-app && cd hill-app && \
-curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/docker-compose.prod.yml && \
-curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/env.example && \
-curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/init-mongo.js && \
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/docker-compose.prod.yml && \
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/env.example && \
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/init-mongo.js && \
 mkdir -p mongodb_data app_data && \
 cp env.example .env && \
 echo "✅ Files downloaded and directories created!" && \

@@ -19,3 +19,4 @@ mongodb_data/*
 */.env
 to_implement/*
 data_csv/*
+INTRODUCTION.md

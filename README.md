@@ -30,9 +30,9 @@ A comprehensive time-series labeling tool for visualizing, annotating, and analy
 
 2. **Download required files**:
    ```bash
-   curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/docker-compose.prod.yml
-   curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/env.example
-   curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/init-mongo.js
+   curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/docker-compose.prod.yml
+   curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/env.example
+   curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/init-mongo.js
    
    # Create data directories
    mkdir -p mongodb_data app_data
@@ -71,9 +71,9 @@ For the fastest setup, use this single command:
 
 ```bash
 mkdir hill-app && cd hill-app && \
-curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/docker-compose.prod.yml && \
-curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/env.example && \
-curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/main/init-mongo.js && \
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/docker-compose.prod.yml && \
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/env.example && \
+curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/init-mongo.js && \
 mkdir -p mongodb_data app_data && \
 cp env.example .env && \
 echo "Edit .env with your OpenAI credentials, then run: docker-compose -f docker-compose.prod.yml up -d"
