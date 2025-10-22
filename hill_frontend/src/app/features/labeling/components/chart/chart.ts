@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef, Input, inject, effect } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef, input, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as Plotly from 'plotly.js-dist-min';
 
@@ -22,20 +22,33 @@ import { ChartService, LabelStateService, LabelingActionsService } from '../../s
 export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chartDiv') chartDiv?: ElementRef;
   
-  @Input() data?: DataModel[];
-  @Input() labelInfo?: LabelModel;
+  // Use signal inputs for reactive updates
+  data = input<DataModel[]>();
+  labelInfo = input<LabelModel>();
   
   private readonly chartService = inject(ChartService);
   private readonly labelState = inject(LabelStateService);
   private readonly labelingActions = inject(LabelingActionsService);
   
   private resizeObserver?: ResizeObserver;
+  private isChartInitialized = false;
   
   // Track interaction state
   private nbClick = 0;
   private startX?: string | number;
   
   constructor() {
+    // React to data changes - reinitialize chart when data changes
+    effect(() => {
+      const currentData = this.data();
+      if (currentData && this.chartDiv && this.isChartInitialized) {
+        // Data changed after initial load - reinitialize chart
+        setTimeout(() => {
+          this.initializeChart();
+        }, 0);
+      }
+    });
+    
     // React to label state changes
     effect(() => {
       const shapes = this.labelState.plotlyShapes();
@@ -67,10 +80,12 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
   
   ngAfterViewInit(): void {
     // Initialize chart after view is ready
-    if (this.chartDiv && this.data) {
+    const currentData = this.data();
+    if (this.chartDiv && currentData) {
       setTimeout(() => {
         this.initializeChart();
         this.setupResizeObserver();
+        this.isChartInitialized = true;
       }, 100);
     }
   }
@@ -85,21 +100,23 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
    * Initialize the Plotly chart
    */
   private initializeChart(): void {
-    if (!this.chartDiv || !this.data) return;
+    const currentData = this.data();
+    const currentLabelInfo = this.labelInfo();
+    if (!this.chartDiv || !currentData) return;
     
     // Clear existing channel list
     this.labelState.clearChannels();
     
     // Initialize chart and populate channel list
     const channelList: any[] = [];
-    this.chartService.initializeChart(this.chartDiv, this.data, channelList);
+    this.chartService.initializeChart(this.chartDiv, currentData, channelList);
     
     // Store channels in state
     channelList.forEach(channel => this.labelState.addChannel(channel));
     
     // Update label visualizations if label info exists
-    if (this.labelInfo) {
-      this.labelState.updateLabel(this.labelInfo);
+    if (currentLabelInfo) {
+      this.labelState.updateLabel(currentLabelInfo);
     }
     
     // Attach Plotly event listeners
@@ -136,12 +153,13 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
           const newGuideline = this.chartService.createGuideline(selectedYAxis);
           
           // Add guideline to label info (optimistic update)
-          if (this.labelInfo) {
-            this.labelInfo.guidelines.push(newGuideline);
-            this.labelState.updateLabel(this.labelInfo);
+          const currentLabelInfo = this.labelInfo();
+          if (currentLabelInfo) {
+            currentLabelInfo.guidelines.push(newGuideline);
+            this.labelState.updateLabel(currentLabelInfo);
             
             // Auto-save to database
-            this.labelingActions.queueAutoSave(this.labelInfo);
+            this.labelingActions.queueAutoSave(currentLabelInfo);
           }
           
           // Reset button state

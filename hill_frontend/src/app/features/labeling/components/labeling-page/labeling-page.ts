@@ -16,7 +16,7 @@ import { DialogModule } from 'primeng/dialog';
 
 // Core imports
 import { UserStateService } from '../../../../core/services';
-import { LabelsRepository, UsersRepository, FilesRepository, ProjectsRepository } from '../../../../core/repositories';
+import { LabelsRepository, UsersRepository, FilesRepository, ProjectsRepository, FoldersRepository } from '../../../../core/repositories';
 import { FileModel, FolderModel, LabelModel, ProjectModel, DataModel, UserModel } from '../../../../core/models';
 import { environment } from '../../../../../environments/environment';
 
@@ -88,12 +88,16 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   private readonly userState = inject(UserStateService);
   private readonly labelState = inject(LabelStateService);
   private readonly projectsRepo = inject(ProjectsRepository);
+  private readonly filesRepo = inject(FilesRepository);
+  private readonly foldersRepo = inject(FoldersRepository);
+  private readonly labelsRepo = inject(LabelsRepository);
   private readonly autoDetectionService = inject(AutoDetectionService);
   private readonly aiChatService = inject(AiChatService);
   private readonly labelingActions = inject(LabelingActionsService);
   private readonly messageService = inject(MessageService);
   
   private subscriptions = new Subscription();
+  private previousFileId?: string;
   
   // Dialog visibility
   protected shareDialogVisible = false;
@@ -154,42 +158,43 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.userState.updatePageLabel('Labeling');
     
-    // Get data from resolver
+    // Get data from resolver (initial load only)
     this.subscriptions.add(
       this.route.data.subscribe((routeData) => {
         const resolvedData = routeData['labelingData'];
         if (resolvedData) {
-          this.fileInfo = resolvedData.file;
-          this.folderInfo = resolvedData.folder;
-          this.labelInfo = resolvedData.label;
-          this.data = resolvedData.data;
-          
-          // Update page title with file name
-          if (this.fileInfo) {
-            this.userState.updatePageTitle(this.fileInfo.name);
-          }
-          
-          // Update label state
-          if (this.labelInfo) {
-            this.labelState.updateLabel(this.labelInfo);
-          }
-          
-          // Note: projectInfo is now a computed signal that updates automatically
-          // when projectList changes in userState
+          this.loadResolvedData(resolvedData);
         }
       })
     );
     
-    // Get route parameters
+    // Watch for route parameter changes and reload data
     this.subscriptions.add(
       this.route.paramMap.subscribe(params => {
-        this.fileId = params.get('fileId') || undefined;
+        const newFileId = params.get('fileId') || undefined;
+        const newFolderId = params.get('folderId') || 
+                           this.route.snapshot.queryParamMap.get('folderId') || undefined;
+        
+        // Check if fileId has changed (navigation between files)
+        if (this.previousFileId && newFileId && this.previousFileId !== newFileId) {
+          // File changed - reload all data
+          this.reloadFileData(newFileId, newFolderId);
+        } else {
+          // First load - just store the IDs
+          this.fileId = newFileId;
+          this.folderId = newFolderId;
+          this.previousFileId = newFileId;
+        }
       })
     );
     
+    // Watch for query parameter changes
     this.subscriptions.add(
       this.route.queryParamMap.subscribe(params => {
-        this.folderId = params.get('folderId') || undefined;
+        const newFolderId = params.get('folderId') || undefined;
+        if (newFolderId) {
+          this.folderId = newFolderId;
+        }
       })
     );
     
@@ -200,6 +205,119 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
         this.onRefreshPage();
       })
     );
+  }
+  
+  /**
+   * Load data from resolver
+   */
+  private loadResolvedData(resolvedData: any): void {
+    this.fileInfo = resolvedData.file;
+    this.folderInfo = resolvedData.folder;
+    this.labelInfo = resolvedData.label;
+    this.data = resolvedData.data;
+    
+    // Update page title with file name
+    if (this.fileInfo) {
+      this.userState.updatePageTitle(this.fileInfo.name);
+    }
+    
+    // Update label state
+    if (this.labelInfo) {
+      this.labelState.updateLabel(this.labelInfo);
+    }
+  }
+  
+  /**
+   * Reload all file data when navigating between files
+   */
+  private reloadFileData(fileId: string, folderId?: string): void {
+    if (!folderId) {
+      console.error('Folder ID is required to reload file data');
+      return;
+    }
+    
+    // Disconnect WebSocket services first
+    if (this.autoDetectionService.isConnected()) {
+      this.autoDetectionService.disconnect();
+      this.autoDetectionVisible = false;
+    }
+    if (this.aiChatService.isConnected()) {
+      this.aiChatService.disconnect();
+      this.aiChatVisible = false;
+    }
+    
+    // Reset dialog visibility
+    this.shareDialogVisible = false;
+    this.descriptionDialogVisible = false;
+    this.projectDescriptionsDialogVisible = false;
+    this.downloadDialogVisible = false;
+    
+    // Reset active tab
+    this.activeTab = '0';
+    
+    // Load file data
+    this.filesRepo.getFile(fileId).subscribe({
+      next: (fileData) => {
+        const file = fileData.fileInfo;
+        const data = fileData.data;
+        const labelId = file.label;
+        
+        // Load folder and label
+        this.foldersRepo.getFolder(folderId).subscribe({
+          next: (folder) => {
+            this.folderInfo = folder;
+            
+            // Load label
+            this.labelsRepo.getLabel(labelId).subscribe({
+              next: (label) => {
+                // Update all component state
+                this.fileInfo = file;
+                this.labelInfo = label;
+                this.data = data;
+                this.fileId = fileId;
+                this.folderId = folderId;
+                this.previousFileId = fileId;
+                
+                // Update page title
+                this.userState.updatePageTitle(file.name);
+                
+                // Update label state (this will trigger chart update)
+                this.labelState.updateLabel(label);
+                
+                // Reset selected event
+                this.selectedEvent = undefined;
+                this.selectedEventIndex = undefined;
+                this.selectedEventDescription = '';
+              },
+              error: (error) => {
+                console.error('Failed to load label:', error);
+                this.messageService.add({
+                  severity: 'error',
+                  summary: 'Error',
+                  detail: 'Failed to load label data'
+                });
+              }
+            });
+          },
+          error: (error) => {
+            console.error('Failed to load folder:', error);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Failed to load folder data'
+            });
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Failed to load file:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load file data'
+        });
+      }
+    });
   }
   
   ngOnDestroy(): void {

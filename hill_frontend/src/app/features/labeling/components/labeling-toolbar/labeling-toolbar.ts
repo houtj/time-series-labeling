@@ -9,9 +9,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
 import { Select } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageService } from 'primeng/api';
 
 // Core imports
 import { FileModel, FolderModel, LabelModel, ProjectModel, UserModel } from '../../../../core/models';
+import { FoldersRepository } from '../../../../core/repositories';
 
 // Feature services
 import { LabelStateService, AutoDetectionService, LabelingActionsService } from '../../services';
@@ -59,6 +61,8 @@ export class LabelingToolbarComponent {
   private readonly userState = inject(UserStateService);
   private readonly labelingActions = inject(LabelingActionsService);
   private readonly router = inject(Router);
+  private readonly foldersRepo = inject(FoldersRepository);
+  private readonly messageService = inject(MessageService);
   
   // Local toggle button states
   protected labelToggleButton = false;
@@ -298,5 +302,129 @@ export class LabelingToolbarComponent {
     
     // Navigate back to files page
     this.router.navigate(['/files', this.folderId]);
+  }
+  
+  /**
+   * Navigate to previous file in the folder
+   */
+  onClickPreviousFile(): void {
+    if (!this.folderId || !this.fileId) {
+      console.error('Folder ID or File ID is missing');
+      return;
+    }
+    
+    // Fetch current folder data to get file list
+    this.foldersRepo.getFolder(this.folderId).subscribe({
+      next: (folder: FolderModel) => {
+        const fileList = folder.fileList || [];
+        
+        if (fileList.length === 0) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'No Files',
+            detail: 'This folder has no files'
+          });
+          return;
+        }
+        
+        // Find current file index
+        const currentIndex = fileList.findIndex(id => id === this.fileId);
+        
+        if (currentIndex === -1) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Current file not found in folder'
+          });
+          return;
+        }
+        
+        // Check if already at first file
+        if (currentIndex === 0) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'First File',
+            detail: 'Already at the first file in the folder'
+          });
+          return;
+        }
+        
+        // Navigate to previous file
+        const previousFileId = fileList[currentIndex - 1];
+        this.router.navigate(['/labeling', previousFileId], {
+          queryParams: { folderId: this.folderId }
+        });
+      },
+      error: (error: any) => {
+        console.error('Failed to fetch folder:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load folder information'
+        });
+      }
+    });
+  }
+  
+  /**
+   * Navigate to next file in the folder
+   */
+  onClickNextFile(): void {
+    if (!this.folderId || !this.fileId) {
+      console.error('Folder ID or File ID is missing');
+      return;
+    }
+    
+    // Fetch current folder data to get file list
+    this.foldersRepo.getFolder(this.folderId).subscribe({
+      next: (folder: FolderModel) => {
+        const fileList = folder.fileList || [];
+        
+        if (fileList.length === 0) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'No Files',
+            detail: 'This folder has no files'
+          });
+          return;
+        }
+        
+        // Find current file index
+        const currentIndex = fileList.findIndex(id => id === this.fileId);
+        
+        if (currentIndex === -1) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Current file not found in folder'
+          });
+          return;
+        }
+        
+        // Check if already at last file
+        if (currentIndex === fileList.length - 1) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Last File',
+            detail: 'Already at the last file in the folder'
+          });
+          return;
+        }
+        
+        // Navigate to next file
+        const nextFileId = fileList[currentIndex + 1];
+        this.router.navigate(['/labeling', nextFileId], {
+          queryParams: { folderId: this.folderId }
+        });
+      },
+      error: (error: any) => {
+        console.error('Failed to fetch folder:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load folder information'
+        });
+      }
+    });
   }
 }
