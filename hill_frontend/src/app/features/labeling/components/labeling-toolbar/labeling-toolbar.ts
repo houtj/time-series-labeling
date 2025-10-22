@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 // PrimeNG imports
 import { ButtonModule } from 'primeng/button';
@@ -57,6 +58,7 @@ export class LabelingToolbarComponent {
   private readonly autoDetectionService = inject(AutoDetectionService);
   private readonly userState = inject(UserStateService);
   private readonly labelingActions = inject(LabelingActionsService);
+  private readonly router = inject(Router);
   
   // Local toggle button states
   protected labelToggleButton = false;
@@ -283,5 +285,18 @@ export class LabelingToolbarComponent {
     
     this.labelState.setSelectedYAxis(this.selectedYAxis);
     this.guidelineSelectionDialogVisible = false;
+  }
+  
+  /**
+   * Handle back button click - navigate to files page
+   */
+  onClickBack(): void {
+    if (!this.folderId) {
+      console.error('Folder ID is missing');
+      return;
+    }
+    
+    // Navigate back to files page
+    this.router.navigate(['/files', this.folderId]);
   }
 }
