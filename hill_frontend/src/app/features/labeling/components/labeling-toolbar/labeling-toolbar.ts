@@ -45,7 +45,6 @@ export class LabelingToolbarComponent {
   @Input() labelInfo?: LabelModel;
   @Input() projectInfo?: ProjectModel;
   
-  @Output() onSave = new EventEmitter<void>();
   @Output() onShare = new EventEmitter<void>();
   @Output() onImport = new EventEmitter<void>();
   @Output() onExport = new EventEmitter<void>();
@@ -169,13 +168,6 @@ export class LabelingToolbarComponent {
     } else {
       this.labelState.updateSelectedButton('none');
     }
-  }
-  
-  /**
-   * Handle save button click
-   */
-  onClickSave(): void {
-    this.onSave.emit();
   }
   
   /**

@@ -228,17 +228,6 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   }
   
   /**
-   * Handle save labels
-   */
-  onSaveLabels(): void {
-    if (!this.labelInfo) return;
-    
-    this.subscriptions.add(
-      this.labelingActions.saveLabel(this.labelInfo).subscribe()
-    );
-  }
-  
-  /**
    * Handle share folder
    */
   onShareFolder(): void {

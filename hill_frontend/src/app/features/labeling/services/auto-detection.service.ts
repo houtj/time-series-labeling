@@ -111,7 +111,7 @@ export class AutoDetectionService extends WebSocketBaseService {
       }
       
       // Update running state based on message type
-      if (data.type === 'detection_completed' || data.type === 'detection_failed') {
+      if (data.type === 'detection_completed' || data.type === 'detection_failed' || data.type === 'detection_cancelled') {
         this.isRunning.set(false);
       }
     } catch (error) {
@@ -174,6 +174,16 @@ export class AutoDetectionService extends WebSocketBaseService {
         return {
           type: 'error',
           message: `❌ Detection failed: ${messageData.message || 'Unknown error'}`,
+          timestamp
+        };
+        
+      case 'detection_cancelled':
+        // Remove view-sync shapes when detection is cancelled
+        this.chartService.removeViewSyncShapes();
+        this.isRunning.set(false);
+        return {
+          type: 'warning',
+          message: '⏹️ Auto-detection cancelled by user',
           timestamp
         };
         
