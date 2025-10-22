@@ -203,7 +203,18 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   }
   
   ngOnDestroy(): void {
+    // Clean up subscriptions
     this.subscriptions.unsubscribe();
+    
+    // Disconnect WebSocket services to prevent stale connections
+    if (this.autoDetectionService.isConnected()) {
+      this.autoDetectionService.disconnect();
+    }
+    if (this.aiChatService.isConnected()) {
+      this.aiChatService.disconnect();
+    }
+    
+    // Reset label state
     this.labelState.reset();
   }
   

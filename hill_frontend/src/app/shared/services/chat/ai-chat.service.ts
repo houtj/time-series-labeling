@@ -47,6 +47,10 @@ export class AiChatService extends WebSocketBaseService {
    * Connect to AI chat WebSocket
    */
   connectChat(fileId: string, context?: { folderId?: string; projectId?: string; userName?: string }): void {
+    // Clear previous chat history when connecting to a new file
+    this.clearChatHistory();
+    this.isWaitingForResponse.set(false);
+    
     const wsUrl = `${environment.wsUrl}/chat/${fileId}`;
     
     // Store context to send after connection is established
@@ -210,6 +214,13 @@ export class AiChatService extends WebSocketBaseService {
    */
   override disconnect(): void {
     this.isWaitingForResponse.set(false);
+    
+    // Clear pending context
+    this.pendingContext = null;
+    
+    // Clear chat history to prevent confusion when switching files
+    this.clearChatHistory();
+    
     super.disconnect();
   }
 }

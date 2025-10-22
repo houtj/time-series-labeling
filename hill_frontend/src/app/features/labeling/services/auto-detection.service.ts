@@ -26,6 +26,11 @@ export class AutoDetectionService extends WebSocketBaseService {
    * Connect to auto-detection WebSocket
    */
   connectAutoDetection(fileId: string, folderId: string): void {
+    // Clear previous inference history when connecting to a new file
+    this.clearInferenceHistory();
+    this.isRunning.set(false);
+    this.detectionCompleted.set(false);
+    
     const wsUrl = `${environment.wsUrl}/auto-detection/${fileId}`;
     this.connect(wsUrl);
   }
@@ -289,9 +294,13 @@ export class AutoDetectionService extends WebSocketBaseService {
    */
   override disconnect(): void {
     this.isRunning.set(false);
+    this.detectionCompleted.set(false);
     
     // Remove view-sync shapes when disconnecting
     this.chartService.removeViewSyncShapes();
+    
+    // Clear inference history to prevent confusion when switching files
+    this.clearInferenceHistory();
     
     super.disconnect();
   }
