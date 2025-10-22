@@ -280,4 +280,158 @@
   }
 }
 
+// Plan display styling
+.plan-display {
+  border-top: 2px solid var(--primary-color);
+  background: var(--surface-section);
+  padding: 1rem;
+  max-height: 40%;
+  display: flex;
+  flex-direction: column;
+  
+  .plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--surface-border);
+    
+    .plan-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text-color);
+      
+      i {
+        color: var(--primary-color);
+        font-size: 1.25rem;
+      }
+    }
+    
+    .plan-progress {
+      font-size: 0.875rem;
+      color: var(--text-color-secondary);
+      font-weight: 500;
+    }
+  }
+  
+  .plan-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: var(--surface-ground);
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: var(--surface-400);
+      border-radius: 3px;
+      
+      &:hover {
+        background: var(--surface-500);
+      }
+    }
+  }
+  
+  .plan-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--surface-card);
+    border-radius: 6px;
+    border-left: 3px solid var(--surface-border);
+    transition: all 0.2s ease;
+    
+    &.completed {
+      border-left-color: var(--green-500);
+      background: var(--green-50);
+      opacity: 0.8;
+      
+      .plan-item-checkbox i {
+        color: var(--green-500);
+      }
+      
+      .plan-item-description {
+        text-decoration: line-through;
+        color: var(--text-color-secondary);
+      }
+    }
+    
+    &:not(.completed) {
+      border-left-color: var(--primary-color);
+      
+      .plan-item-checkbox i {
+        color: var(--surface-400);
+      }
+    }
+    
+    .plan-item-checkbox {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.5rem;
+      
+      i {
+        font-size: 1.25rem;
+        transition: color 0.2s ease;
+      }
+    }
+    
+    .plan-item-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      
+      .plan-item-description {
+        font-size: 0.875rem;
+        line-height: 1.4;
+        color: var(--text-color);
+        font-weight: 500;
+      }
+      
+      .plan-item-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        
+        .plan-item-type {
+          padding: 0.125rem 0.5rem;
+          border-radius: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          
+          &.identification {
+            background: var(--blue-100);
+            color: var(--blue-700);
+          }
+          
+          &.verification {
+            background: var(--purple-100);
+            color: var(--purple-700);
+          }
+        }
+        
+        .plan-item-id {
+          color: var(--text-color-secondary);
+          font-family: monospace;
+        }
+      }
+    }
+  }
+}
+
 

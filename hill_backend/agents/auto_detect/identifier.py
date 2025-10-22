@@ -113,6 +113,14 @@ def identifier_node(coordinator, state):
         for plan_item in current_plan:
             if plan_item.get('task_id') == task_id:
                 plan_item['is_done'] = True
+                
+                # Send task completion notification to frontend
+                import asyncio
+                asyncio.create_task(coordinator.send_notification('task_completed', {
+                    'message': f'Task completed: {plan_item.get("task_description", task_id)}',
+                    'task_id': task_id,
+                    'plan': current_plan
+                }))
                 break
         else:
             print(f'Error: task {task_id} not found in plan')

@@ -1,5 +1,6 @@
 <div class="auto-detection-container">
   <div class="panel-content">
+    <!-- Scrollable inference log -->
     <div class="inference-log" #inferenceLog>
       @if (inferenceHistory().length === 0) {
         <div class="log-empty">
@@ -68,5 +69,42 @@
         </div>
       }
     </div>
+    
+    <!-- Fixed plan display at bottom -->
+    @if (currentPlan().length > 0) {
+      <div class="plan-display">
+        <div class="plan-header">
+          <div class="plan-title">
+            <i class="pi pi-list-check"></i>
+            <span>Execution Plan</span>
+          </div>
+          <div class="plan-progress">
+            {{ getCompletedTasksCount() }} / {{ currentPlan().length }} completed
+          </div>
+        </div>
+        <div class="plan-items">
+          @for (task of currentPlan(); track task.task_id) {
+            <div class="plan-item" [class.completed]="task.is_done">
+              <div class="plan-item-checkbox">
+                @if (task.is_done) {
+                  <i class="pi pi-check-circle"></i>
+                } @else {
+                  <i class="pi pi-circle"></i>
+                }
+              </div>
+              <div class="plan-item-content">
+                <div class="plan-item-description">{{ task.task_description }}</div>
+                <div class="plan-item-meta">
+                  <span class="plan-item-type" [class.identification]="task.task_type === 'identification'" [class.verification]="task.task_type === 'verification'">
+                    {{ task.task_type }}
+                  </span>
+                  <span class="plan-item-id">{{ task.task_id }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
   </div>
 </div>

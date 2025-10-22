@@ -128,16 +128,23 @@ async def start_auto_detection_process(websocket: WebSocket, file_id: str):
                 if 'error' in message.get('data', {}):
                     conv_message['error'] = message['data']['error']
                 
+                # Database update operations
+                update_ops = {
+                    '$push': {'messages': conv_message},
+                    '$set': {
+                        'status': conv_message['status'],
+                        'updatedAt': datetime.now(tz=timezone.utc).isoformat()
+                    }
+                }
+                
+                # Handle plan updates - save plan to database
+                if message.get('type') == 'plan_updated' and 'plan' in message.get('data', {}):
+                    update_ops['$set']['plan'] = message['data']['plan']
+                
                 # Save to database
                 db['auto_detection_conversations'].update_one(
                     {'fileId': file_id},
-                    {
-                        '$push': {'messages': conv_message},
-                        '$set': {
-                            'status': conv_message['status'],
-                            'updatedAt': datetime.now(tz=timezone.utc).isoformat()
-                        }
-                    }
+                    update_ops
                 )
                 
                 # Stream to WebSocket

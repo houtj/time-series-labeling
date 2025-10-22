@@ -39,6 +39,7 @@ export class AutoDetectionPanelComponent implements AfterViewChecked {
   // Auto-detection state from service
   protected readonly isRunning = this.autoDetectionService.isRunning;
   protected readonly inferenceHistory = this.autoDetectionService.inferenceHistory;
+  protected readonly currentPlan = this.autoDetectionService.currentPlan;
   
   ngAfterViewChecked(): void {
     if (this.shouldScrollToBottom) {
@@ -197,5 +198,12 @@ export class AutoDetectionPanelComponent implements AfterViewChecked {
       const element = this.inferenceLogElement.nativeElement;
       element.scrollTop = element.scrollHeight;
     }
+  }
+  
+  /**
+   * Get count of completed tasks
+   */
+  getCompletedTasksCount(): number {
+    return this.currentPlan().filter(task => task.is_done).length;
   }
 }

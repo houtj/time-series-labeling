@@ -31,12 +31,23 @@ export interface AutoDetectionMessage {
 }
 
 /**
+ * Plan item for auto-detection
+ */
+export interface PlanItem {
+  task_id: string;
+  task_description: string;
+  task_type: 'identification' | 'verification';
+  is_done: boolean;
+}
+
+/**
  * Auto-detection conversation model
  */
 export interface AutoDetectionConversation extends BaseModel {
   fileId: string;
   messages: AutoDetectionMessage[];
   status: AutoDetectionStatus;
+  plan?: PlanItem[];
   createdAt?: string;
   updatedAt?: string;
 }

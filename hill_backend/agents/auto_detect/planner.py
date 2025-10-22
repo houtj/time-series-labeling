@@ -124,6 +124,14 @@ def planner_node(coordinator, state):
         elif additional_info.plan is not None:
             plan = [r.model_dump() for r in additional_info.plan]
             print(f'plan updated: {plan}')
+            
+            # Send plan update notification to frontend
+            import asyncio
+            asyncio.create_task(coordinator.send_notification('plan_updated', {
+                'message': 'Planner has created/updated the plan',
+                'plan': plan
+            }))
+            
             return Command(update={
                 'planner_messages': messages+[AIMessage(content=response.raw_message), AIMessage(content=f"The plan is updated. The current plan is: {plan}. Please assign the task to the identifier or validator agent.")],
                 'plan': plan,

@@ -2,6 +2,7 @@ import { Injectable, signal, inject } from '@angular/core';
 import { WebSocketBaseService } from '../../../core/services/websocket/websocket-base.service';
 import { environment } from '../../../../environments/environment';
 import { ChartService } from './chart.service';
+import { PlanItem } from '../../../core/models';
 
 /**
  * Auto-Detection Service
@@ -15,6 +16,7 @@ export class AutoDetectionService extends WebSocketBaseService {
   readonly isRunning = signal<boolean>(false);
   readonly inferenceHistory = signal<any[]>([]);
   readonly detectionCompleted = signal<boolean>(false);
+  readonly currentPlan = signal<PlanItem[]>([]);
   
   private readonly chartService = inject(ChartService);
   
@@ -30,6 +32,7 @@ export class AutoDetectionService extends WebSocketBaseService {
     this.clearInferenceHistory();
     this.isRunning.set(false);
     this.detectionCompleted.set(false);
+    this.currentPlan.set([]);
     
     const wsUrl = `${environment.wsUrl}/auto-detection/${fileId}`;
     this.connect(wsUrl);
@@ -194,6 +197,28 @@ export class AutoDetectionService extends WebSocketBaseService {
           timestamp
         };
         
+      case 'plan_updated':
+        // Update the current plan
+        if (messageData.plan) {
+          this.currentPlan.set(messageData.plan);
+        }
+        return {
+          type: 'info',
+          message: `📋 Planner created execution plan with ${messageData.plan?.length || 0} tasks`,
+          timestamp
+        };
+        
+      case 'task_completed':
+        // Update the plan with completed task
+        if (messageData.plan) {
+          this.currentPlan.set(messageData.plan);
+        }
+        return {
+          type: 'success',
+          message: `✓ ${messageData.message || 'Task completed'}`,
+          timestamp
+        };
+        
       case 'llm_interaction':
         // Format agent reasoning with clear labels
         const agent = messageData.agent || 'Agent';
@@ -290,6 +315,7 @@ export class AutoDetectionService extends WebSocketBaseService {
    */
   clearInferenceHistory(): void {
     this.inferenceHistory.set([]);
+    this.currentPlan.set([]);
   }
 
   /**
