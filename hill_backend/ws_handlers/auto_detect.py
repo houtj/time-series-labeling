@@ -93,7 +93,7 @@ async def start_auto_detection_process(websocket: WebSocket, file_id: str):
             
             # Initialize conversation
             db = get_db()
-            db['auto_detection_conversations'].update_one(
+            result = db['auto_detection_conversations'].update_one(
                 {'fileId': file_id},
                 {
                     '$set': {
@@ -106,6 +106,16 @@ async def start_auto_detection_process(websocket: WebSocket, file_id: str):
                 },
                 upsert=True
             )
+            
+            # Get conversation ID and update file
+            conversation = db['auto_detection_conversations'].find_one({'fileId': file_id})
+            if conversation and '_id' in conversation:
+                conversation_id = str(conversation['_id'])
+                from bson import ObjectId
+                db['files'].update_one(
+                    {'_id': ObjectId(file_id)},
+                    {'$set': {'autoDetectionConversationId': conversation_id}}
+                )
             
             # Define callback to save messages and stream to WebSocket
             async def auto_detection_callback(file_id: str, message: dict):

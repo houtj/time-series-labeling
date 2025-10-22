@@ -2,6 +2,7 @@ import { Injectable, signal, inject, effect } from '@angular/core';
 import { WebSocketBaseService } from '../../../core/services/websocket/websocket-base.service';
 import { environment } from '../../../../environments/environment';
 import { Subject } from 'rxjs';
+import { ChatRepository } from '../../../core/repositories';
 
 /**
  * AI Chat Service
@@ -22,6 +23,9 @@ export class AiChatService extends WebSocketBaseService {
   
   // Store context to send after connection
   private pendingContext: { fileId: string; context: any } | null = null;
+  
+  // Inject repository
+  private readonly chatRepo = inject(ChatRepository);
   
   constructor() {
     super();
@@ -47,9 +51,22 @@ export class AiChatService extends WebSocketBaseService {
    * Connect to AI chat WebSocket
    */
   connectChat(fileId: string, context?: { folderId?: string; projectId?: string; userName?: string }): void {
-    // Clear previous chat history when connecting to a new file
+    // Clear previous chat history
     this.clearChatHistory();
     this.isWaitingForResponse.set(false);
+    
+    // Load existing conversation history
+    this.chatRepo.getChatConversation(fileId).subscribe({
+      next: (conversation) => {
+        if (conversation && conversation.messages && conversation.messages.length > 0) {
+          // Load messages into chat history
+          this.chatHistory.set(conversation.messages);
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load chat history:', error);
+      }
+    });
     
     const wsUrl = `${environment.wsUrl}/chat/${fileId}`;
     
@@ -191,8 +208,20 @@ export class AiChatService extends WebSocketBaseService {
   /**
    * Clear chat history
    */
-  clearChatHistory(): void {
+  clearChatHistory(fileId?: string): void {
     this.chatHistory.set([]);
+    
+    // If fileId provided, also clear conversation in database
+    if (fileId) {
+      this.chatRepo.clearChatConversation(fileId).subscribe({
+        next: () => {
+          console.log('Chat conversation cleared in database');
+        },
+        error: (error) => {
+          console.error('Failed to clear chat conversation:', error);
+        }
+      });
+    }
   }
 
   /**

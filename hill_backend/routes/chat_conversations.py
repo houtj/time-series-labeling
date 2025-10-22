@@ -39,25 +39,24 @@ async def get_chat_conversation(file_id: str):
 @router.delete("/{file_id}")
 async def clear_chat_conversation(file_id: str):
     """
-    Clear chat conversation history
-    
-    Empties the message array but keeps the conversation document
+    Delete chat conversation and remove reference from file
     """
     db = get_db()
-    result = db['chat_conversations'].update_one(
-        {'fileId': file_id},
-        {
-            '$set': {
-                'messages': [],
-                'updatedAt': datetime.now(tz=timezone.utc).isoformat()
-            }
-        }
+    
+    # Delete the conversation document
+    result = db['chat_conversations'].delete_one({'fileId': file_id})
+    
+    # Remove conversation ID from file
+    from bson import ObjectId
+    db['files'].update_one(
+        {'_id': ObjectId(file_id)},
+        {'$unset': {'chatConversationId': ''}}
     )
     
-    if result.matched_count == 0:
+    if result.deleted_count == 0:
         return {'status': 'not_found', 'message': 'No conversation found for this file'}
     
-    return {'status': 'cleared', 'fileId': file_id}
+    return {'status': 'deleted', 'fileId': file_id}
 
 
 @router.get("/{file_id}/messages/recent")

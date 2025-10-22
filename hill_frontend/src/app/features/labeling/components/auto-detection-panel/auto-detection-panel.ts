@@ -117,7 +117,7 @@ export class AutoDetectionPanelComponent implements AfterViewChecked {
    * Clear inference log
    */
   onClickClearLog(): void {
-    this.autoDetectionService.clearInferenceHistory();
+    this.autoDetectionService.clearInferenceHistory(this.fileId);
   }
   
   /**

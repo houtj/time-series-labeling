@@ -3,6 +3,7 @@ import { WebSocketBaseService } from '../../../core/services/websocket/websocket
 import { environment } from '../../../../environments/environment';
 import { ChartService } from './chart.service';
 import { PlanItem } from '../../../core/models';
+import { AutoDetectionRepository } from '../../../core/repositories';
 
 /**
  * Auto-Detection Service
@@ -19,6 +20,7 @@ export class AutoDetectionService extends WebSocketBaseService {
   readonly currentPlan = signal<PlanItem[]>([]);
   
   private readonly chartService = inject(ChartService);
+  private readonly autoDetectionRepo = inject(AutoDetectionRepository);
   
   constructor() {
     super();
@@ -28,11 +30,48 @@ export class AutoDetectionService extends WebSocketBaseService {
    * Connect to auto-detection WebSocket
    */
   connectAutoDetection(fileId: string, folderId: string): void {
-    // Clear previous inference history when connecting to a new file
+    // Clear previous inference history
     this.clearInferenceHistory();
     this.isRunning.set(false);
     this.detectionCompleted.set(false);
     this.currentPlan.set([]);
+    
+    // Load existing conversation history
+    this.autoDetectionRepo.getDetectionConversation(fileId).subscribe({
+      next: (conversation) => {
+        if (conversation) {
+          // Load messages into inference history
+          if (conversation.messages && conversation.messages.length > 0) {
+            // Transform messages to inference log format
+            const logs = conversation.messages.map((msg: any) => {
+              return {
+                type: msg.type || 'info',
+                message: msg.message || '',
+                timestamp: msg.timestamp || new Date().toISOString(),
+                details: msg
+              };
+            });
+            this.inferenceHistory.set(logs);
+          }
+          
+          // Load plan if exists
+          if (conversation.plan && conversation.plan.length > 0) {
+            this.currentPlan.set(conversation.plan);
+          }
+          
+          // Set running state if conversation is in progress
+          if (conversation.status === 'started' || 
+              conversation.status === 'planning' || 
+              conversation.status === 'identifying' || 
+              conversation.status === 'validating') {
+            this.isRunning.set(true);
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load auto-detection history:', error);
+      }
+    });
     
     const wsUrl = `${environment.wsUrl}/auto-detection/${fileId}`;
     this.connect(wsUrl);
@@ -313,9 +352,21 @@ export class AutoDetectionService extends WebSocketBaseService {
   /**
    * Clear inference history
    */
-  clearInferenceHistory(): void {
+  clearInferenceHistory(fileId?: string): void {
     this.inferenceHistory.set([]);
     this.currentPlan.set([]);
+    
+    // If fileId provided, also clear conversation in database
+    if (fileId) {
+      this.autoDetectionRepo.clearDetectionConversation(fileId).subscribe({
+        next: () => {
+          console.log('Auto-detection conversation cleared in database');
+        },
+        error: (error) => {
+          console.error('Failed to clear auto-detection conversation:', error);
+        }
+      });
+    }
   }
 
   /**

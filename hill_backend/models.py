@@ -73,6 +73,8 @@ class FileModel(BaseModel):
     jsonPath: str
     label: str  # ObjectId as string
     lastModifier: str
+    chatConversationId: str = None  # ObjectId of chat conversation
+    autoDetectionConversationId: str = None  # ObjectId of auto-detection conversation
 
 
 class FolderModel(BaseModel):

@@ -14,6 +14,8 @@ export interface FileModel extends BaseModel {
   lastUpdate: MongoDate;
   lastModifier: string;
   inputVisible?: boolean;
+  chatConversationId?: string;
+  autoDetectionConversationId?: string;
 }
 
 

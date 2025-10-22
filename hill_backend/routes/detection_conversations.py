@@ -40,26 +40,24 @@ async def get_detection_conversation(file_id: str):
 @router.delete("/{file_id}")
 async def clear_detection_conversation(file_id: str):
     """
-    Clear auto-detection conversation history
-    
-    Empties messages and resets status to idle
+    Delete auto-detection conversation and remove reference from file
     """
     db = get_db()
-    result = db['auto_detection_conversations'].update_one(
-        {'fileId': file_id},
-        {
-            '$set': {
-                'messages': [],
-                'status': 'idle',
-                'updatedAt': datetime.now(tz=timezone.utc).isoformat()
-            }
-        }
+    
+    # Delete the conversation document
+    result = db['auto_detection_conversations'].delete_one({'fileId': file_id})
+    
+    # Remove conversation ID from file
+    from bson import ObjectId
+    db['files'].update_one(
+        {'_id': ObjectId(file_id)},
+        {'$unset': {'autoDetectionConversationId': ''}}
     )
     
-    if result.matched_count == 0:
+    if result.deleted_count == 0:
         return {'status': 'not_found', 'message': 'No conversation found for this file'}
     
-    return {'status': 'cleared', 'fileId': file_id}
+    return {'status': 'deleted', 'fileId': file_id}
 
 
 @router.get("/{file_id}/latest")

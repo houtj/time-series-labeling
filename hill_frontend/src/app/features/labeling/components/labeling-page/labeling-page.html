@@ -68,7 +68,7 @@
                     </p-tabpanel>
                     @if (aiChatVisible) {
                       <p-tabpanel value="1">
-                        <app-ai-chat-tab (onClose)="onAiChatClose()" />
+                        <app-ai-chat-tab [fileId]="fileId" (onClose)="onAiChatClose()" />
                       </p-tabpanel>
                     }
                     @if (autoDetectionVisible) {

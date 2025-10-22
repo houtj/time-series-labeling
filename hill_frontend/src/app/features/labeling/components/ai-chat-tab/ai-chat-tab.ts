@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, inject, AfterViewChecked, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, AfterViewChecked, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -29,6 +29,7 @@ import { ToolbarAction } from '../../models/toolbar-action.model';
 export class AiChatTabComponent implements AfterViewChecked {
   @ViewChild('chatMessages') chatMessagesElement?: ElementRef;
   
+  @Input() fileId?: string;
   @Output() onClose = new EventEmitter<void>();
   
   private readonly aiChatService = inject(AiChatService);
@@ -91,7 +92,7 @@ export class AiChatTabComponent implements AfterViewChecked {
    * Clear chat history
    */
   onClickClearChat(): void {
-    this.aiChatService.clearChatHistory();
+    this.aiChatService.clearChatHistory(this.fileId);
   }
   
   /**

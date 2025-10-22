@@ -60,7 +60,15 @@ async def handle_websocket(websocket: WebSocket, file_id: str):
                     'createdAt': datetime.now(tz=timezone.utc).isoformat(),
                     'updatedAt': datetime.now(tz=timezone.utc).isoformat()
                 }
-                db['chat_conversations'].insert_one(conversation)
+                result = db['chat_conversations'].insert_one(conversation)
+                conversation_id = str(result.inserted_id)
+                
+                # Update file with conversation ID
+                from bson import ObjectId
+                db['files'].update_one(
+                    {'_id': ObjectId(file_id)},
+                    {'$set': {'chatConversationId': conversation_id}}
+                )
             
             # Add user message
             user_msg = {
