@@ -52,10 +52,9 @@ export class FilesRepository extends BaseRepository<FileModel> {
    * Update file description
    */
   updateDescription(fileId: string, description: string, userName: string): Observable<string> {
-    return this.apiService.put(`${this.basePath}/description`, {
-      fileId,
-      description,
-      userName
+    return this.apiService.put(`${this.basePath}/descriptions`, {
+      file_id: fileId,
+      description
     });
   }
 

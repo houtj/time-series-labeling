@@ -162,7 +162,7 @@
   [(visible)]="descriptionDialogVisible"
   [title]="'Edit Event Description'"
   [resourceName]="selectedEvent?.className || ''"
-  [description]="selectedEventDescription"
+  [(description)]="selectedEventDescription"
   [placeholder]="'Add notes about this event...'"
   [maxLength]="500"
   [rows]="5"
