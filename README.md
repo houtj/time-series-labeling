@@ -56,10 +56,10 @@ A comprehensive time-series labeling tool for visualizing, annotating, and analy
 4. **Start the application**:
    ```bash
    # IMPORTANT: Run from the hill-app directory
-   docker-compose -f docker-compose.prod.yml up -d
+   docker compose -f docker-compose.prod.yml up -d
    ```
    
-   **Note**: Always run docker-compose from the same directory containing the docker-compose.prod.yml file. Data will be stored in `./mongodb_data` and `./app_data` relative to this location.
+   **Note**: Always run docker compose from the same directory containing the docker-compose.prod.yml file. Data will be stored in `./mongodb_data` and `./app_data` relative to this location.
 
 5. **Access the application**:
    - Open your browser to: http://localhost:4200
@@ -76,7 +76,7 @@ curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/env.
 curl -O https://raw.githubusercontent.com/houtj/time-series-labeling/master/init-mongo.js && \
 mkdir -p mongodb_data app_data && \
 cp env.example .env && \
-echo "Edit .env with your OpenAI credentials, then run: docker-compose -f docker-compose.prod.yml up -d"
+echo "Edit .env with your OpenAI credentials, then run: docker compose -f docker-compose.prod.yml up -d"
 ```
 
 ## Usage
@@ -134,12 +134,12 @@ Edit your `.env` file to configure:
 
 ### Data Persistence
 
-Your data is stored in directories relative to where you run docker-compose:
+Your data is stored in directories relative to where you run docker compose:
 - `./mongodb_data` - Database files
 - `./app_data` - Uploaded files and parsed data
 
 **Important**: 
-- Always run docker-compose from the same directory (where docker-compose.prod.yml is located)
+- Always run docker compose from the same directory (where docker-compose.prod.yml is located)
 - These directories are created automatically on first run
 - Data persists across container restarts and upgrades
 - For production, consider using absolute paths in your `.env` file:
@@ -157,10 +157,10 @@ Your data is stored in directories relative to where you run docker-compose:
 cd /path/to/hill-app
 
 # All services
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # Specific service
-docker-compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f backend
 ```
 
 ### Stopping the Application
@@ -170,7 +170,7 @@ docker-compose -f docker-compose.prod.yml logs -f backend
 cd /path/to/hill-app
 
 # Stop all services
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 ```
 
 ### Updating to New Version
@@ -183,8 +183,8 @@ cd /path/to/hill-app
 export VERSION=v1.2.0
 
 # Pull and restart
-docker-compose -f docker-compose.prod.yml pull
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### Scaling Workers
@@ -196,7 +196,7 @@ For better performance with many files:
 cd /path/to/hill-app
 
 # Scale to 3 workers
-docker-compose -f docker-compose.prod.yml up -d --scale worker=3
+docker compose -f docker-compose.prod.yml up -d --scale worker=3
 ```
 
 ## Troubleshooting
@@ -210,21 +210,21 @@ FRONTEND_PORT=4201
 
 Then restart:
 ```bash
-docker-compose -f docker-compose.prod.yml down
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### Cannot Connect to Application
 
 1. Check if all services are running:
    ```bash
-   docker-compose -f docker-compose.prod.yml ps
+   docker compose -f docker-compose.prod.yml ps
    ```
 
 2. Check service health:
    ```bash
-   docker-compose -f docker-compose.prod.yml logs backend
-   docker-compose -f docker-compose.prod.yml logs frontend
+   docker compose -f docker-compose.prod.yml logs backend
+   docker compose -f docker-compose.prod.yml logs frontend
    ```
 
 3. Verify network connectivity:
@@ -237,7 +237,7 @@ docker-compose -f docker-compose.prod.yml up -d
 1. Verify your Azure OpenAI credentials in `.env`
 2. Check backend logs:
    ```bash
-   docker-compose -f docker-compose.prod.yml logs backend
+   docker compose -f docker-compose.prod.yml logs backend
    ```
 3. Ensure your OpenAI endpoint is accessible from your network
 
@@ -245,11 +245,11 @@ docker-compose -f docker-compose.prod.yml up -d
 
 1. Check worker logs:
    ```bash
-   docker-compose -f docker-compose.prod.yml logs worker
+   docker compose -f docker-compose.prod.yml logs worker
    ```
 2. Verify Redis is running:
    ```bash
-   docker-compose -f docker-compose.prod.yml ps redis
+   docker compose -f docker-compose.prod.yml ps redis
    ```
 
 ## Data Backup
@@ -258,7 +258,7 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ```bash
 # Backup database
-docker-compose -f docker-compose.prod.yml exec mongodb mongodump --out /backup
+docker compose -f docker-compose.prod.yml exec mongodb mongodump --out /backup
 
 # Backup files
 tar czf backup-$(date +%Y%m%d).tar.gz mongodb_data app_data
@@ -268,7 +268,7 @@ tar czf backup-$(date +%Y%m%d).tar.gz mongodb_data app_data
 
 ```bash
 # Restore database
-docker-compose -f docker-compose.prod.yml exec mongodb mongorestore /backup
+docker compose -f docker-compose.prod.yml exec mongodb mongorestore /backup
 
 # Restore files
 tar xzf backup-20240115.tar.gz
