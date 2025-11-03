@@ -12,8 +12,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageService } from 'primeng/api';
 
 // Core imports
-import { FileModel, FolderModel, LabelModel, ProjectModel, UserModel } from '../../../../core/models';
-import { FoldersRepository } from '../../../../core/repositories';
+import { FileModel, FolderModel, LabelModel, ProjectModel, UserModel, EventClass } from '../../../../core/models';
+import { FoldersRepository, ProjectsRepository } from '../../../../core/repositories';
 
 // Feature services
 import { LabelStateService, AutoDetectionService, LabelingActionsService } from '../../services';
@@ -62,6 +62,7 @@ export class LabelingToolbarComponent {
   private readonly labelingActions = inject(LabelingActionsService);
   private readonly router = inject(Router);
   private readonly foldersRepo = inject(FoldersRepository);
+  private readonly projectsRepo = inject(ProjectsRepository);
   private readonly messageService = inject(MessageService);
   
   // Local toggle button states
@@ -73,9 +74,18 @@ export class LabelingToolbarComponent {
   protected guidelineSelectionDialogVisible = false;
   
   // Dialog data
-  protected selectedClass?: ProjectModel['classes'][0];
+  protected selectedClass?: ProjectModel['classes'][0] | { name: string; color: string; description: string; isNew?: boolean };
   protected selectedEventDescription = '';
   protected selectedYAxis?: { channelName: string; yaxis: string; color: string };
+  protected isAddingNewClass = false;
+  protected newClassName = '';
+  
+  // Special option for adding new class
+  protected readonly ADD_NEW_CLASS_OPTION: EventClass = {
+    name: '+ Add new class...',
+    color: '#999999',
+    description: 'Create a new event class'
+  };
   
   // Get channel list from label state
   protected get channelList(): Array<{ channelName: string; yaxis: string; color: string }> {
@@ -85,9 +95,10 @@ export class LabelingToolbarComponent {
   // Auto-annotation state from service
   protected readonly isAutoAnnotationRunning = this.autoDetectionService.isRunning;
   
-  // Get class list from project
-  protected get classList(): ProjectModel['classes'] {
-    return this.projectInfo?.classes || [];
+  // Get class list from project (with "Add new class..." option)
+  protected get classList(): Array<EventClass> {
+    const classes = this.projectInfo?.classes || [];
+    return [...classes, this.ADD_NEW_CLASS_OPTION];
   }
   
   // Get user info
@@ -105,10 +116,13 @@ export class LabelingToolbarComponent {
         // Show dialog for class selection
         this.labelSelectionDialogVisible = true;
         this.selectedEventDescription = '';
+        this.isAddingNewClass = false;
+        this.newClassName = '';
         
-        // Set default class if available
-        if (this.classList && this.classList.length > 0) {
-          this.selectedClass = this.classList[0];
+        // Set default class if available (not the "Add new class..." option)
+        const regularClasses = this.projectInfo?.classes || [];
+        if (regularClasses.length > 0) {
+          this.selectedClass = regularClasses[0];
         }
       }
     });
@@ -234,38 +248,174 @@ export class LabelingToolbarComponent {
   }
   
   /**
+   * Handle class selection change
+   */
+  onClassSelectionChange(): void {
+    if (this.selectedClass?.name === this.ADD_NEW_CLASS_OPTION.name) {
+      this.isAddingNewClass = true;
+      this.newClassName = '';
+    } else {
+      this.isAddingNewClass = false;
+    }
+  }
+  
+  /**
+   * Generate a random color for new class
+   */
+  private generateRandomColor(): string {
+    const hue = Math.floor(Math.random() * 360);
+    const saturation = 65 + Math.floor(Math.random() * 20); // 65-85%
+    const lightness = 45 + Math.floor(Math.random() * 15); // 45-60%
+    
+    // Convert HSL to RGB
+    const h = hue / 360;
+    const s = saturation / 100;
+    const l = lightness / 100;
+    
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    
+    let r, g, b;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    
+    const toHex = (x: number) => {
+      const hex = Math.round(x * 255).toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    };
+    
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  
+  /**
    * Handle class selection confirmation
    */
   onClickSelectClass(): void {
-    if (!this.selectedClass || !this.labelInfo || !this.userInfo) return;
+    if (!this.labelInfo || !this.userInfo || !this.projectInfo) return;
     
     const start = this.labelState.labelSelectionStart();
     const end = this.labelState.labelSelectionEnd();
     
     if (start === undefined || end === undefined) return;
     
-    // Create new event
-    const newEvent = {
-      start,
-      end,
-      className: this.selectedClass.name,
-      color: this.selectedClass.color,
-      description: this.selectedEventDescription,
-      labeler: this.userInfo.name,
-      hide: false
-    };
-    
-    // Add to label info (optimistic update)
-    this.labelInfo.events.push(newEvent);
-    this.labelState.updateLabel(this.labelInfo);
-    
-    // Auto-save to database
-    this.labelingActions.queueAutoSave(this.labelInfo);
-    
-    // Clear selection and close dialog
-    this.labelState.clearLabelSelection();
-    this.labelSelectionDialogVisible = false;
-    this.labelState.updateSelectedButton('none');
+    // Check if adding a new class
+    if (this.isAddingNewClass) {
+      if (!this.newClassName.trim()) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Invalid Name',
+          detail: 'Please enter a class name'
+        });
+        return;
+      }
+      
+      // Check if class name already exists
+      const existingClass = this.projectInfo.classes.find(
+        c => c.name.toLowerCase() === this.newClassName.trim().toLowerCase()
+      );
+      
+      if (existingClass) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Class Exists',
+          detail: 'A class with this name already exists'
+        });
+        return;
+      }
+      
+      // Generate color for new class
+      const newClassColor = this.generateRandomColor();
+      
+      // Add class to database
+      this.projectsRepo.addClass(this.projectInfo._id!.$oid, {
+        name: this.newClassName.trim(),
+        color: newClassColor,
+        description: ''
+      }).subscribe({
+        next: () => {
+          // Create new event with the new class
+          const newEvent = {
+            start,
+            end,
+            className: this.newClassName.trim(),
+            color: newClassColor,
+            description: this.selectedEventDescription,
+            labeler: this.userInfo!.name,
+            hide: false
+          };
+          
+          // Add to label info (optimistic update)
+          this.labelInfo!.events.push(newEvent);
+          this.labelState.updateLabel(this.labelInfo!);
+          
+          // Auto-save to database
+          this.labelingActions.queueAutoSave(this.labelInfo!);
+          
+          // Show success message
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Class Added',
+            detail: `New class "${this.newClassName.trim()}" created`
+          });
+          
+          // Update project info in parent (will be handled by parent reload)
+          
+          // Clear selection and close dialog
+          this.labelState.clearLabelSelection();
+          this.labelSelectionDialogVisible = false;
+          this.labelState.updateSelectedButton('none');
+          this.isAddingNewClass = false;
+          this.newClassName = '';
+        },
+        error: (error: any) => {
+          console.error('Failed to add class:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to add new class'
+          });
+        }
+      });
+    } else {
+      // Regular class selection
+      if (!this.selectedClass) return;
+      
+      // Create new event
+      const newEvent = {
+        start,
+        end,
+        className: this.selectedClass.name,
+        color: this.selectedClass.color,
+        description: this.selectedEventDescription,
+        labeler: this.userInfo.name,
+        hide: false
+      };
+      
+      // Add to label info (optimistic update)
+      this.labelInfo.events.push(newEvent);
+      this.labelState.updateLabel(this.labelInfo);
+      
+      // Auto-save to database
+      this.labelingActions.queueAutoSave(this.labelInfo);
+      
+      // Clear selection and close dialog
+      this.labelState.clearLabelSelection();
+      this.labelSelectionDialogVisible = false;
+      this.labelState.updateSelectedButton('none');
+    }
   }
   
   /**

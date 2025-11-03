@@ -141,11 +141,26 @@
         inputId="eventClass"
         [options]="classList"
         [(ngModel)]="selectedClass"
+        (onChange)="onClassSelectionChange()"
         optionLabel="name"
         placeholder="Select a class"
         appendTo="body"
         [style]="{width: '100%'}"
       />
+      
+      @if (isAddingNewClass) {
+        <label for="newClassName">New Class Name</label>
+        <input 
+          id="newClassName" 
+          type="text" 
+          pInputText 
+          [(ngModel)]="newClassName"
+          placeholder="Enter new class name"
+          [style]="{width: '100%'}"
+          autofocus
+        />
+      }
+      
       <label for="eventDescription">Description</label>
       <input 
         id="eventDescription" 
@@ -162,7 +177,7 @@
         (onClick)="onClickSelectClass()" 
         [rounded]="true" 
         [text]="true"
-        label="OK"
+        [label]="isAddingNewClass ? 'Create & Add Event' : 'OK'"
       />
       <p-button 
         icon="pi pi-times" 
