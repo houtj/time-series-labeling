@@ -74,7 +74,11 @@ import { AutoDetectionPanelComponent } from '../auto-detection-panel/auto-detect
   standalone: true,
   providers: [MessageService, LabelingActionsService],
   templateUrl: './labeling-page.html',
-  styleUrl: './labeling-page.scss'
+  styleUrl: './labeling-page.scss',
+  host: {
+    '(document:keydown)': 'handleKeyboardShortcut($event)',
+    'tabindex': '0'
+  }
 })
 export class LabelingPageComponent implements OnInit, OnDestroy {
   // ViewChild references to panel components
@@ -608,5 +612,52 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
    */
   getRightToolbarActions(): ToolbarAction[] {
     return this.eventsPanel?.getToolbarActions() || [];
+  }
+  
+  /**
+   * Handle keyboard shortcuts
+   * E key: Toggle label mode
+   * G key: Toggle guideline mode
+   */
+  handleKeyboardShortcut(event: KeyboardEvent): void {
+    // Ignore shortcuts if user is typing in an input/textarea or dialog is open
+    const target = event.target as HTMLElement;
+    const isInputField = target.tagName === 'INPUT' || 
+                        target.tagName === 'TEXTAREA' || 
+                        target.isContentEditable;
+    
+    // Also ignore if any dialog is open
+    const isDialogOpen = this.shareDialogVisible || 
+                        this.descriptionDialogVisible || 
+                        this.projectDescriptionsDialogVisible || 
+                        this.downloadDialogVisible;
+    
+    if (isInputField || isDialogOpen) {
+      return;
+    }
+    
+    const key = event.key.toLowerCase();
+    
+    // E key: Toggle label mode
+    if (key === 'e') {
+      event.preventDefault();
+      const currentButton = this.labelState.selectedButton();
+      if (currentButton === 'label') {
+        this.labelState.updateSelectedButton('none');
+      } else {
+        this.labelState.updateSelectedButton('label');
+      }
+    }
+    
+    // G key: Toggle guideline mode
+    if (key === 'g') {
+      event.preventDefault();
+      const currentButton = this.labelState.selectedButton();
+      if (currentButton === 'guideline') {
+        this.labelState.updateSelectedButton('none');
+      } else {
+        this.labelState.updateSelectedButton('guideline');
+      }
+    }
   }
 }
