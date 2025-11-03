@@ -53,7 +53,15 @@ export class ChartService {
     responsive: true,
     scrollZoom: true,
     displaylogo: false,
-    displayModeBar: false
+    displayModeBar: true,
+    modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+    toImageButtonOptions: {
+      format: 'png',
+      filename: 'time-series-chart',
+      height: 1080,
+      width: 1920,
+      scale: 1
+    }
   };
 
   private plotlyChartElement?: HTMLElement;

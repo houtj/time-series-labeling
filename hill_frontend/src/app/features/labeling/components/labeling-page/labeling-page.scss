@@ -114,7 +114,7 @@
 
 // Deep styles for PrimeNG Tabs
 :host ::ng-deep {
-  .left-tabs {
+  .left-tabs, .right-tabs {
     p-tabs {
       height: 100%;
       display: flex;
@@ -133,10 +133,13 @@
       .p-tabpanels {
         flex: 1;
         overflow: hidden;
+        min-height: 0;
         
         .p-tabpanel {
           height: 100%;
           overflow: hidden;
+          display: flex;
+          flex-direction: column;
         }
       }
       
