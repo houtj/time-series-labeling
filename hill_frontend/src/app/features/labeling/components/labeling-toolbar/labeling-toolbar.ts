@@ -13,13 +13,16 @@ import { MessageService } from 'primeng/api';
 
 // Core imports
 import { FileModel, FolderModel, LabelModel, ProjectModel, UserModel, EventClass } from '../../../../core/models';
-import { FoldersRepository, ProjectsRepository } from '../../../../core/repositories';
+import { FoldersRepository, ProjectsRepository, FilesRepository } from '../../../../core/repositories';
 
 // Feature services
 import { LabelStateService, AutoDetectionService, LabelingActionsService } from '../../services';
 
 // Core services
 import { UserStateService } from '../../../../core/services';
+
+// Shared components
+import { DescriptionDialogComponent } from '../../../../shared/components/description-dialog/description-dialog';
 
 /**
  * Labeling Toolbar Component
@@ -34,7 +37,8 @@ import { UserStateService } from '../../../../core/services';
     TooltipModule,
     DialogModule,
     Select,
-    InputTextModule
+    InputTextModule,
+    DescriptionDialogComponent
   ],
   standalone: true,
   templateUrl: './labeling-toolbar.html',
@@ -63,6 +67,7 @@ export class LabelingToolbarComponent {
   private readonly router = inject(Router);
   private readonly foldersRepo = inject(FoldersRepository);
   private readonly projectsRepo = inject(ProjectsRepository);
+  private readonly filesRepo = inject(FilesRepository);
   private readonly messageService = inject(MessageService);
   
   // Local toggle button states
@@ -72,6 +77,7 @@ export class LabelingToolbarComponent {
   // Dialog states
   protected labelSelectionDialogVisible = false;
   protected guidelineSelectionDialogVisible = false;
+  protected fileDescriptionDialogVisible = false;
   
   // Dialog data
   protected selectedClass?: ProjectModel['classes'][0] | { name: string; color: string; description: string; isNew?: boolean };
@@ -79,6 +85,7 @@ export class LabelingToolbarComponent {
   protected selectedYAxis?: { channelName: string; yaxis: string; color: string };
   protected isAddingNewClass = false;
   protected newClassName = '';
+  protected fileDescriptionText = '';
   
   // Special option for adding new class
   protected readonly ADD_NEW_CLASS_OPTION: EventClass = {
@@ -573,6 +580,52 @@ export class LabelingToolbarComponent {
           severity: 'error',
           summary: 'Error',
           detail: 'Failed to load folder information'
+        });
+      }
+    });
+  }
+  
+  /**
+   * Handle edit file description button click
+   */
+  onClickEditFileDescription(): void {
+    if (!this.fileInfo) {
+      console.error('File info is missing');
+      return;
+    }
+    
+    // Set current description and show dialog
+    this.fileDescriptionText = this.fileInfo.description || '';
+    this.fileDescriptionDialogVisible = true;
+  }
+  
+  /**
+   * Handle save file description
+   */
+  onSaveFileDescription(newDescription: string): void {
+    if (!this.fileInfo || !this.userInfo || !this.fileId) {
+      console.error('File info, user info, or file ID is missing');
+      return;
+    }
+    
+    // Update file description in database
+    this.filesRepo.updateDescription(this.fileId, newDescription, this.userInfo.name).subscribe({
+      next: () => {
+        // Update local file info
+        this.fileInfo!.description = newDescription;
+        
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'File description updated successfully'
+        });
+      },
+      error: (error: any) => {
+        console.error('Failed to update file description:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to update file description'
         });
       }
     });

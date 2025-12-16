@@ -72,7 +72,7 @@ pwd
 # Should show: /path/to/hill-app
 
 # Start the application
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 This will:
@@ -101,7 +101,7 @@ cp env.example .env && \
 echo "✅ Files downloaded and directories created!" && \
 echo "Next steps:" && \
 echo "1. Edit .env with your OpenAI credentials" && \
-echo "2. Run: docker-compose -f docker-compose.prod.yml up -d"
+echo "2. Run: docker compose -f docker-compose.prod.yml up -d"
 ```
 
 ## Verify Installation
@@ -109,7 +109,7 @@ echo "2. Run: docker-compose -f docker-compose.prod.yml up -d"
 Check that all services are running:
 
 ```bash
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 ```
 
 You should see 5 services running:
@@ -132,8 +132,8 @@ FRONTEND_PORT=4201
 Restart the application:
 
 ```bash
-docker-compose -f docker-compose.prod.yml down
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 Access at: http://localhost:4201
@@ -143,7 +143,7 @@ Access at: http://localhost:4201
 Check the logs:
 
 ```bash
-docker-compose -f docker-compose.prod.yml logs
+docker compose -f docker-compose.prod.yml logs
 ```
 
 Common causes:
@@ -164,16 +164,16 @@ Verify your OpenAI credentials in `.env`:
 
 ```bash
 # All services
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # Specific service
-docker-compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f backend
 ```
 
 ### Stop the Application
 
 ```bash
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 ```
 
 Your data is preserved in `mongodb_data` and `app_data` directories.
@@ -185,7 +185,7 @@ Your data is preserved in `mongodb_data` and `app_data` directories.
 cd /path/to/hill-app
 
 # Restart
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### Update to Latest Version
@@ -195,8 +195,8 @@ docker-compose -f docker-compose.prod.yml up -d
 cd /path/to/hill-app
 
 # Pull and restart with latest version
-docker-compose -f docker-compose.prod.yml pull
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ## Configuration Options
@@ -215,7 +215,7 @@ MONGO_EXPRESS_PORT=8081   # Change database admin port
 For better performance with many files:
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d --scale worker=3
+docker compose -f docker-compose.prod.yml up -d --scale worker=3
 ```
 
 ### Enable Database Admin UI
@@ -223,7 +223,7 @@ docker-compose -f docker-compose.prod.yml up -d --scale worker=3
 Start with MongoDB Express:
 
 ```bash
-docker-compose -f docker-compose.prod.yml --profile tools up -d
+docker compose -f docker-compose.prod.yml --profile tools up -d
 ```
 
 Access at: http://localhost:8081
@@ -246,7 +246,7 @@ tar czf hill-backup-$(date +%Y%m%d).tar.gz mongodb_data app_data .env
 tar xzf hill-backup-20240115.tar.gz
 
 # Restart application
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ## Next Steps
@@ -259,7 +259,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ## Getting Help
 
 - **Documentation**: See [README.md](README.md) for full documentation
-- **Troubleshooting**: Check logs with `docker-compose logs`
+- **Troubleshooting**: Check logs with `docker compose logs`
 - **Issues**: Report at [GitHub Issues](https://github.com/houtj/time-series-labeling/issues)
 
 ## Uninstall
@@ -268,7 +268,7 @@ To completely remove the application:
 
 ```bash
 # Stop and remove containers
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 
 # Remove data (careful - this deletes all your work!)
 rm -rf mongodb_data app_data

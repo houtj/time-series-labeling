@@ -94,6 +94,14 @@
       pTooltip="Next File"
       tooltipPosition="bottom"
     />
+    <p-button 
+      icon="pi pi-pencil" 
+      (onClick)="onClickEditFileDescription()" 
+      [rounded]="true" 
+      [text]="true"
+      pTooltip="Edit File Description"
+      tooltipPosition="bottom"
+    />
   </div>
   
   
@@ -228,3 +236,15 @@
     </div>
   </div>
 </p-dialog>
+
+<!-- File Description Edit Dialog -->
+<app-description-dialog
+  [(visible)]="fileDescriptionDialogVisible"
+  [(description)]="fileDescriptionText"
+  [title]="'Edit File Description'"
+  [resourceName]="fileInfo?.name || ''"
+  [placeholder]="'Enter file description...'"
+  [maxLength]="500"
+  [rows]="3"
+  (onSave)="onSaveFileDescription($event)"
+/>
