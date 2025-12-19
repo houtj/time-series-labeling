@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, effect } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -16,7 +16,7 @@ import { FileModel, FolderModel, LabelModel, ProjectModel, UserModel, EventClass
 import { FoldersRepository, ProjectsRepository, FilesRepository } from '../../../../core/repositories';
 
 // Feature services
-import { LabelStateService, AutoDetectionService, LabelingActionsService } from '../../services';
+import { LabelStateService, AutoDetectionService, LabelingActionsService, WindowFeaturesService, WindowFeatures } from '../../services';
 
 // Core services
 import { UserStateService } from '../../../../core/services';
@@ -64,6 +64,7 @@ export class LabelingToolbarComponent {
   private readonly autoDetectionService = inject(AutoDetectionService);
   private readonly userState = inject(UserStateService);
   private readonly labelingActions = inject(LabelingActionsService);
+  private readonly windowFeaturesService = inject(WindowFeaturesService);
   private readonly router = inject(Router);
   private readonly foldersRepo = inject(FoldersRepository);
   private readonly projectsRepo = inject(ProjectsRepository);
@@ -86,6 +87,10 @@ export class LabelingToolbarComponent {
   protected isAddingNewClass = false;
   protected newClassName = '';
   protected fileDescriptionText = '';
+  
+  // Window features state
+  protected windowFeatures = signal<WindowFeatures | null>(null);
+  protected featuresLoading = signal<boolean>(false);
   
   // Special option for adding new class
   protected readonly ADD_NEW_CLASS_OPTION: EventClass = {
@@ -130,6 +135,27 @@ export class LabelingToolbarComponent {
         const regularClasses = this.projectInfo?.classes || [];
         if (regularClasses.length > 0) {
           this.selectedClass = regularClasses[0];
+        }
+        
+        // Fetch window features
+        if (this.fileId) {
+          this.featuresLoading.set(true);
+          this.windowFeatures.set(null);
+          
+          // Convert to numbers in case they're strings from Plotly
+          const startIndex = typeof start === 'number' ? start : parseInt(start, 10);
+          const endIndex = typeof end === 'number' ? end : parseInt(end, 10);
+          
+          this.windowFeaturesService.getWindowFeatures(this.fileId, startIndex, endIndex).subscribe({
+            next: (features) => {
+              this.windowFeatures.set(features);
+              this.featuresLoading.set(false);
+            },
+            error: (error) => {
+              console.error('Failed to fetch window features:', error);
+              this.featuresLoading.set(false);
+            }
+          });
         }
       }
     });
