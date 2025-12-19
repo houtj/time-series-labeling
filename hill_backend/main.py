@@ -32,7 +32,7 @@ from ws_handlers.auto_detect import handle_websocket as handle_auto_detect_ws
 app = FastAPI(
     title="Hill Sequence Backend",
     description="Time series data labeling platform",
-    version="1.5.0"
+    version="2.0.4"
 )
 
 
@@ -81,7 +81,7 @@ async def root():
     """Health check endpoint"""
     return {
         'hello': 'world', 
-        'version': '1.5.0', 
+        'version': '2.0.4', 
         'status': 'healthy'
     }
 

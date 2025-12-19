@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2025-12-19
+
+### Added
+- Window features computation endpoint (`POST /window-indicator/features`)
+- Real-time frequency, energy, and morphology feature display in label selection dialog
+- Automatic feature calculation after second click in label mode
+- Self-contained feature computation (frequency bands, energy metrics, waveform morphology)
+- Loading state and error handling for feature computation
+
+### Technical
+- New backend route: `hill_backend/routes/window_indicator.py` with independent feature computation
+- New frontend service: `WindowFeaturesService` for fetching computed features
+- Enhanced label selection dialog with expandable features section
+- Type-safe window index handling for Plotly click events
+
 ## [2.0.3] - 2025-12-16
 
 ### Added
