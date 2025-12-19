@@ -290,3 +290,10 @@ class SendChatMessageRequest(BaseModel):
     """Send a chat message"""
     message: str
 
+
+class WindowFeaturesRequest(BaseModel):
+    """Request window feature computation"""
+    file_id: str
+    start: int
+    end: int
+

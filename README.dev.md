@@ -54,7 +54,7 @@ cp ../.env.example .env
 # Edit .env with your Azure OpenAI credentials
 
 # Run the backend
-uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Backend will be available at: http://localhost:8000
@@ -70,7 +70,7 @@ npm install
 # Run development server
 npm start
 # or
-ng serve
+npx ng serve
 ```
 
 Frontend will be available at: http://localhost:4200

@@ -178,6 +178,66 @@
         placeholder="Add a description for this event"
         [style]="{width: '100%'}"
       />
+      
+      <!-- Window Features Section -->
+      <div class="window-features-section">
+        <h4>Window Features</h4>
+        
+        @if (featuresLoading()) {
+          <div class="features-loading">
+            <i class="pi pi-spin pi-spinner"></i>
+            <span>Computing features...</span>
+          </div>
+        } @else if (windowFeatures()) {
+          <div class="features-content">
+            @for (channel of windowFeatures()!.frequency | keyvalue; track channel.key) {
+              <div class="channel-features">
+                <h5>{{ channel.key }}</h5>
+                
+                <!-- Frequency Features -->
+                <div class="feature-category">
+                  <strong>Frequency:</strong>
+                  <div class="feature-grid">
+                    <span>Delta: {{ windowFeatures()!.frequency[channel.key].bp_delta | number:'1.2-4' }}</span>
+                    <span>Theta: {{ windowFeatures()!.frequency[channel.key].bp_theta | number:'1.2-4' }}</span>
+                    <span>Alpha: {{ windowFeatures()!.frequency[channel.key].bp_alpha | number:'1.2-4' }}</span>
+                    <span>Beta: {{ windowFeatures()!.frequency[channel.key].bp_beta | number:'1.2-4' }}</span>
+                    <span>Slow Ratio: {{ windowFeatures()!.frequency[channel.key].slow_ratio | number:'1.2-4' }}</span>
+                    <span>Fast Ratio: {{ windowFeatures()!.frequency[channel.key].fast_ratio | number:'1.2-4' }}</span>
+                  </div>
+                </div>
+                
+                <!-- Energy Features -->
+                <div class="feature-category">
+                  <strong>Energy:</strong>
+                  <div class="feature-grid">
+                    <span>RMS: {{ windowFeatures()!.energy[channel.key].rms | number:'1.2-4' }}</span>
+                    <span>Mean Env: {{ windowFeatures()!.energy[channel.key].mean_envelope | number:'1.2-4' }}</span>
+                    <span>Std Env: {{ windowFeatures()!.energy[channel.key].std_envelope | number:'1.2-4' }}</span>
+                    <span>Max Env: {{ windowFeatures()!.energy[channel.key].max_envelope | number:'1.2-4' }}</span>
+                  </div>
+                </div>
+                
+                <!-- Morphology Features -->
+                <div class="feature-category">
+                  <strong>Morphology:</strong>
+                  <div class="feature-grid">
+                    <span>Peak-to-Peak: {{ windowFeatures()!.morphology[channel.key].peak_to_peak | number:'1.2-4' }}</span>
+                    <span>Zero Cross Rate: {{ windowFeatures()!.morphology[channel.key].zero_crossing_rate | number:'1.2-4' }}</span>
+                    <span>Max Slope: {{ windowFeatures()!.morphology[channel.key].max_slope | number:'1.2-4' }}</span>
+                    <span>Symmetry: {{ windowFeatures()!.morphology[channel.key].symmetry_estimate | number:'1.2-4' }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="features-error">
+            <i class="pi pi-exclamation-triangle"></i>
+            <span>Failed to compute features</span>
+          </div>
+        }
+      </div>
     </div>
     <div class="dialog-buttons">
       <p-button 

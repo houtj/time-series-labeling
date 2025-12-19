@@ -20,7 +20,8 @@ from routes import (
     labels,
     users,
     chat_conversations,
-    detection_conversations
+    detection_conversations,
+    window_indicator
 )
 
 # Import WebSocket handlers
@@ -97,6 +98,7 @@ app.include_router(labels.router)
 app.include_router(users.router)
 app.include_router(chat_conversations.router)
 app.include_router(detection_conversations.router)
+app.include_router(window_indicator.router)
 
 
 # ============================================================================
