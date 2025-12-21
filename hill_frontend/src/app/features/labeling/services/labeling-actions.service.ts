@@ -161,7 +161,12 @@ export class LabelingActionsService {
       throw new Error('No label data available');
     }
     
-    const json = JSON.stringify(labelInfo.events);
+    // Export both events and guidelines
+    const exportData = {
+      events: labelInfo.events || [],
+      guidelines: labelInfo.guidelines || []
+    };
+    const json = JSON.stringify(exportData);
     return this.sanitizer.bypassSecurityTrustUrl(
       'data:text/json;charset=UTF-8,' + encodeURIComponent(json)
     );

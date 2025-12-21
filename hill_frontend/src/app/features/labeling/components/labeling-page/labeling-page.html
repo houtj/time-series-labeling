@@ -188,12 +188,13 @@
   [style]="{width: '50vw'}">
   <div class="dialog-body">
     <div class="dialog-content">
+      <p>Click the link below to download:</p>
       <a 
         title="Download JSON" 
         [href]="downloadUri" 
-        download="download.json" 
-        (click)="downloadDialogVisible = false">
-        Download JSON File
+        download="download.json"
+        class="download-link">
+        <i class="pi pi-download"></i> Download JSON File
       </a>
     </div>
   </div>

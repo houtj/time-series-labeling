@@ -68,18 +68,34 @@ async def update_label(request: UpdateLabelRequest):
 
 @router.post("/event")
 async def add_event(data: Annotated[str, Form()], user: Annotated[str, Form()], file: UploadFile):
-    """Add single event"""
+    """Add single event (can include both events and guidelines)"""
     db = get_db()
-    event_info = file.file.read()
-    event_info = json.loads(event_info)
+    import_data = file.file.read()
+    import_data = json.loads(import_data)
     label_id = data
     user_name = user
     
-    db['labels'].update_one({'_id': ObjectId(label_id)}, {'$set': {'events': event_info}})
+    # Handle both old format (just array of events) and new format (object with events and guidelines)
+    update_dict = {}
+    events_list = []
+    if isinstance(import_data, list):
+        # Old format: just events array
+        update_dict['events'] = import_data
+        events_list = import_data
+    elif isinstance(import_data, dict):
+        # New format: object with events and/or guidelines
+        if 'events' in import_data:
+            update_dict['events'] = import_data['events']
+            events_list = import_data['events']
+        if 'guidelines' in import_data:
+            update_dict['guidelines'] = import_data['guidelines']
+    
+    if update_dict:
+        db['labels'].update_one({'_id': ObjectId(label_id)}, {'$set': update_dict})
     
     file_doc = db['files'].find_one({'label': label_id})
     previous_nbEvents = file_doc['nbEvent']
-    new_nbEvents = calculate_event_display(event_info)
+    new_nbEvents = calculate_event_display(events_list)
     
     db['files'].update_one(
         {'label': label_id}, 
