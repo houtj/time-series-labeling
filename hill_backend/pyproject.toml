@@ -1,6 +1,6 @@
 [project]
 name = "hill-backend-v1-5"
-version = "2.0.4"
+version = "2.0.5"
 description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [

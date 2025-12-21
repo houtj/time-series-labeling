@@ -21,7 +21,7 @@ export class ToolbarComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly userState = inject(UserStateService);
 
-  readonly version = 'v2.0.0';
+  readonly version = 'v2.0.5';
   readonly menuItems = signal<MenuItem[]>([]);
 
   ngOnInit() {
