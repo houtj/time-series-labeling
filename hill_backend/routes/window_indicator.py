@@ -176,7 +176,7 @@ async def compute_window_features(request: WindowFeaturesRequest):
         window_df = df.iloc[request.start:request.end]
         
         # Compute features with fs=1.0 (hardcoded as requested)
-        fs = 1.0
+        fs = 256.0
         
         frequency_features = compute_frequency_features(window_df, fs)
         energy_features = compute_energy_features(window_df, fs)
