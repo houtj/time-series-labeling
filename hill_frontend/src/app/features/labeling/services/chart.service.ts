@@ -76,13 +76,37 @@ export class ChartService {
 
   /**
    * Initialize the Plotly chart with data
+   * 
+   * @param plotlyChart Reference to the chart element
+   * @param data Array of data models (x-trace and channels)
+   * @param channelList Output list to track channel configurations
+   * @param xType Optional x-axis type ('timestamp' or 'numeric')
    */
-  initializeChart(plotlyChart: ElementRef, data: DataModel[], channelList: any[]): void {
+  initializeChart(
+    plotlyChart: ElementRef, 
+    data: DataModel[], 
+    channelList: any[],
+    xType?: 'timestamp' | 'numeric'
+  ): void {
     // Store reference to chart element
     this.plotlyChartElement = plotlyChart.nativeElement;
     
     const x_trace = data.find(c => c.x === true)!;
     const channels = data.filter(c => c.x === false);
+    
+    // Convert x-axis data based on type
+    // If xType is 'timestamp', convert Unix timestamps (seconds) to Date objects
+    // Plotly handles Date objects natively for proper axis formatting
+    let xData: (number | Date | string)[] = x_trace.data;
+    
+    if (xType === 'timestamp') {
+      // Check if data looks like Unix timestamps (large numbers > 1e9)
+      const firstValue = x_trace.data[0];
+      if (typeof firstValue === 'number' && firstValue > 1e9) {
+        // Convert Unix timestamps (seconds) to Date objects
+        xData = (x_trace.data as number[]).map(ts => new Date(ts * 1000));
+      }
+    }
 
     const traces: Plotly.Data[] = channels.map((c: any, index: number) => {
       let k;
@@ -116,7 +140,7 @@ export class ChartService {
       channelList.push({ channelName: c.name, yaxis: `y${k}`, color: c.color });
 
       return {
-        x: x_trace.data,
+        x: xData,
         y: c.data,
         yaxis: `y${k}`,
         name: c.name,
@@ -127,7 +151,7 @@ export class ChartService {
     });
 
     this.layout.xaxis!.domain = [channels.length * 0.04 - 0.035, 0.94];
-    this.layout.xaxis!.range = [x_trace.data[0], x_trace.data[x_trace.data.length - 1]];
+    this.layout.xaxis!.range = [xData[0], xData[xData.length - 1]];
 
     Plotly.newPlot(plotlyChart.nativeElement, traces, this.layout, this.config);
   }

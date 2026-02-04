@@ -1,3 +1,14 @@
 <div class="chart-container">
   <div #chartDiv id="myChartDiv" class="chart-plot"></div>
+  
+  <!-- Loading indicator for viewport data fetching (Option B: small indicator in corner) -->
+  @if (isLoading()) {
+    <div class="loading-indicator">
+      <p-progressSpinner 
+        strokeWidth="4" 
+        [style]="{ width: '24px', height: '24px' }"
+        animationDuration=".8s">
+      </p-progressSpinner>
+    </div>
+  }
 </div>

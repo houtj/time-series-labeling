@@ -1,6 +1,7 @@
 """File Routes"""
-from fastapi import APIRouter, UploadFile, Form
-from typing import Annotated
+from fastapi import APIRouter, UploadFile, Form, Query
+from fastapi.responses import Response
+from typing import Annotated, Optional
 from bson.objectid import ObjectId
 from bson.json_util import dumps
 from datetime import datetime, timezone
@@ -8,11 +9,13 @@ from pathlib import Path
 import simplejson as json
 import shutil
 import logging
+import numpy as np
 
 from database import get_db, get_data_folder_path
 from models import UpdateDescriptionRequest, ReparsingFilesRequest, DownloadJsonFilesRequest
 from config import settings
 from redis_client import get_redis_client
+from services import get_data_reader, ResamplerService
 
 logger = logging.getLogger(__name__)
 
@@ -95,19 +98,227 @@ async def get_files(filesId: str):
 
 @router.get("/{file_id}")
 async def get_file(file_id: str):
-    """Get single file with data"""
+    """Get single file with data.
+    
+    For large files (useBinaryFormat=True), returns overview data for initial display.
+    For small files, returns full data.
+    """
     db = get_db()
     data_folder_path = get_data_folder_path()
     
     result = db['files'].find_one({'_id': ObjectId(file_id)})
-    json_path = result['jsonPath']
-    file_path = f'{data_folder_path}/{json_path}'
     
-    with open(file_path, 'r') as f:
-        json_string = f.read()
+    # Check if this is a large file using binary format
+    use_binary = result.get('useBinaryFormat', False)
+    
+    if use_binary and result.get('overviewPath'):
+        # Large file: return overview data for initial display
+        overview_path = result['overviewPath']
+        file_path = f'{data_folder_path}/{overview_path}'
+        
+        with open(file_path, 'r') as f:
+            overview_content = json.load(f)
+        
+        # New format has { meta: {...}, data: [...] }
+        # Extract just the data array for backward compatibility
+        if isinstance(overview_content, dict) and 'data' in overview_content:
+            json_string = json.dumps(overview_content['data'])
+        else:
+            # Old format - direct array
+            json_string = json.dumps(overview_content)
+        
+        logger.info(f"Returning overview data for large file: {file_id}")
+    else:
+        # Small file or no overview: return full data
+        json_path = result['jsonPath']
+        file_path = f'{data_folder_path}/{json_path}'
+        
+        with open(file_path, 'r') as f:
+            json_string = f.read()
     
     response = {'fileInfo': dumps(result), 'data': json_string}
     return json.dumps(response)
+
+
+@router.get("/{file_id}/viewport")
+async def get_viewport(
+    file_id: str,
+    x_min: float = Query(..., description="Start of range (in x-axis units)"),
+    x_max: float = Query(..., description="End of range (in x-axis units)"),
+    max_points: int = Query(default=20000, description="Target points per channel"),
+):
+    """Get viewport data for a specific range.
+    
+    Returns binary data optimized for the requested viewport.
+    Used for progressive loading when user zooms/pans on large files.
+    
+    Response Headers:
+        X-Total-Points: Original points in requested range
+        X-Returned-Points: Points after resampling
+        X-Full-Resolution: "true" if no resampling was applied
+        X-Num-Columns: Number of columns (1 + num_channels)
+        X-X-Min: Actual range start
+        X-X-Max: Actual range end
+        X-Channel-Names: Comma-separated channel names
+    
+    Response Body:
+        Binary ArrayBuffer containing float64 values.
+        Layout: [x_values][ch1_values][ch2_values]...
+        Each array has length = X-Returned-Points
+    """
+    try:
+        db = get_db()
+        data_folder_path = get_data_folder_path()
+        
+        result = db['files'].find_one({'_id': ObjectId(file_id)})
+        
+        if not result:
+            return Response(
+                content=b"File not found",
+                status_code=404,
+                media_type="text/plain"
+            )
+        
+        use_binary = result.get('useBinaryFormat', False)
+        
+        if not use_binary:
+            # Small file: load from JSON and return all data in range
+            json_path = result['jsonPath']
+            file_path = f'{data_folder_path}/{json_path}'
+            
+            with open(file_path, 'r') as f:
+                json_data = json.load(f)
+            
+            # Convert to numpy arrays
+            x_trace = next(d for d in json_data if d['x'])
+            channels = [d for d in json_data if not d['x']]
+            
+            x_data = x_trace['data']
+            x_is_time = isinstance(x_data[0], str) if x_data else False
+            
+            if x_is_time:
+                x_numeric = np.arange(len(x_data), dtype=np.float64)
+            else:
+                x_numeric = np.array(x_data, dtype=np.float64)
+            
+            # Find range
+            start_idx = int(np.searchsorted(x_numeric, x_min, side='left'))
+            end_idx = int(np.searchsorted(x_numeric, x_max, side='right'))
+            
+            start_idx = max(0, start_idx)
+            end_idx = min(len(x_numeric), end_idx)
+            
+            original_count = end_idx - start_idx
+            
+            # Handle empty range
+            if original_count == 0:
+                return Response(
+                    content=np.array([], dtype=np.float64).tobytes(),
+                    media_type="application/octet-stream",
+                    headers={
+                        "X-Total-Points": "0",
+                        "X-Returned-Points": "0",
+                        "X-Full-Resolution": "true",
+                        "X-Num-Columns": str(1 + len(channels)),
+                        "X-X-Min": str(x_min),
+                        "X-X-Max": str(x_max),
+                        "X-Channel-Names": ",".join(ch['name'] for ch in channels),
+                    }
+                )
+            
+            # Extract data
+            x_slice = x_numeric[start_idx:end_idx]
+            channel_slices = [
+                np.array(ch['data'], dtype=np.float64)[start_idx:end_idx] 
+                for ch in channels
+            ]
+            channel_names = [ch['name'] for ch in channels]
+            
+            # Resample if needed
+            resampler = ResamplerService(max_points)
+            x_out, channels_out, is_full = resampler.resample(x_slice, channel_slices)
+            
+            # Pack into binary
+            # Layout: x, ch1, ch2, ... (each contiguous)
+            result_data = np.concatenate([x_out] + channels_out)
+            
+            logger.debug(f"Viewport response: {len(x_out)} points, {len(channels_out)} channels, {result_data.nbytes} bytes")
+            
+            return Response(
+                content=result_data.tobytes(),
+                media_type="application/octet-stream",
+                headers={
+                    "X-Total-Points": str(original_count),
+                    "X-Returned-Points": str(len(x_out)),
+                    "X-Full-Resolution": str(is_full).lower(),
+                    "X-Num-Columns": str(1 + len(channels_out)),
+                    "X-X-Min": str(float(x_out[0]) if len(x_out) > 0 else x_min),
+                    "X-X-Max": str(float(x_out[-1]) if len(x_out) > 0 else x_max),
+                    "X-Channel-Names": ",".join(channel_names),
+                }
+            )
+        
+        # Large file: use memory-mapped reader
+        binary_path = f'{data_folder_path}/{result["binaryPath"]}'
+        meta_path = f'{data_folder_path}/{result["metaPath"]}'
+        
+        reader = get_data_reader(binary_path, meta_path)
+        
+        # Get slice from memory-mapped file
+        data, original_count = reader.get_slice(x_min, x_max)
+        
+        if len(data) == 0:
+            return Response(
+                content=np.array([], dtype=np.float64).tobytes(),
+                media_type="application/octet-stream",
+                headers={
+                    "X-Total-Points": "0",
+                    "X-Returned-Points": "0",
+                    "X-Full-Resolution": "true",
+                    "X-Num-Columns": str(reader.num_columns),
+                    "X-X-Min": str(x_min),
+                    "X-X-Max": str(x_max),
+                    "X-Channel-Names": ",".join(ch['name'] for ch in reader.channels),
+                }
+            )
+        
+        # Extract x and channels
+        x = data[:, 0]
+        channel_arrays = [data[:, i + 1] for i in range(len(reader.channels))]
+        channel_names = [ch['name'] for ch in reader.channels]
+        
+        # Resample if needed
+        resampler = ResamplerService(max_points)
+        x_out, channels_out, is_full = resampler.resample(x, channel_arrays)
+        
+        # Pack into binary (row-major: concatenate arrays)
+        result_data = np.concatenate([x_out] + channels_out)
+        
+        logger.debug(f"Viewport response (binary): {len(x_out)} points, {len(channels_out)} channels, {result_data.nbytes} bytes")
+        
+        return Response(
+            content=result_data.tobytes(),
+            media_type="application/octet-stream",
+            headers={
+                "X-Total-Points": str(original_count),
+                "X-Returned-Points": str(len(x_out)),
+                "X-Full-Resolution": str(is_full).lower(),
+                "X-Num-Columns": str(1 + len(channels_out)),
+                "X-X-Min": str(float(x_out[0])),
+                "X-X-Max": str(float(x_out[-1])),
+                "X-Channel-Names": ",".join(channel_names),
+                "X-X-Type": reader.x_type,
+                "X-X-Format": reader.x_format or "",
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Viewport error: {e}", exc_info=True)
+        return Response(
+            content=f"Viewport error: {str(e)}".encode(),
+            status_code=500,
+            media_type="text/plain"
+        )
 
 
 @router.delete("")

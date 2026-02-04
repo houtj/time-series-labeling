@@ -21,7 +21,7 @@ import { FileModel, FolderModel, LabelModel, ProjectModel, DataModel, UserModel 
 import { environment } from '../../../../../environments/environment';
 
 // Feature services
-import { LabelStateService, AutoDetectionService, LabelingActionsService } from '../../services';
+import { LabelStateService, AutoDetectionService, LabelingActionsService, FetchControllerService } from '../../services';
 
 // Shared services
 import { AiChatService } from '../../../../shared/services';
@@ -99,6 +99,7 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   private readonly aiChatService = inject(AiChatService);
   private readonly labelingActions = inject(LabelingActionsService);
   private readonly messageService = inject(MessageService);
+  private readonly fetchController = inject(FetchControllerService);
   
   private subscriptions = new Subscription();
   private previousFileId?: string;
@@ -240,6 +241,9 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
       return;
     }
     
+    // Cancel pending requests when switching files
+    this.fetchController.cancelPendingRequest();
+    
     // Disconnect WebSocket services first
     if (this.autoDetectionService.isConnected()) {
       this.autoDetectionService.disconnect();
@@ -327,6 +331,9 @@ export class LabelingPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Clean up subscriptions
     this.subscriptions.unsubscribe();
+    
+    // Cancel pending requests
+    this.fetchController.cancelPendingRequest();
     
     // Disconnect WebSocket services to prevent stale connections
     if (this.autoDetectionService.isConnected()) {

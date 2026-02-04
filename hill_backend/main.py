@@ -54,6 +54,18 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Expose custom headers for viewport API binary responses
+    expose_headers=[
+        "X-Total-Points",
+        "X-Returned-Points",
+        "X-Full-Resolution",
+        "X-Num-Columns",
+        "X-X-Min",
+        "X-X-Max",
+        "X-Channel-Names",
+        "X-X-Type",
+        "X-X-Format"
+    ],
 )
 
 # Add large file middleware

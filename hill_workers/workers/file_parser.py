@@ -9,8 +9,11 @@ import sys
 import time
 import re
 from pathlib import Path
+from datetime import datetime
+from typing import Optional
 import simplejson as json
 import pandas as pd
+import numpy as np
 from bson.objectid import ObjectId
 
 # Add parent directory to path for imports
@@ -19,6 +22,153 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import settings
 from database import get_db, get_data_folder_path
 from redis_client import get_redis_client
+
+# Threshold for using binary format (100k points)
+BINARY_FORMAT_THRESHOLD = 100_000
+
+# Common time format patterns for auto-detection
+TIME_FORMAT_PATTERNS = [
+    ('%Y-%m-%d %H:%M:%S.%f', r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+'),
+    ('%Y-%m-%d %H:%M:%S', r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$'),
+    ('%Y-%m-%dT%H:%M:%S.%f', r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+'),
+    ('%Y-%m-%dT%H:%M:%S', r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'),
+    ('%Y/%m/%d %H:%M:%S', r'\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}'),
+    ('%m/%d/%Y %H:%M:%S', r'\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}'),
+    ('%d/%m/%Y %H:%M:%S', r'\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}'),
+    ('%Y-%m-%d', r'\d{4}-\d{2}-\d{2}$'),
+    ('%H:%M:%S.%f', r'\d{2}:\d{2}:\d{2}\.\d+$'),
+    ('%H:%M:%S', r'\d{2}:\d{2}:\d{2}$'),
+]
+
+
+# ===== Time Format Detection =====
+
+def detect_time_format(sample_strings: list[str]) -> Optional[str]:
+    """
+    Detect the time format from sample strings.
+    
+    Args:
+        sample_strings: List of sample time strings
+    
+    Returns:
+        Format string (strftime format) or None if not detected
+    """
+    if not sample_strings:
+        return None
+    
+    sample = str(sample_strings[0]).strip()
+    
+    # Try each pattern
+    for fmt, pattern in TIME_FORMAT_PATTERNS:
+        if re.match(pattern, sample):
+            # Verify by parsing
+            try:
+                datetime.strptime(sample, fmt)
+                return fmt
+            except ValueError:
+                continue
+    
+    # Try pandas auto-detection as fallback
+    try:
+        pd.to_datetime(sample)
+        return 'auto'  # Will use pandas for parsing
+    except:
+        pass
+    
+    return None
+
+
+def parse_time_string(time_str: str, fmt: str) -> float:
+    """
+    Parse a time string to Unix timestamp (seconds since epoch).
+    
+    Args:
+        time_str: Time string to parse
+        fmt: strftime format string or 'auto'
+    
+    Returns:
+        Unix timestamp as float (includes fractional seconds)
+    """
+    try:
+        if fmt == 'auto':
+            dt = pd.to_datetime(time_str)
+            return dt.timestamp()
+        else:
+            dt = datetime.strptime(str(time_str).strip(), fmt)
+            return dt.timestamp()
+    except Exception as e:
+        raise ValueError(f"Failed to parse time '{time_str}' with format '{fmt}': {e}")
+
+
+def convert_times_to_timestamps(time_strings: list, fmt: str) -> tuple[np.ndarray, str]:
+    """
+    Convert a list of time strings to Unix timestamps.
+    
+    Args:
+        time_strings: List of time strings
+        fmt: strftime format string or 'auto'
+    
+    Returns:
+        Tuple of (numpy array of timestamps, detected/confirmed format string)
+    """
+    n = len(time_strings)
+    timestamps = np.zeros(n, dtype=np.float64)
+    
+    # For 'auto' format, use pandas for bulk conversion (faster)
+    if fmt == 'auto':
+        try:
+            dt_series = pd.to_datetime(time_strings)
+            # Get the inferred format from first value for display
+            sample = str(time_strings[0]).strip()
+            detected_fmt = detect_display_format(sample, dt_series[0])
+            timestamps = (dt_series.astype('int64') / 1e9).values  # Convert to seconds
+            return timestamps, detected_fmt
+        except Exception as e:
+            raise ValueError(f"Failed to parse times with auto format: {e}")
+    
+    # Parse individually with known format
+    for i, ts in enumerate(time_strings):
+        timestamps[i] = parse_time_string(ts, fmt)
+    
+    return timestamps, fmt
+
+
+def detect_display_format(sample_str: str, parsed_dt: datetime) -> str:
+    """
+    Determine the best display format for a time string.
+    
+    Args:
+        sample_str: Original time string
+        parsed_dt: Parsed datetime
+    
+    Returns:
+        strftime format string for display
+    """
+    sample = str(sample_str).strip()
+    
+    # Check if has microseconds
+    has_micro = '.' in sample and any(c.isdigit() for c in sample.split('.')[-1])
+    
+    # Check if has date part
+    has_date = '-' in sample or '/' in sample
+    
+    # Check if has time part
+    has_time = ':' in sample
+    
+    if has_date and has_time:
+        if has_micro:
+            return '%Y-%m-%d %H:%M:%S.%f'
+        else:
+            return '%Y-%m-%d %H:%M:%S'
+    elif has_date:
+        return '%Y-%m-%d'
+    elif has_time:
+        if has_micro:
+            return '%H:%M:%S.%f'
+        else:
+            return '%H:%M:%S'
+    else:
+        return '%Y-%m-%d %H:%M:%S'  # Default
 
 
 # ===== Logging Setup =====
@@ -211,6 +361,254 @@ def get_channel(channel, df):
     return channel_data
 
 
+def save_as_binary_format(json_dict: list, output_path: str) -> dict:
+    """
+    Save parsed data in memory-mappable binary format.
+    
+    For time-based x-axis:
+    - Converts time strings to Unix timestamps (float64 seconds since epoch)
+    - Stores format string in metadata for display conversion
+    
+    For numeric x-axis:
+    - Stores values directly as float64
+    
+    Args:
+        json_dict: Parsed data in JSON format (list of channel dicts)
+        output_path: Base path for output files (without extension)
+    
+    Returns:
+        Metadata dict with file information
+    """
+    # Find x-axis and channels
+    x_trace = next(d for d in json_dict if d['x'])
+    channels = [d for d in json_dict if not d['x']]
+    
+    n_points = len(x_trace['data'])
+    n_cols = 1 + len(channels)  # x + channels
+    
+    # Determine if x-axis is time-based (string) or numeric
+    x_data = x_trace['data']
+    x_is_time = isinstance(x_data[0], str) if x_data else False
+    
+    if x_is_time:
+        # Detect time format
+        sample_strings = x_data[:10]  # Use first 10 for detection
+        detected_format = detect_time_format(sample_strings)
+        
+        if detected_format is None:
+            logger.warning("Could not detect time format, treating as numeric indices")
+            x_numeric = np.arange(n_points, dtype=np.float64)
+            x_type = 'numeric'
+            x_format = None
+        else:
+            # Convert time strings to Unix timestamps
+            logger.info(f"Detected time format: {detected_format}")
+            try:
+                x_numeric, x_format = convert_times_to_timestamps(x_data, detected_format)
+                x_type = 'timestamp'
+                logger.info(f"Converted {n_points} time strings to timestamps")
+                logger.info(f"Timestamp range: {x_numeric[0]:.3f} to {x_numeric[-1]:.3f}")
+            except Exception as e:
+                logger.error(f"Failed to convert times: {e}, using numeric indices")
+                x_numeric = np.arange(n_points, dtype=np.float64)
+                x_type = 'numeric'
+                x_format = None
+    else:
+        x_numeric = np.array(x_data, dtype=np.float64)
+        x_type = 'numeric'
+        x_format = None
+    
+    # Create numpy array (row-major: each row is [x, ch1, ch2, ...])
+    arr = np.zeros((n_points, n_cols), dtype=np.float64)
+    arr[:, 0] = x_numeric
+    
+    for i, ch in enumerate(channels):
+        ch_data = np.array(ch['data'], dtype=np.float64)
+        # Handle NaN values - keep as NaN for proper handling
+        arr[:, i + 1] = ch_data
+    
+    # Save binary file
+    binary_path = f"{output_path}.bin"
+    arr.tofile(binary_path)
+    
+    logger.info(f"Saved binary file: {binary_path}, shape: {arr.shape}")
+    
+    # Create metadata
+    meta = {
+        "format": "binary",
+        "version": 2,  # Version 2 uses timestamps instead of indices
+        "shape": [n_points, n_cols],
+        "dtype": "float64",
+        "totalPoints": n_points,
+        "xColumn": {
+            "name": x_trace['name'],
+            "unit": x_trace.get('unit', ''),
+            "type": x_type,  # 'timestamp' or 'numeric'
+            "column": 0,
+            "min": float(x_numeric[0]),
+            "max": float(x_numeric[-1]),
+        },
+        "channels": [
+            {
+                "name": ch['name'],
+                "unit": ch.get('unit', ''),
+                "color": ch.get('color', '#000000'),
+                "column": i + 1
+            }
+            for i, ch in enumerate(channels)
+        ]
+    }
+    
+    # Add format string for timestamp display
+    if x_type == 'timestamp' and x_format:
+        meta["xColumn"]["format"] = x_format
+        meta["xColumn"]["timezone"] = "local"  # Default to local, can be configured
+    
+    # Save metadata
+    meta_path = f"{output_path}_meta.json"
+    with open(meta_path, 'w') as f:
+        json.dump(meta, f, indent=2)
+    
+    logger.info(f"Saved metadata file: {meta_path}")
+    
+    return meta
+
+
+def generate_overview_data(json_dict: list, target_points_per_channel: int = 5000) -> tuple[list, dict]:
+    """
+    Generate downsampled overview data for initial chart display.
+    
+    Uses MinMaxLTTB with union of indices to preserve important features.
+    For time-based x-axis, converts to timestamps for consistent handling.
+    
+    Args:
+        json_dict: Parsed data in JSON format
+        target_points_per_channel: Target points per channel
+    
+    Returns:
+        Tuple of (downsampled data in JSON format, overview metadata dict)
+    """
+    from tsdownsample import MinMaxLTTBDownsampler
+    
+    # Find x-axis and channels
+    x_trace = next(d for d in json_dict if d['x'])
+    channels = [d for d in json_dict if not d['x']]
+    
+    n_points = len(x_trace['data'])
+    x_data = x_trace['data']
+    x_is_time = isinstance(x_data[0], str) if x_data else False
+    
+    # Prepare x values and detect format
+    x_format = None
+    if x_is_time:
+        sample_strings = x_data[:10]
+        detected_format = detect_time_format(sample_strings)
+        if detected_format:
+            try:
+                x_numeric, x_format = convert_times_to_timestamps(x_data, detected_format)
+            except:
+                # Fallback to indices
+                x_numeric = np.arange(n_points, dtype=np.float64)
+                x_is_time = False
+        else:
+            x_numeric = np.arange(n_points, dtype=np.float64)
+            x_is_time = False
+    else:
+        x_numeric = np.array(x_data, dtype=np.float64)
+    
+    # Overview metadata
+    overview_meta = {
+        'xType': 'timestamp' if x_is_time else 'numeric',
+        'xFormat': x_format,
+        'xMin': float(x_numeric[0]),
+        'xMax': float(x_numeric[-1]),
+        'totalPoints': n_points
+    }
+    
+    # No resampling needed if data is small
+    if n_points <= target_points_per_channel:
+        # Still convert times to timestamps for consistency
+        if x_is_time and x_format:
+            result = [{
+                'x': True,
+                'name': x_trace['name'],
+                'unit': x_trace.get('unit', ''),
+                'data': x_numeric.tolist()
+            }]
+        else:
+            result = [{
+                'x': True,
+                'name': x_trace['name'],
+                'unit': x_trace.get('unit', ''),
+                'data': x_data if not x_is_time else x_numeric.tolist()
+            }]
+        
+        for ch in channels:
+            result.append({
+                'x': False,
+                'name': ch['name'],
+                'unit': ch.get('unit', ''),
+                'color': ch.get('color', '#000000'),
+                'data': ch['data']
+            })
+        
+        overview_meta['overviewPoints'] = n_points
+        return result, overview_meta
+    
+    # Collect channel data as numpy arrays
+    channel_arrays = []
+    for ch in channels:
+        ch_arr = np.array(ch['data'], dtype=np.float64)
+        ch_arr = np.nan_to_num(ch_arr, nan=0.0)  # Replace NaN for algorithm
+        channel_arrays.append(ch_arr)
+    
+    # Run MinMaxLTTB on each channel and collect indices
+    downsampler = MinMaxLTTBDownsampler()
+    all_indices = set()
+    
+    for ch_arr in channel_arrays:
+        try:
+            indices = downsampler.downsample(x_numeric, ch_arr, n_out=target_points_per_channel)
+            all_indices.update(indices.tolist())
+        except Exception as e:
+            logger.warning(f"MinMaxLTTB failed: {e}, using uniform sampling")
+            step = max(1, n_points // target_points_per_channel)
+            indices = list(range(0, n_points, step))[:target_points_per_channel]
+            all_indices.update(indices)
+    
+    # Sort indices
+    selected_indices = sorted(all_indices)
+    
+    logger.info(f"Generated overview: {n_points} -> {len(selected_indices)} points")
+    
+    # Build output with timestamps (not time strings)
+    result = []
+    
+    # X-axis - always use numeric values (timestamps or original numbers)
+    x_out = [float(x_numeric[i]) for i in selected_indices]
+    
+    result.append({
+        'x': True,
+        'name': x_trace['name'],
+        'unit': x_trace.get('unit', ''),
+        'data': x_out
+    })
+    
+    # Channels
+    for ch in channels:
+        ch_out = [ch['data'][i] for i in selected_indices]
+        result.append({
+            'x': False,
+            'name': ch['name'],
+            'unit': ch.get('unit', ''),
+            'color': ch.get('color', '#000000'),
+            'data': ch_out
+        })
+    
+    overview_meta['overviewPoints'] = len(selected_indices)
+    return result, overview_meta
+
+
 # ===== Worker Class =====
 
 class FileParserWorker:
@@ -305,33 +703,104 @@ class FileParserWorker:
             # Parse file
             json_dict = parse_file(self.db, file_doc, self.data_folder_path)
             
-            # Save JSON
+            # Determine total points from x-axis
+            x_trace = next(d for d in json_dict if d['x'])
+            total_points = len(x_trace['data'])
+            
+            # Setup paths
             local_folder = Path(file_doc["rawPath"]).parent
             file_stem = Path(file_doc["rawPath"]).stem
-            json_path = f"{local_folder}/{file_stem}.json"
+            output_dir = Path(self.data_folder_path) / local_folder
+            output_dir.mkdir(parents=True, exist_ok=True)
             
-            json_file_path = Path(self.data_folder_path) / json_path
-            json_file_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            with open(json_file_path, 'w') as f:
-                json.dump(json_dict, f, ignore_nan=True)
-            
-            logger.info(f"Saved JSON to {json_path}")
-            
-            # Update database
-            project_id = local_folder.parent.name
+            project_id = local_folder.parent.name if local_folder.parent.name else str(local_folder.parent)
             file_id_name = local_folder.name
-            json_name = f"{file_stem}.json"
             
-            self.db['files'].update_one(
-                {'_id': file_doc['_id']},
-                {'$set': {
+            # Determine storage format based on size
+            use_binary_format = total_points >= BINARY_FORMAT_THRESHOLD
+            
+            if use_binary_format:
+                logger.info(f"Using binary format for large file: {total_points} points")
+                
+                # Save binary format
+                binary_base_path = str(output_dir / file_stem)
+                meta = save_as_binary_format(json_dict, binary_base_path)
+                
+                # Generate and save overview data for initial display
+                overview_data, overview_meta = generate_overview_data(json_dict, target_points_per_channel=5000)
+                overview_path = f"{local_folder}/{file_stem}_overview.json"
+                overview_file_path = Path(self.data_folder_path) / overview_path
+                
+                # Save overview with metadata embedded
+                overview_output = {
+                    'meta': overview_meta,
+                    'data': overview_data
+                }
+                with open(overview_file_path, 'w') as f:
+                    json.dump(overview_output, f, ignore_nan=True)
+                
+                logger.info(f"Saved overview to {overview_path}")
+                
+                # Also save full JSON for backward compatibility (optional, can be removed later)
+                json_path = f"{local_folder}/{file_stem}.json"
+                json_file_path = Path(self.data_folder_path) / json_path
+                
+                with open(json_file_path, 'w') as f:
+                    json.dump(json_dict, f, ignore_nan=True)
+                
+                # Extract x-axis info from metadata
+                x_type = meta.get('xColumn', {}).get('type', 'numeric')
+                x_format = meta.get('xColumn', {}).get('format', None)
+                x_min = meta.get('xColumn', {}).get('min', 0)
+                x_max = meta.get('xColumn', {}).get('max', total_points - 1)
+                
+                # Update database with binary format info
+                update_data = {
                     'parsing': 'parsed',
-                    'jsonPath': f'{project_id}/{file_id_name}/{json_name}'
-                }}
-            )
+                    'jsonPath': f'{project_id}/{file_id_name}/{file_stem}.json',
+                    'binaryPath': f'{project_id}/{file_id_name}/{file_stem}.bin',
+                    'metaPath': f'{project_id}/{file_id_name}/{file_stem}_meta.json',
+                    'overviewPath': f'{project_id}/{file_id_name}/{file_stem}_overview.json',
+                    'useBinaryFormat': True,
+                    'totalPoints': total_points,
+                    'xType': x_type,
+                    'xMin': x_min,
+                    'xMax': x_max,
+                }
+                if x_format:
+                    update_data['xFormat'] = x_format
+                
+                self.db['files'].update_one(
+                    {'_id': file_doc['_id']},
+                    {'$set': update_data}
+                )
+                
+                logger.info(f"Successfully processed large file: {file_name} ({total_points} points, xType={x_type})")
             
-            logger.info(f"Successfully processed file: {file_name}")
+            else:
+                logger.info(f"Using JSON format for small file: {total_points} points")
+                
+                # Save JSON (original behavior)
+                json_path = f"{local_folder}/{file_stem}.json"
+                json_file_path = Path(self.data_folder_path) / json_path
+                
+                with open(json_file_path, 'w') as f:
+                    json.dump(json_dict, f, ignore_nan=True)
+                
+                logger.info(f"Saved JSON to {json_path}")
+                
+                # Update database
+                self.db['files'].update_one(
+                    {'_id': file_doc['_id']},
+                    {'$set': {
+                        'parsing': 'parsed',
+                        'jsonPath': f'{project_id}/{file_id_name}/{file_stem}.json',
+                        'useBinaryFormat': False,
+                        'totalPoints': total_points
+                    }}
+                )
+                
+                logger.info(f"Successfully processed file: {file_name}")
             
             # Acknowledge success
             self.redis.acknowledge(msg_id)
