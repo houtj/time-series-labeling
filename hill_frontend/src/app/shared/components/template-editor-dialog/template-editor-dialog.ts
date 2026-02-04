@@ -104,15 +104,6 @@ export class TemplateEditorDialogComponent {
   onClickAddChannel(event: MouseEvent): void {
     if (!this.template) return;
 
-    if (this.template.channels.length >= 8) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Maximum Reached',
-        detail: 'Support 8 channels maximum'
-      });
-      return;
-    }
-
     const newChannel: TemplateModel['channels'][0] = {
       mandatory: true,
       channelName: '',
@@ -218,7 +209,7 @@ export class TemplateEditorDialogComponent {
     // Auto-map all columns as channels (skip first if it was used for X-axis)
     const startIndex = hasXAxisMapping ? 0 : 1;
     
-    for (let i = startIndex; i < columns.length && this.template.channels.length < 8; i++) {
+    for (let i = startIndex; i < columns.length; i++) {
       const column = columns[i];
       const newChannel: TemplateModel['channels'][0] = {
         mandatory: true,
@@ -246,6 +237,16 @@ export class TemplateEditorDialogComponent {
   onClickSave(event: MouseEvent): void {
     const projectId = this.projectId();
     if (!this.template || !projectId) return;
+
+    // Check channel limit before saving
+    if (this.template.channels.length > 8) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Too Many Channels',
+        detail: `Maximum 8 channels allowed. Please remove ${this.template.channels.length - 8} channel(s) before saving.`
+      });
+      return;
+    }
 
     // Update file type
     this.template.fileType = this.selectedFileType.name;
