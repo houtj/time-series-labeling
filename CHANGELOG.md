@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.11] - 2026-02-04
+
+### Fixed
+- File parser now validates that x-axis data is numeric when "isTime" is not enabled in template
+- Prevents silent misconfiguration where datetime strings were incorrectly treated as numeric indices
+
 ## [2.0.10] - 2026-02-04
 
 ### Changed

@@ -78,6 +78,28 @@ def detect_time_format(sample_strings: list[str]) -> Optional[str]:
     return None
 
 
+def is_numeric_series(series: pd.Series) -> bool:
+    """
+    Check if a pandas Series contains numeric values.
+    
+    Args:
+        series: pandas Series to check
+    
+    Returns:
+        True if the series is numeric (int/float), False otherwise
+    """
+    # Check if dtype is already numeric
+    if pd.api.types.is_numeric_dtype(series):
+        return True
+    
+    # Try converting to numeric - if it fails, it's not numeric
+    try:
+        pd.to_numeric(series, errors='raise')
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
 def parse_time_string(time_str: str, fmt: str) -> float:
     """
     Parse a time string to Unix timestamp (seconds since epoch).
@@ -287,8 +309,19 @@ def parse_file(db, f, data_folder_path):
             raise Exception(f'x axis not found for regex {x_regex}')
         x = df[c]
     
+    # Validate: if isTime is not enabled, x-axis must be numeric
+    is_time_enabled = templateInfo.get('x', {}).get('isTime', False)
+    
+    if not is_time_enabled and not is_numeric_series(x):
+        sample_value = x.iloc[0] if len(x) > 0 else "N/A"
+        raise Exception(
+            f'X-axis contains non-numeric values (e.g., "{sample_value}"), '
+            f'but "isTime" is not enabled in the template. '
+            f'Please enable "isTime" for the x-axis if the data contains timestamps.'
+        )
+    
     # Convert to time if needed (default to False if not specified)
-    if templateInfo.get('x', {}).get('isTime', False):
+    if is_time_enabled:
         try:
             x = pd.to_datetime(x).dt.strftime('%Y-%m-%d %H:%M:%S')
         except:
