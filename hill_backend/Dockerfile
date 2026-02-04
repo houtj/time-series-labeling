@@ -19,6 +19,7 @@ COPY config.py database.py main.py models.py redis_client.py ./
 COPY routes/ ./routes/
 COPY ws_handlers/ ./ws_handlers/
 COPY agents/ ./agents/
+COPY services/ ./services/
 
 # Install uv
 RUN pip install uv
