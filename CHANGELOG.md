@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.10] - 2026-02-04
+
+### Changed
+- Increased maximum file upload size from 100MB to 1024MB (1GB)
+- Made upload size configurable via `MAX_UPLOAD_SIZE_MB` environment variable
+- Added `proxy_request_buffering off` to nginx for better large file upload handling
+
 ## [2.0.9] - 2026-02-04
 
 ### Fixed
