@@ -42,12 +42,29 @@
   gap: 1rem;
 }
 
+// X-axis options (useIndex checkbox)
+.x-axis-options {
+  margin-bottom: 1rem;
+}
+
 // X-axis grid
 .x-axis-grid {
   display: grid;
   grid-template-columns: 2fr 2fr 1fr auto;
   gap: 1rem;
   align-items: end;
+}
+
+// X-axis index info message
+.x-axis-index-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color-secondary);
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--surface-card);
+  border-radius: var(--border-radius);
 }
 
 // Form fields

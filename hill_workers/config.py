@@ -21,7 +21,7 @@ class Settings:
     REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", "")
     
     # ===== Paths =====
-    DATA_FOLDER_PATH: Path = Path(os.getenv("DATA_FOLDER_PATH", "./data_folder"))
+    DATA_FOLDER_PATH: Path = Path(os.getenv("DATA_FOLDER_PATH", "/home/thou2/projects/hill-app/app_data"))
     
     # ===== Worker Configuration =====
     WORKER_NAME: str = os.getenv("WORKER_NAME", "file-parser-1")

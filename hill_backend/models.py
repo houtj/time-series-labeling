@@ -50,6 +50,7 @@ class TemplateX(BaseModel):
     regex: str
     isTime: bool
     unit: str
+    useIndex: bool = False
 
 
 class TemplateModel(BaseModel):

@@ -79,7 +79,18 @@
     <!-- X-axis configuration -->
     <div class="x-axis-section">
       <h3>X-Axis Configuration</h3>
-      <div class="x-axis-grid">
+      <div class="x-axis-options">
+        <div class="form-field checkbox-field">
+          <p-checkbox
+            [(ngModel)]="template.x.useIndex"
+            [binary]="true"
+            inputId="useIndex"
+            label="Use Row Index"
+            pTooltip="Use row index (0, 1, 2, ...) as x-axis instead of a data column"
+          />
+        </div>
+      </div>
+      <div class="x-axis-grid" *ngIf="!template.x.useIndex">
         <div class="form-field">
           <label for="xAxisName">X-Axis Name</label>
           <input
@@ -90,7 +101,7 @@
             placeholder="e.g., Time"
           />
         </div>
-        
+
         <div class="form-field">
           <label for="xRegex">Matching String</label>
           <input
@@ -102,7 +113,7 @@
             pTooltip="Regular expression to match the column"
           />
         </div>
-        
+
         <div class="form-field">
           <label for="xUnit">Unit</label>
           <input
@@ -113,7 +124,7 @@
             placeholder="e.g., seconds"
           />
         </div>
-        
+
         <div class="form-field checkbox-field">
           <p-checkbox
             [(ngModel)]="template.x.isTime"
@@ -122,6 +133,10 @@
             label="Is Time Axis"
           />
         </div>
+      </div>
+      <div class="x-axis-index-info" *ngIf="template.x.useIndex">
+        <i class="pi pi-info-circle"></i>
+        <span>X-axis will use row index (0, 1, 2, ..., N-1) instead of a data column.</span>
       </div>
     </div>
 

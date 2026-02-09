@@ -28,7 +28,8 @@ async def create_template(request: NewTemplateRequest):
             'name': '',
             'regex': '',
             'unit': '',
-            'isTime': False
+            'isTime': False,
+            'useIndex': False
         },
         'headRow': 0,
         'skipRow': 0,

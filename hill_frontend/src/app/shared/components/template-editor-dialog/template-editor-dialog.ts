@@ -196,18 +196,22 @@ export class TemplateEditorDialogComponent {
 
     // Clear existing channels before auto-mapping
     this.template.channels = [];
-    
-    // Auto-map the first column to X-axis if no X-axis is configured
+
+    // When useIndex is enabled, all columns become channels (no column needed for x-axis)
+    const useIndex = this.template.x.useIndex;
+
+    // Auto-map the first column to X-axis if no X-axis is configured and not using index
     const hasXAxisMapping = this.template.x.regex && this.template.x.regex.trim() !== '';
-    if (columns.length > 0 && !hasXAxisMapping) {
+    if (!useIndex && columns.length > 0 && !hasXAxisMapping) {
       this.template.x.regex = columns[0].name;
       if (!this.template.x.name || this.template.x.name.trim() === '') {
         this.template.x.name = columns[0].name;
       }
     }
-    
-    // Auto-map all columns as channels (skip first if it was used for X-axis)
-    const startIndex = hasXAxisMapping ? 0 : 1;
+
+    // Auto-map all columns as channels
+    // Skip first column only if it was used for X-axis (not when useIndex is enabled)
+    const startIndex = useIndex ? 0 : (hasXAxisMapping ? 0 : 1);
     
     for (let i = startIndex; i < columns.length; i++) {
       const column = columns[i];

@@ -8,6 +8,7 @@ export interface XAxisConfig {
   regex: string;
   isTime: boolean;
   unit: string;
+  useIndex: boolean;
 }
 
 /**

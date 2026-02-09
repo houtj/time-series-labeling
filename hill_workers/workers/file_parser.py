@@ -290,53 +290,66 @@ def parse_file(db, f, data_folder_path):
         raise ValueError(f"Unsupported file type: {templateInfo['fileType']}")
     
     # Extract X-axis
-    columnNames = df.columns.values.tolist()
-    x_regex = templateInfo['x']['regex']
-    
-    if 'col:' in x_regex:
-        x_regex = x_regex.replace('col:', '').strip()
-        try:
-            x_regex = int(x_regex)
-        except:
-            raise Exception(f'expect col:[number], got col:{x_regex} for x_axis')
-        x = df.iloc[:, x_regex]
+    use_index = templateInfo.get('x', {}).get('useIndex', False)
+
+    if use_index:
+        # Use row index as x-axis (0 to N-1)
+        x = list(range(len(df)))
+        logger.info(f"Using row index as x-axis: 0 to {len(df) - 1}")
+        json_dict.append({
+            'x': True,
+            'name': 'index',
+            'unit': '',
+            'data': x
+        })
     else:
-        for c in columnNames:
-            if re.match(x_regex, c):
-                break
-        else:
-            logger.error(f"Available columns: {columnNames}")
-            raise Exception(f'x axis not found for regex {x_regex}')
-        x = df[c]
-    
-    # Validate: if isTime is not enabled, x-axis must be numeric
-    is_time_enabled = templateInfo.get('x', {}).get('isTime', False)
-    
-    if not is_time_enabled and not is_numeric_series(x):
-        sample_value = x.iloc[0] if len(x) > 0 else "N/A"
-        raise Exception(
-            f'X-axis contains non-numeric values (e.g., "{sample_value}"), '
-            f'but "isTime" is not enabled in the template. '
-            f'Please enable "isTime" for the x-axis if the data contains timestamps.'
-        )
-    
-    # Convert to time if needed (default to False if not specified)
-    if is_time_enabled:
-        try:
-            x = pd.to_datetime(x).dt.strftime('%Y-%m-%d %H:%M:%S')
-        except:
+        columnNames = df.columns.values.tolist()
+        x_regex = templateInfo['x']['regex']
+
+        if 'col:' in x_regex:
+            x_regex = x_regex.replace('col:', '').strip()
             try:
-                x = pd.to_datetime(x, format='mixed').dt.strftime('%Y-%m-%d %H:%M:%S')
+                x_regex = int(x_regex)
             except:
-                raise Exception('x axis cannot be converted to time')
-    
-    x = x.values.tolist()
-    json_dict.append({
-        'x': True,
-        'name': templateInfo['x']['name'],
-        'unit': templateInfo['x'].get('unit', ''),
-        'data': x
-    })
+                raise Exception(f'expect col:[number], got col:{x_regex} for x_axis')
+            x = df.iloc[:, x_regex]
+        else:
+            for c in columnNames:
+                if re.match(x_regex, c):
+                    break
+            else:
+                logger.error(f"Available columns: {columnNames}")
+                raise Exception(f'x axis not found for regex {x_regex}')
+            x = df[c]
+
+        # Validate: if isTime is not enabled, x-axis must be numeric
+        is_time_enabled = templateInfo.get('x', {}).get('isTime', False)
+
+        if not is_time_enabled and not is_numeric_series(x):
+            sample_value = x.iloc[0] if len(x) > 0 else "N/A"
+            raise Exception(
+                f'X-axis contains non-numeric values (e.g., "{sample_value}"), '
+                f'but "isTime" is not enabled in the template. '
+                f'Please enable "isTime" for the x-axis if the data contains timestamps.'
+            )
+
+        # Convert to time if needed (default to False if not specified)
+        if is_time_enabled:
+            try:
+                x = pd.to_datetime(x).dt.strftime('%Y-%m-%d %H:%M:%S')
+            except:
+                try:
+                    x = pd.to_datetime(x, format='mixed').dt.strftime('%Y-%m-%d %H:%M:%S')
+                except:
+                    raise Exception('x axis cannot be converted to time')
+
+        x = x.values.tolist()
+        json_dict.append({
+            'x': True,
+            'name': templateInfo['x']['name'],
+            'unit': templateInfo['x'].get('unit', ''),
+            'data': x
+        })
     
     # Extract channels
     for channel in templateInfo['channels']:

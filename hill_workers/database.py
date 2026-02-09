@@ -18,7 +18,7 @@ def init_database():
     MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://root:example@localhost:27017/")
     client = pymongo.MongoClient(MONGODB_URL)
     _db = client['hill_ts']
-    _data_folder_path = os.getenv("DATA_FOLDER_PATH", './data_folder')
+    _data_folder_path = os.getenv("DATA_FOLDER_PATH", '/home/thou2/projects/hill-app/app_data')
     return _db
 
 def get_db():
