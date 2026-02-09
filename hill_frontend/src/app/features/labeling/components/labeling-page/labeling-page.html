@@ -62,7 +62,7 @@
                   </p-tablist>
                   <p-tabpanels>
                     <p-tabpanel value="0">
-                      <app-guidelines-panel 
+                      <app-guidelines-panel
                         [labelInfo]="labelInfo"
                         (onRefresh)="onRefreshPage()"
                       />
@@ -74,7 +74,7 @@
                     }
                     @if (autoDetectionVisible) {
                       <p-tabpanel [value]="aiChatVisible ? '2' : '1'">
-                        <app-auto-detection-panel 
+                        <app-auto-detection-panel
                           [fileId]="fileId"
                           [folderId]="folderId"
                           [projectId]="projectInfo()?._id?.$oid"

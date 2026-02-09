@@ -134,8 +134,8 @@
         flex: 1;
         overflow: hidden;
         min-height: 0;
-        
-        .p-tabpanel {
+
+        .p-tabpanel:not([hidden]) {
           height: 100%;
           overflow: hidden;
           display: flex;

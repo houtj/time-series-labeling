@@ -34,10 +34,10 @@ cd time-series-labeling
 
 ```bash
 # Start MongoDB and Redis
-docker-compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml up -d
 
 # Verify services are running
-docker-compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml ps
 ```
 
 ### 3. Backend Development
@@ -102,7 +102,7 @@ uv run python -m workers.file_parser
 
 ```bash
 # Build all services
-docker-compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml build
 
 # Build specific service
 docker build -t hill-backend ./hill_backend
@@ -118,14 +118,14 @@ cp env.example .env
 # Edit .env with your credentials
 
 # Build and run
-docker-compose -f docker-compose.prod.yml build
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
 
 # Test the application
 open http://localhost:4200
 
 # Stop services
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 ```
 
 ## CI/CD Pipeline Setup
@@ -295,17 +295,17 @@ uv run python -m debugpy --listen 5678 --wait-for-client -m uvicorn main:app --r
 
 ```bash
 # Development services
-docker-compose -f docker-compose.dev.yml logs -f
+docker compose -f docker-compose.dev.yml logs -f
 
 # Production services
-docker-compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f backend
 ```
 
 ### Database Access
 
 ```bash
 # Connect to MongoDB
-docker-compose -f docker-compose.dev.yml exec mongodb mongosh -u root -p example
+docker compose -f docker-compose.dev.yml exec mongodb mongosh -u root -p example
 
 # Or use MongoDB Compass
 # Connection string: mongodb://root:example@localhost:27017
@@ -364,7 +364,7 @@ Before creating a release tag:
 docker system prune -a
 
 # Rebuild without cache
-docker-compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml build --no-cache
 ```
 
 ### Port Conflicts
