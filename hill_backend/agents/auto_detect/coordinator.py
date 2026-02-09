@@ -15,6 +15,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import os
 import asyncio
 from dotenv import load_dotenv
+_env_path = Path(__file__).parent.parent.parent.parent / '.env'
 
 from .models import PlannerResponseFormatter, StatusEnum, IdentifierResponseFormatter, ValidatorResponseFormatter
 
@@ -42,7 +43,7 @@ class State(TypedDict):
     token_usage: int
     current_agent: str # Current running agent: "planner", "identifier", "validator"
 
-load_dotenv()
+load_dotenv(_env_path)
 
 class Config:
     API_VERSION = os.getenv('API_VERSION')

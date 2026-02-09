@@ -78,16 +78,16 @@
 
     <!-- X-axis configuration -->
     <div class="x-axis-section">
-      <h3>X-Axis Configuration</h3>
-      <div class="x-axis-options">
+      <div class="x-axis-header">
+        <h3>X-Axis Configuration</h3>
         <div class="form-field checkbox-field">
           <p-checkbox
             [(ngModel)]="template.x.useIndex"
             [binary]="true"
             inputId="useIndex"
-            label="Use Row Index"
             pTooltip="Use row index (0, 1, 2, ...) as x-axis instead of a data column"
           />
+          <label for="useIndex">Use Row Index</label>
         </div>
       </div>
       <div class="x-axis-grid" *ngIf="!template.x.useIndex">
@@ -130,8 +130,9 @@
             [(ngModel)]="template.x.isTime"
             [binary]="true"
             inputId="isTime"
-            label="Is Time Axis"
+            pTooltip="Parse x-axis values as date/time and display a time-formatted axis"
           />
+          <label for="isTime">Is Time Axis</label>
         </div>
       </div>
       <div class="x-axis-index-info" *ngIf="template.x.useIndex">
@@ -193,8 +194,9 @@
             <p-checkbox
               [(ngModel)]="channel.mandatory"
               [binary]="true"
-              label="Mandatory"
+              inputId="mandatory-{{ index }}"
             />
+            <label for="mandatory-{{ index }}">Mandatory</label>
           </div>
           
           <p-button

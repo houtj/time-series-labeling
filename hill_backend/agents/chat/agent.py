@@ -10,9 +10,10 @@ from langchain_core.tools import BaseTool
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from dotenv import load_dotenv
+from pathlib import Path
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from project root .env
+load_dotenv(Path(__file__).parent.parent.parent.parent / '.env')
 
 # Azure OpenAI configuration
 azure_chat_model = AzureChatOpenAI(

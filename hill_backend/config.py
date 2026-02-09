@@ -6,8 +6,10 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from project root .env
+# In Docker, env vars are set via docker-compose environment section
+_env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(_env_path)
 
 
 class Settings:

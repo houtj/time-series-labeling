@@ -6,22 +6,25 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load environment variables from project root .env
+# In Docker, env vars are set via docker-compose environment section
+_env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(_env_path)
 
 class Settings:
     """Worker settings from environment variables"""
-    
+
     # ===== Database =====
     MONGODB_URL: str = os.getenv("MONGODB_URL", "mongodb://root:example@localhost:27017/")
     DATABASE_NAME: str = "hill_ts"
-    
+
     # ===== Redis =====
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
     REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", "")
-    
+
     # ===== Paths =====
-    DATA_FOLDER_PATH: Path = Path(os.getenv("DATA_FOLDER_PATH", "/home/thou2/projects/hill-app/app_data"))
+    DATA_FOLDER_PATH: Path = Path(os.getenv("DATA_FOLDER_PATH", "./data_folder"))
     
     # ===== Worker Configuration =====
     WORKER_NAME: str = os.getenv("WORKER_NAME", "file-parser-1")

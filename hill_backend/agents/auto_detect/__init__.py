@@ -14,8 +14,9 @@ async def run_auto_detection(file_id: str, description: str = "Auto-detection re
     import pandas as pd
     from bson.objectid import ObjectId
     from dotenv import load_dotenv
-    
-    load_dotenv()
+    from pathlib import Path
+
+    load_dotenv(Path(__file__).parent.parent.parent / '.env')
     
     try:
         # Import database functions
