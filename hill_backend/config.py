@@ -48,7 +48,7 @@ class Settings:
     
     # Server
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = int(os.getenv("BACKEND_PORT", "8001"))  # Dev uses 8001, Prod uses 8000
     DEBUG: bool = True
 
 

@@ -4,11 +4,45 @@ This guide is for developers and contributors working on the Hill Sequence proje
 
 ## Table of Contents
 
+- [Dev/Prod Environment Isolation](#devprod-environment-isolation)
 - [Local Development Setup](#local-development-setup)
 - [Building from Source](#building-from-source)
 - [CI/CD Pipeline Setup](#cicd-pipeline-setup)
 - [Release Process](#release-process)
 - [Contributing](#contributing)
+
+## Dev/Prod Environment Isolation
+
+The development and production environments are completely isolated to prevent interference:
+
+### Port Allocation
+
+| Service | Production Port | Development Port |
+|---------|----------------|------------------|
+| Frontend | 4200 | 4201 |
+| Backend | 8000 | 8001 |
+| MongoDB | 27017 (not exposed) | 27018 |
+| Redis | 6379 (not exposed) | 6380 |
+
+### Data Isolation
+
+- **Production**: Located in `~/projects/hill-app/`
+  - All services run in Docker containers
+  - MongoDB and Redis are NOT exposed to host (internal network only)
+  - Data stored in `~/projects/hill-app/app_data`
+
+- **Development**: Located in `~/projects/hill_dev/`
+  - MongoDB and Redis run in Docker containers (different ports)
+  - Backend, Frontend, Worker run in terminals for hot-reload
+  - Data stored in `~/projects/hill_dev/dev_data`
+
+### Benefits of Isolation
+
+- No port conflicts between dev and prod
+- Dev changes don't affect production data
+- Dev and prod workers use separate Redis queues
+- Safe to test breaking changes in development
+- Can run both environments simultaneously
 
 ## Local Development Setup
 
@@ -21,7 +55,38 @@ This guide is for developers and contributors working on the Hill Sequence proje
 
 ### Development Environment
 
-The project uses `docker-compose.dev.yml` for local development, which provides only MongoDB and Redis. You run the application services (backend, frontend, worker) locally on your machine for faster development iteration.
+The project uses `docker compose.dev.yml` for local development, which provides isolated MongoDB (port 27018) and Redis (port 6380). You run the application services (backend, frontend, worker) locally on your machine for faster development iteration.
+
+### Quick Start with Scripts
+
+We provide convenient startup scripts:
+
+```bash
+# 1. Start development databases (MongoDB + Redis)
+./scripts/start-dev-db.sh
+
+# 2. (Optional) Sync production data to dev for realistic testing
+./scripts/sync-prod-to-dev.sh
+
+# 3. In separate terminals, start each service:
+./scripts/start-dev-backend.sh   # Runs on http://localhost:8001
+./scripts/start-dev-worker.sh    # Connects to dev Redis queue
+./scripts/start-dev-frontend.sh  # Runs on http://localhost:4201
+
+# Stop databases when done
+./scripts/stop-dev-db.sh
+```
+
+**Note:** The sync script (`sync-prod-to-dev.sh`) copies all production data including:
+- Application data (uploaded files, parsed JSON)
+- MongoDB database (complete database copy)
+- Redis data (cleared and started fresh)
+
+This is useful for testing with real production data in a safe isolated environment.
+
+### Manual Setup (Alternative)
+
+If you prefer manual setup:
 
 ### 1. Clone the Repository
 
@@ -33,11 +98,11 @@ cd time-series-labeling
 ### 2. Start Development Dependencies
 
 ```bash
-# Start MongoDB and Redis
-docker compose -f docker-compose.dev.yml up -d
+# Start MongoDB (port 27018) and Redis (port 6380)
+docker compose -f docker compose.dev.yml up -d
 
 # Verify services are running
-docker compose -f docker-compose.dev.yml ps
+docker compose -f docker compose.dev.yml ps
 ```
 
 ### 3. Backend Development
@@ -53,11 +118,11 @@ uv sync
 cp ../.env.example .env
 # Edit .env with your Azure OpenAI credentials
 
-# Run the backend
-uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# Run the backend (dev uses port 8001, prod uses 8000)
+uv run uvicorn main:app --reload --host 0.0.0.0 --port 8001
 ```
 
-Backend will be available at: http://localhost:8000
+Backend will be available at: http://localhost:8001
 
 ### 4. Frontend Development
 
@@ -67,13 +132,13 @@ cd hill_frontend
 # Install dependencies
 npm install
 
-# Run development server
+# Run development server (dev uses port 4201, prod uses 4200)
 npm start
 # or
 ng serve
 ```
 
-Frontend will be available at: http://localhost:4200
+Frontend will be available at: http://localhost:4201
 
 ### 5. Worker Development
 
@@ -102,7 +167,7 @@ uv run python -m workers.file_parser
 
 ```bash
 # Build all services
-docker compose -f docker-compose.prod.yml build
+docker compose -f docker compose.prod.yml build
 
 # Build specific service
 docker build -t hill-backend ./hill_backend
@@ -118,14 +183,14 @@ cp env.example .env
 # Edit .env with your credentials
 
 # Build and run
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker compose.prod.yml build
+docker compose -f docker compose.prod.yml up -d
 
 # Test the application
 open http://localhost:4200
 
 # Stop services
-docker compose -f docker-compose.prod.yml down
+docker compose -f docker compose.prod.yml down
 ```
 
 ## CI/CD Pipeline Setup
@@ -251,8 +316,8 @@ time-series-labeling/
 │   ├── workers/                 # Background workers
 │   ├── Dockerfile               # Worker container
 │   └── pyproject.toml           # Python dependencies
-├── docker-compose.dev.yml       # Development (MongoDB + Redis)
-├── docker-compose.prod.yml      # Production (all services)
+├── docker compose.dev.yml       # Development (MongoDB + Redis)
+├── docker compose.prod.yml      # Production (all services)
 ├── env.example                  # Environment template
 ├── init-mongo.js                # MongoDB initialization
 ├── README.md                    # User documentation
@@ -295,20 +360,21 @@ uv run python -m debugpy --listen 5678 --wait-for-client -m uvicorn main:app --r
 
 ```bash
 # Development services
-docker compose -f docker-compose.dev.yml logs -f
+docker compose -f docker compose.dev.yml logs -f
 
 # Production services
-docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker compose.prod.yml logs -f backend
 ```
 
 ### Database Access
 
 ```bash
-# Connect to MongoDB
-docker compose -f docker-compose.dev.yml exec mongodb mongosh -u root -p example
+# Connect to Dev MongoDB
+docker compose -f docker compose.dev.yml exec mongodb mongosh -u root -p example
 
 # Or use MongoDB Compass
-# Connection string: mongodb://root:example@localhost:27017
+# Dev connection string: mongodb://root:example@localhost:27018
+# Prod connection string: mongodb://root:example@localhost:27017 (if exposed)
 ```
 
 ## Testing
@@ -364,17 +430,26 @@ Before creating a release tag:
 docker system prune -a
 
 # Rebuild without cache
-docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker compose.prod.yml build --no-cache
 ```
 
 ### Port Conflicts
 
+Dev and prod environments use different ports to avoid conflicts:
+- Frontend: Dev=4201, Prod=4200
+- Backend: Dev=8001, Prod=8000
+- MongoDB: Dev=27018, Prod=27017 (not exposed in new setup)
+- Redis: Dev=6380, Prod=6379 (not exposed in new setup)
+
 ```bash
 # Check what's using the port
-lsof -i :8000
-lsof -i :4200
+lsof -i :8001  # Dev backend
+lsof -i :4201  # Dev frontend
+lsof -i :27018 # Dev MongoDB
+lsof -i :6380  # Dev Redis
 
-# Kill the process or change ports in docker-compose.dev.yml
+# Kill the process if needed
+kill -9 <PID>
 ```
 
 ### Dependencies Out of Sync

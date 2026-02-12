@@ -1,11 +1,12 @@
 services:
   # MongoDB Database for Development
+  # Isolated from production - uses port 27018 on host
   mongodb:
     image: mongo:7.0
     container_name: hill-mongodb-dev
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "27018:27017"  # Host:Container - Dev uses 27018, Prod uses 27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-root}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-example}
@@ -21,12 +22,13 @@ services:
       start_period: 40s
 
   # Redis for Development
+  # Isolated from production - uses port 6380 on host
   redis:
     image: redis:7-alpine
     container_name: hill-redis-dev
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"  # Host:Container - Dev uses 6380, Prod uses 6379
     volumes:
       - ./redis_data:/data
     healthcheck:

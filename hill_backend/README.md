@@ -243,7 +243,7 @@ source .venv/bin/activate  # or use 'uv run'
 ### Database Connection Issues
 ```bash
 # Check MongoDB is running
-docker-compose up -d mongodb  # if using docker
+docker compose up -d mongodb  # if using docker
 
 # Verify connection string in .env
 MONGODB_URL=mongodb://root:example@localhost:27017/

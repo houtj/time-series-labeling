@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-02-12
+
+### Changed - Dev/Prod Environment Isolation
+
+**BREAKING CHANGE for development setup**: Development and production environments are now completely isolated.
+
+## [2.0.12] - 2026-02-12
+
+### Fixed
+- Enable index a-axis
+
 ## [2.0.11] - 2026-02-04
 
 ### Fixed
@@ -60,6 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Removed manual "Save Labels" button (auto-save handles all changes)
-- Docker commands updated to use `docker compose` instead of `docker-compose`
+- Docker commands updated to use `docker compose` instead of `docker compose`
 
 

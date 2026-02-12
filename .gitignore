@@ -15,6 +15,7 @@ redis_data/*
 *.crt
 *.cert
 app_data/*
+dev_data/*
 mongodb_data/*
 .env
 */.env

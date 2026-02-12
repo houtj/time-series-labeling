@@ -88,7 +88,7 @@ Using Docker:
 docker run -d -p 6379:6379 redis:7-alpine
 ```
 
-Or use docker-compose (see project root).
+Or use docker compose (see project root).
 
 ## Running the Worker
 
@@ -105,7 +105,7 @@ python -m workers.file_parser
 ### Production (Docker)
 
 ```bash
-docker-compose up worker
+docker compose up worker
 ```
 
 ### Multiple Workers
