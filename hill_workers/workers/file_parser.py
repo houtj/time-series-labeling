@@ -762,15 +762,41 @@ class FileParserWorker:
             project_id = local_folder.parent.name if local_folder.parent.name else str(local_folder.parent)
             file_id_name = local_folder.name
             
+            # Determine x-axis type from parsed data (needed for both storage paths)
+            x_data = x_trace['data']
+            x_is_time = isinstance(x_data[0], str) if x_data else False
+
+            if x_is_time:
+                sample_strings = x_data[:10]
+                detected_format = detect_time_format(sample_strings)
+                if detected_format:
+                    x_type = 'timestamp'
+                    x_format = detected_format
+                    # Convert to timestamps to get min/max
+                    x_numeric, _ = convert_times_to_timestamps(x_data, detected_format)
+                    x_min = float(x_numeric[0])
+                    x_max = float(x_numeric[-1])
+                else:
+                    x_type = 'numeric'
+                    x_format = None
+                    x_min = 0
+                    x_max = total_points - 1
+            else:
+                x_type = 'numeric'
+                x_format = None
+                x_numeric = np.array(x_data, dtype=np.float64)
+                x_min = float(x_numeric[0])
+                x_max = float(x_numeric[-1])
+
             # Determine storage format based on size
             use_binary_format = total_points >= BINARY_FORMAT_THRESHOLD
-            
+
             if use_binary_format:
                 logger.info(f"Using binary format for large file: {total_points} points")
                 
                 # Save binary format
                 binary_base_path = str(output_dir / file_stem)
-                meta = save_as_binary_format(json_dict, binary_base_path)
+                save_as_binary_format(json_dict, binary_base_path)
                 
                 # Generate and save overview data for initial display
                 overview_data, overview_meta = generate_overview_data(json_dict, target_points_per_channel=5000)
@@ -793,12 +819,6 @@ class FileParserWorker:
                 
                 with open(json_file_path, 'w') as f:
                     json.dump(json_dict, f, ignore_nan=True)
-                
-                # Extract x-axis info from metadata
-                x_type = meta.get('xColumn', {}).get('type', 'numeric')
-                x_format = meta.get('xColumn', {}).get('format', None)
-                x_min = meta.get('xColumn', {}).get('min', 0)
-                x_max = meta.get('xColumn', {}).get('max', total_points - 1)
                 
                 # Update database with binary format info
                 update_data = {
@@ -836,17 +856,24 @@ class FileParserWorker:
                 logger.info(f"Saved JSON to {json_path}")
                 
                 # Update database
+                update_data = {
+                    'parsing': 'parsed',
+                    'jsonPath': f'{project_id}/{file_id_name}/{file_stem}.json',
+                    'useBinaryFormat': False,
+                    'totalPoints': total_points,
+                    'xType': x_type,
+                    'xMin': x_min,
+                    'xMax': x_max,
+                }
+                if x_format:
+                    update_data['xFormat'] = x_format
+
                 self.db['files'].update_one(
                     {'_id': file_doc['_id']},
-                    {'$set': {
-                        'parsing': 'parsed',
-                        'jsonPath': f'{project_id}/{file_id_name}/{file_stem}.json',
-                        'useBinaryFormat': False,
-                        'totalPoints': total_points
-                    }}
+                    {'$set': update_data}
                 )
-                
-                logger.info(f"Successfully processed file: {file_name}")
+
+                logger.info(f"Successfully processed file: {file_name} ({total_points} points, xType={x_type})")
             
             # Acknowledge success
             self.redis.acknowledge(msg_id)
