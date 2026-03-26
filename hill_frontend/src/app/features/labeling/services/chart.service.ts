@@ -116,6 +116,14 @@ export class ChartService {
         k = index + 1;
       }
 
+      // Compute explicit y-axis range to prevent auto-rescaling on x scroll zoom
+      const yValues = (c.data as number[]).filter(v => v !== null && v !== undefined && isFinite(v));
+      let yMin = Math.min(...yValues);
+      let yMax = Math.max(...yValues);
+      const yPadding = (yMax - yMin) * 0.05 || 1; // 5% padding, fallback to 1 for constant data
+      yMin -= yPadding;
+      yMax += yPadding;
+
       // @ts-expect-error - Dynamic yaxis configuration
       this.layout[`yaxis${k}`] = {
         title: {
@@ -134,7 +142,9 @@ export class ChartService {
         side: 'left',
         position: 0.04 * index,
         showgrid: false,
-        zeroline: false
+        zeroline: false,
+        autorange: false,
+        range: [yMin, yMax]
       };
 
       channelList.push({ channelName: c.name, yaxis: `y${k}`, color: c.color });
