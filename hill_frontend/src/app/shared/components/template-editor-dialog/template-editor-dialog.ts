@@ -61,6 +61,9 @@ export class TemplateEditorDialogComponent {
   fileTypesList = [{ name: '.xlsx' }, { name: '.xls' }, { name: '.csv' }];
   selectedFileType = { name: '.xlsx' };
 
+  // Upload state
+  isUploading = false;
+
   constructor() {
     // Use effect to react to input changes - more declarative and cleaner than ngOnChanges
     effect(() => {
@@ -157,8 +160,10 @@ export class TemplateEditorDialogComponent {
     formData.append('file', file);
     formData.append('templateId', this.template._id?.$oid || '');
 
+    this.isUploading = true;
     this.http.post<any>(`${environment.apiUrl}/templates/extract-columns`, formData).subscribe({
       next: (response) => {
+        this.isUploading = false;
         // Check if backend returned an error object
         if (response.error) {
           console.error('Failed to extract columns:', response.error);
@@ -169,7 +174,7 @@ export class TemplateEditorDialogComponent {
           });
           return;
         }
-        
+
         this.autoMapColumnsToTemplate(response.columns);
         this.messageService.add({
           severity: 'success',
@@ -178,6 +183,7 @@ export class TemplateEditorDialogComponent {
         });
       },
       error: (error) => {
+        this.isUploading = false;
         console.error('Failed to extract columns:', error);
         this.messageService.add({
           severity: 'error',

@@ -30,8 +30,10 @@
         label="Upload Test File"
         (onClick)="onClickFromFile($event)"
         [outlined]="true"
+        [disabled]="isUploading"
         pTooltip="Upload a file to auto-map columns"
       />
+      <i *ngIf="isUploading" class="pi pi-spin pi-spinner" style="font-size: 1.2rem;"></i>
     </div>
 
     <!-- Meta information section -->
