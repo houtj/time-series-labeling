@@ -336,12 +336,14 @@ def parse_file(db, f, data_folder_path):
         # Convert to time if needed (default to False if not specified)
         if is_time_enabled:
             try:
-                x = pd.to_datetime(x).dt.strftime('%Y-%m-%d %H:%M:%S')
+                x_dt = pd.to_datetime(x)
             except:
                 try:
-                    x = pd.to_datetime(x, format='mixed').dt.strftime('%Y-%m-%d %H:%M:%S')
+                    x_dt = pd.to_datetime(x, format='mixed')
                 except:
                     raise Exception('x axis cannot be converted to time')
+            time_fmt = '%Y-%m-%d %H:%M:%S.%f' if x_dt.dt.microsecond.any() else '%Y-%m-%d %H:%M:%S'
+            x = x_dt.dt.strftime(time_fmt)
 
         x = x.values.tolist()
         json_dict.append({
