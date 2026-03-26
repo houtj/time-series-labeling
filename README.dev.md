@@ -98,28 +98,20 @@ cd time-series-labeling
 ### 2. Start Development Dependencies
 
 ```bash
-# Start MongoDB (port 27018) and Redis (port 6380)
-docker compose -f docker compose.dev.yml up -d
-
-# Verify services are running
-docker compose -f docker compose.dev.yml ps
+./scripts/start-dev-db.sh
 ```
 
 ### 3. Backend Development
 
 ```bash
-cd hill_backend
-
-# Install dependencies using uv
-pip install uv
-uv sync
+# Install dependencies (first time only)
+cd hill_backend && pip install uv && uv sync && cd ..
 
 # Create .env file (optional, for local config)
-cp ../.env.example .env
-# Edit .env with your Azure OpenAI credentials
+cp .env.example hill_backend/.env
+# Edit hill_backend/.env with your Azure OpenAI credentials
 
-# Run the backend (dev uses port 8001, prod uses 8000)
-uv run uvicorn main:app --reload --host 0.0.0.0 --port 8001
+./scripts/start-dev-backend.sh
 ```
 
 Backend will be available at: http://localhost:8001
@@ -127,15 +119,10 @@ Backend will be available at: http://localhost:8001
 ### 4. Frontend Development
 
 ```bash
-cd hill_frontend
+# Install dependencies (first time only)
+cd hill_frontend && npm install && cd ..
 
-# Install dependencies
-npm install
-
-# Run development server (dev uses port 4201, prod uses 4200)
-npm start
-# or
-ng serve
+./scripts/start-dev-frontend.sh
 ```
 
 Frontend will be available at: http://localhost:4201
@@ -143,14 +130,10 @@ Frontend will be available at: http://localhost:4201
 ### 5. Worker Development
 
 ```bash
-cd hill_workers
+# Install dependencies (first time only)
+cd hill_workers && pip install uv && uv sync && cd ..
 
-# Install dependencies
-pip install uv
-uv sync
-
-# Run the worker
-uv run python -m workers.file_parser
+./scripts/start-dev-worker.sh
 ```
 
 ### Development Workflow

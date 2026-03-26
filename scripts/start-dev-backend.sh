@@ -14,5 +14,10 @@ if [ -d ".venv" ]; then
     source .venv/bin/activate
 fi
 
+# Set dev environment variables
+export REDIS_HOST=localhost
+export REDIS_PORT=6380
+export MONGODB_URL=mongodb://root:example@localhost:27018/
+
 # Start the backend
 uvicorn main:app --host 0.0.0.0 --port 8001 --reload

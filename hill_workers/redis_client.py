@@ -89,6 +89,13 @@ class RedisQueueClient:
                 block=block_ms
             )
             return messages if messages else []
+        except redis.exceptions.ResponseError as e:
+            if "NOGROUP" in str(e):
+                logger.warning("Consumer group lost (Redis may have been flushed), recreating...")
+                self._ensure_consumer_groups()
+            else:
+                logger.error(f"Error reading from Redis: {e}")
+            return []
         except Exception as e:
             logger.error(f"Error reading from Redis: {e}")
             return []
