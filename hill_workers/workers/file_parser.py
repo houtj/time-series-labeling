@@ -536,7 +536,7 @@ def generate_overview_data(json_dict: list, target_points_per_channel: int = 500
     Returns:
         Tuple of (downsampled data in JSON format, overview metadata dict)
     """
-    from tsdownsample import MinMaxLTTBDownsampler
+    from tsdownsample import MinMaxLTTBDownsampler, NaNMinMaxLTTBDownsampler
     
     # Find x-axis and channels
     x_trace = next(d for d in json_dict if d['x'])
@@ -611,7 +611,7 @@ def generate_overview_data(json_dict: list, target_points_per_channel: int = 500
         channel_arrays.append(ch_arr)
     
     # Run MinMaxLTTB on each channel and collect indices
-    downsampler = MinMaxLTTBDownsampler()
+    downsampler = NaNMinMaxLTTBDownsampler()
     all_indices = set()
     
     for ch_arr in channel_arrays:

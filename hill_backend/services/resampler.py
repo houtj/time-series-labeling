@@ -4,7 +4,7 @@ Downsamples multi-channel time series data using MinMaxLTTB with union of indice
 """
 
 import numpy as np
-from tsdownsample import MinMaxLTTBDownsampler
+from tsdownsample import MinMaxLTTBDownsampler, NaNMinMaxLTTBDownsampler
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class ResamplerService:
                                        Final count may be higher due to union of indices.
         """
         self.target_points = target_points_per_channel
-        self.downsampler = MinMaxLTTBDownsampler()
+        self.downsampler = NaNMinMaxLTTBDownsampler()
     
     def resample(
         self, 
