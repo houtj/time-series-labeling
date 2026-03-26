@@ -70,17 +70,22 @@ export class FileUploadComponent {
     }).subscribe({
       next: (res) => {
         if (res.type === HttpEventType.UploadProgress) {
-          this.uploadProgress = Math.round(100 * res.loaded / (res.total || 1));
+          // Cap at 80% — server still needs time to process after bytes are sent
+          this.uploadProgress = Math.min(80, Math.round(80 * res.loaded / (res.total || 1)));
         }
         if (res.type === HttpEventType.Response) {
+          // Animate to 100% so the user sees completion, then close
+          this.uploadProgress = 100;
           this.messageService.add({
             severity: 'success',
             summary: 'Success',
             detail: `${this.uploadedFileNames.length} file(s) uploaded successfully`
           });
-          this.isUploading = false;
-          this.uploadComplete.emit();
-          this.clear();
+          setTimeout(() => {
+            this.isUploading = false;
+            this.uploadComplete.emit();
+            this.clear();
+          }, 600);
         }
       },
       error: (error) => {
@@ -110,6 +115,9 @@ export class FileUploadComponent {
    */
   getStatusMessage(): string {
     if (this.isUploading) {
+      if (this.uploadProgress >= 80 && this.uploadProgress < 100) {
+        return `Processing... ${this.uploadProgress}%`;
+      }
       return `Uploading... ${this.uploadProgress}%`;
     }
     if (this.uploadedFileNames.length > 0) {

@@ -32,7 +32,7 @@
           <ul class="uploaded-files-list">
             @for (file of files; track file.name) {
               <li class="uploaded-file-item">
-                @if (uploadProgress === 100) {
+                @if (!isUploading && uploadedFileNames.length > 0) {
                   <i class="pi pi-check-circle"></i>
                 } @else {
                   <i class="pi pi-file"></i>
