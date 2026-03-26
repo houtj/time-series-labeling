@@ -1,5 +1,6 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef, input, inject, effect, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import * as Plotly from 'plotly.js-dist-min';
 
 // PrimeNG imports
@@ -9,9 +10,9 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DataModel, LabelModel, FileModel } from '../../../../core/models';
 
 // Feature services
-import { 
-  ChartService, 
-  LabelStateService, 
+import {
+  ChartService,
+  LabelStateService,
   LabelingActionsService,
   FetchControllerService,
   BinaryParserService
@@ -45,6 +46,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
   
   private resizeObserver?: ResizeObserver;
   private isChartInitialized = false;
+  private viewportSub?: Subscription;
   
   // Track interaction state
   private nbClick = 0;
@@ -115,6 +117,25 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   
   ngAfterViewInit(): void {
+    // Subscribe to viewport data stream once
+    this.viewportSub = this.fetchController.viewportData$.subscribe({
+      next: ({ response, xMin, xMax }) => {
+        console.debug('[Viewport] Received data:', {
+          points: response.metadata.returnedPoints,
+          channels: response.metadata.channelNames.length
+        });
+
+        const dataModels = this.binaryParser.toDataModelFormat(
+          response,
+          this.xMeta.name,
+          this.xMeta.unit,
+          this.channelMeta
+        );
+
+        this.updateChartTracesWithRange(dataModels, xMin, xMax);
+      }
+    });
+
     // Initialize chart after view is ready
     const currentData = this.data();
     if (this.chartDiv && currentData) {
@@ -130,7 +151,9 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
     }
-    
+
+    this.viewportSub?.unsubscribe();
+
     // Cancel any pending fetch requests
     this.fetchController.cancelPendingRequest();
   }
@@ -349,48 +372,12 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   
   /**
-   * Handle viewport change - fetch resampled data from backend
-   * 
-   * Simplified flow:
-   * 1. Send viewport range to backend
-   * 2. Backend resamples to 5k points/channel
-   * 3. Frontend renders directly
+   * Handle viewport change - request resampled data from backend
+   * The actual response is handled by the viewportData$ subscription
    */
   private handleViewportChange(viewMin: number, viewMax: number, fileId: string): void {
-    console.debug('[Viewport] Fetching data for range:', { viewMin, viewMax });
-    
-    // Fetch resampled data from backend (with debounce)
-    this.fetchController.debouncedFetch(fileId, viewMin, viewMax, 5000).subscribe({
-      next: (response) => {
-        console.debug('[Viewport] Received data:', {
-          points: response.metadata.returnedPoints,
-          channels: response.metadata.channelNames.length
-        });
-        
-        // Convert to DataModel format
-        const dataModels = this.binaryParser.toDataModelFormat(
-          response,
-          this.xMeta.name,
-          this.xMeta.unit,
-          this.channelMeta
-        );
-        
-        // Update chart, preserving current viewport
-        this.updateChartTracesWithRange(dataModels, viewMin, viewMax);
-      },
-      error: (err) => {
-        if (err.message !== 'Request cancelled') {
-          console.error('[Viewport] Failed to fetch data:', err);
-        }
-      }
-    });
-  }
-  
-  /**
-   * Update chart traces with new data (without reinitializing)
-   */
-  private updateChartTraces(data: DataModel[]): void {
-    this.updateChartTracesWithRange(data);
+    console.debug('[Viewport] Requesting data for range:', { viewMin, viewMax });
+    this.fetchController.requestViewport(fileId, viewMin, viewMax, 5000);
   }
   
   /**
