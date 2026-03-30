@@ -353,33 +353,40 @@ export class LabelingToolbarComponent {
         description: ''
       }).subscribe({
         next: () => {
+          const trimmedName = this.newClassName.trim();
+
           // Create new event with the new class
           const newEvent = {
             start,
             end,
-            className: this.newClassName.trim(),
+            className: trimmedName,
             color: newClassColor,
             description: this.selectedEventDescription,
             labeler: this.userInfo!.name,
             hide: false
           };
-          
+
           // Add to label info (optimistic update)
           this.labelInfo!.events.push(newEvent);
           this.labelState.updateLabel(this.labelInfo!);
-          
+
           // Auto-save to database
           this.labelingActions.queueAutoSave(this.labelInfo!);
-          
+
           // Show success message
           this.messageService.add({
             severity: 'success',
             summary: 'Class Added',
-            detail: `New class "${this.newClassName.trim()}" created`
+            detail: `New class "${trimmedName}" created`
           });
-          
-          // Update project info in parent (will be handled by parent reload)
-          
+
+          // Update local projectInfo so the new class appears in the dropdown immediately
+          this.projectInfo!.classes.push({
+            name: trimmedName,
+            color: newClassColor,
+            description: ''
+          });
+
           // Clear selection and close dialog
           this.labelState.clearLabelSelection();
           this.labelSelectionDialogVisible = false;
